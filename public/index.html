@@ -94,6 +94,66 @@
       transition: width 1s cubic-bezier(0.4,0,0.2,1);
     }
 
+    /* ── DXY Live Meter ───────────────────────────────────────────────── */
+    .dxy-bar {
+      background: #0D1117;
+      border-bottom: 1px solid #21262D;
+      position: relative;
+      overflow: hidden;
+    }
+    /* subtle animated sweep on the DXY bar */
+    .dxy-bar::after {
+      content: '';
+      position: absolute;
+      top: 0; left: -100%; width: 60%;  height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.015), transparent);
+      animation: dxySweep 4s ease-in-out infinite;
+      pointer-events: none;
+    }
+    @keyframes dxySweep { 0%{ left:-60%; } 100%{ left:160%; } }
+
+    .dxy-price-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 2px 10px 2px 8px;
+      border: 1px solid;
+      border-radius: 2px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      transition: all 0.4s ease;
+    }
+    .dxy-price-pill.bullish {
+      color: #FF3B3B;
+      border-color: rgba(255,59,59,0.35);
+      background: rgba(255,59,59,0.07);
+      box-shadow: 0 0 12px rgba(255,59,59,0.1);
+    }
+    .dxy-price-pill.bearish {
+      color: #00FF88;
+      border-color: rgba(0,255,136,0.35);
+      background: rgba(0,255,136,0.07);
+      box-shadow: 0 0 12px rgba(0,255,136,0.1);
+    }
+    .dxy-price-pill.neutral {
+      color: #F0B429;
+      border-color: rgba(240,180,41,0.35);
+      background: rgba(240,180,41,0.07);
+    }
+
+    /* blinking live dot */
+    @keyframes livePulse { 0%,100%{ opacity:1; transform:scale(1); } 50%{ opacity:0.3; transform:scale(0.7); } }
+    .live-dot { animation: livePulse 1.4s ease-in-out infinite; }
+
+    /* skeleton for DXY loading */
+    .dxy-skeleton {
+      background: linear-gradient(90deg, #161B22 25%, #1E242C 50%, #161B22 75%);
+      background-size: 300px 100%;
+      animation: shimmer 1.4s infinite;
+      border-radius: 2px;
+      height: 18px; width: 80px; display:inline-block;
+    }
+
     /* ── Ticker ───────────────────────────────────────────────────────── */
     @keyframes ticker { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
     .ticker-inner { display: flex; white-space: nowrap; animation: ticker 40s linear infinite; }
@@ -143,6 +203,72 @@
     <div class="ticker-inner font-mono text-xs text-[#484F58]">
       <span class="px-8">DEPRESSEDESIGN MACRO PREDICTOR &nbsp;·&nbsp; FOREX &amp; XAU/USD SIGNALS &nbsp;·&nbsp; NFP &nbsp;·&nbsp; CPI &nbsp;·&nbsp; GDP GROWTH &nbsp;·&nbsp; FED RATE &nbsp;·&nbsp; ADP &nbsp;·&nbsp; JOLTS &nbsp;·&nbsp; ISM PMI &nbsp;·&nbsp; PPI &nbsp;·&nbsp; RETAIL SALES &nbsp;·&nbsp; WTI CRUDE &nbsp;·&nbsp; NOT FINANCIAL ADVICE &nbsp;·&nbsp;</span>
       <span class="px-8">DEPRESSEDESIGN MACRO PREDICTOR &nbsp;·&nbsp; FOREX &amp; XAU/USD SIGNALS &nbsp;·&nbsp; NFP &nbsp;·&nbsp; CPI &nbsp;·&nbsp; GDP GROWTH &nbsp;·&nbsp; FED RATE &nbsp;·&nbsp; ADP &nbsp;·&nbsp; JOLTS &nbsp;·&nbsp; ISM PMI &nbsp;·&nbsp; PPI &nbsp;·&nbsp; RETAIL SALES &nbsp;·&nbsp; WTI CRUDE &nbsp;·&nbsp; NOT FINANCIAL ADVICE &nbsp;·&nbsp;</span>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════
+       DXY LIVE METER — full-width strip between ticker and header
+  ══════════════════════════════════════════════════════════════════════ -->
+  <div class="dxy-bar px-6 py-2">
+    <div class="max-w-[1400px] mx-auto flex items-center justify-between gap-4 flex-wrap">
+
+      <!-- Left: label + live dot -->
+      <div class="flex items-center gap-3">
+        <div class="flex items-center gap-1.5">
+          <div class="w-1.5 h-1.5 rounded-full bg-[#484F58] live-dot" id="dxyDot"></div>
+          <span class="font-mono text-[9px] text-[#484F58] tracking-[0.25em] uppercase">DXY Live</span>
+          <span class="font-mono text-[9px] text-[#21262D]">/</span>
+          <span class="font-mono text-[9px] text-[#484F58] tracking-[0.15em]">US Dollar Index</span>
+        </div>
+      </div>
+
+      <!-- Center: price pill + change -->
+      <div class="flex items-center gap-3">
+        <!-- Loading state -->
+        <div id="dxyLoading" class="flex items-center gap-2">
+          <div class="dxy-skeleton"></div>
+          <div class="dxy-skeleton" style="width:52px"></div>
+        </div>
+
+        <!-- Populated state (hidden until data loads) -->
+        <div id="dxyLive" class="hidden flex items-center gap-3">
+          <!-- Current price pill -->
+          <span id="dxyPricePill" class="dxy-price-pill neutral">
+            <svg width="7" height="7" viewBox="0 0 7 7" fill="currentColor" id="dxyArrow">
+              <polygon points="3.5,0 7,7 0,7" id="dxyArrowPoly"/>
+            </svg>
+            <span id="dxyPrice">—</span>
+          </span>
+
+          <!-- Change percent badge -->
+          <span id="dxyChangeBadge" class="font-mono text-[10px] font-semibold text-[#484F58]">—%</span>
+
+          <!-- Status label -->
+          <span id="dxyStatus" class="font-mono text-[9px] text-[#484F58] tracking-widest uppercase hidden md:block">—</span>
+
+          <!-- Divider -->
+          <span class="text-[#21262D] font-mono text-xs hidden md:block">|</span>
+
+          <!-- XAU implication -->
+          <span id="dxyXauHint" class="font-mono text-[9px] tracking-widest hidden md:block" style="color:#484F58">XAU IMPLICATION: —</span>
+        </div>
+      </div>
+
+      <!-- Right: mini sparkline placeholder label -->
+      <div class="hidden xl:flex items-center gap-2">
+        <span class="font-mono text-[8px] text-[#21262D] tracking-[0.2em] uppercase">Dollar Strength Index</span>
+        <!-- 7-bar mini pulse bars -->
+        <div class="flex items-end gap-[2px] h-4" id="dxySparkline">
+          <div class="w-[3px] rounded-sm bg-[#21262D]" style="height:30%"></div>
+          <div class="w-[3px] rounded-sm bg-[#21262D]" style="height:50%"></div>
+          <div class="w-[3px] rounded-sm bg-[#21262D]" style="height:40%"></div>
+          <div class="w-[3px] rounded-sm bg-[#21262D]" style="height:70%"></div>
+          <div class="w-[3px] rounded-sm bg-[#21262D]" style="height:55%"></div>
+          <div class="w-[3px] rounded-sm bg-[#21262D]" style="height:80%"></div>
+          <div class="w-[3px] rounded-sm bg-[#21262D]" style="height:65%"></div>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -273,10 +399,6 @@
        4-CARD GRID
   ══════════════════════════════════════════════════════════════════════ -->
   <main class="max-w-[1400px] mx-auto px-6 pb-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-
-    <!-- ── CARD TEMPLATE macro (rendered 4×) ─────────────────────────
-         Cards: nfp · cpi · growth · fed
-    ──────────────────────────────────────────────────────────────────── -->
 
     <!-- ① NFP PREDICTOR ─────────────────────────────────────────────── -->
     <div id="nfpCard" class="macro-card bg-[#0D1117] border border-[#21262D] flex flex-col">
@@ -781,6 +903,79 @@
       if (banner) banner.className = `px-4 py-4 border-b border-[#21262D] ${bannerBg(type)}`;
     }
 
+    // ─── RENDER DXY LIVE METER ────────────────────────────────────────
+
+    function renderDXY(dxy) {
+      if (!dxy) return;
+
+      const loading = document.getElementById('dxyLoading');
+      const live    = document.getElementById('dxyLive');
+      const pill    = document.getElementById('dxyPricePill');
+      const dot     = document.getElementById('dxyDot');
+      const spark   = document.getElementById('dxySparkline');
+
+      if (loading) loading.classList.add('hidden');
+      if (live)    live.classList.remove('hidden');
+
+      const current       = parseFloat(dxy.current)       || 0;
+      const changePercent = parseFloat(dxy.changePercent) || 0;
+      const statusRaw     = (dxy.status || '').toUpperCase();
+
+      // Determine direction: bullish DXY = bad for gold (sell XAU), bearish DXY = good for gold (buy XAU)
+      const isBullish = changePercent > 0;
+      const isBearish = changePercent < 0;
+
+      // Price pill class
+      const pillClass = isBullish ? 'bullish' : isBearish ? 'bearish' : 'neutral';
+      if (pill) pill.className = `dxy-price-pill ${pillClass}`;
+
+      // Arrow direction — point up if bullish, down if bearish
+      const poly = document.getElementById('dxyArrowPoly');
+      if (poly) {
+        if (isBullish) {
+          poly.setAttribute('points', '3.5,0 7,7 0,7'); // up
+        } else if (isBearish) {
+          poly.setAttribute('points', '0,0 7,0 3.5,7'); // down
+        } else {
+          poly.setAttribute('points', '0,3.5 7,3.5 3.5,3.5'); // flat line
+        }
+      }
+
+      // Live dot color
+      if (dot) {
+        dot.style.background  = isBullish ? '#FF3B3B' : isBearish ? '#00FF88' : '#F0B429';
+        dot.style.boxShadow   = isBullish ? '0 0 6px #FF3B3B99' : isBearish ? '0 0 6px #00FF8899' : 'none';
+      }
+
+      // Populate text
+      setEl('dxyPrice', current.toFixed(2));
+
+      const changeSign  = changePercent > 0 ? '+' : '';
+      const changeColor = isBullish ? '#FF3B3B' : isBearish ? '#00FF88' : '#F0B429';
+      setEl('dxyChangeBadge', `${changeSign}${changePercent.toFixed(2)}%`, changeColor);
+
+      setEl('dxyStatus', statusRaw || (isBullish ? 'BULLISH (UP)' : isBearish ? 'BEARISH (DOWN)' : 'FLAT'), changeColor);
+
+      // XAU implication hint
+      const xauHint = isBullish
+        ? 'XAU IMPLICATION: BEARISH PRESSURE ↓'
+        : isBearish
+        ? 'XAU IMPLICATION: BULLISH SUPPORT ↑'
+        : 'XAU IMPLICATION: NEUTRAL';
+      setEl('dxyXauHint', xauHint, changeColor);
+
+      // Update sparkline bars with accent on last bar
+      if (spark) {
+        const bars = spark.querySelectorAll('div');
+        bars.forEach((b, i) => {
+          const isLast = i === bars.length - 1;
+          b.style.background  = isLast ? changeColor : '#21262D';
+          b.style.boxShadow   = isLast ? `0 0 4px ${changeColor}99` : 'none';
+          b.style.transition  = 'background 0.5s ease, box-shadow 0.5s ease';
+        });
+      }
+    }
+
     // ─── RENDER NFP ───────────────────────────────────────────────────
 
     function renderNFP(nfp) {
@@ -850,7 +1045,6 @@
     // ─── RENDER GROWTH ────────────────────────────────────────────────
 
     function renderGrowth(growth) {
-      // growth: { score, signal, components: { gdp, retail_sales } }
       if (!growth) return 0;
 
       const type  = classifyByScore(growth.score);
@@ -893,7 +1087,6 @@
     // ─── RENDER FED ───────────────────────────────────────────────────
 
     function renderFed(fed) {
-      // fed: { score, signal, components: { fed_rate: { current, previous, change, bias, points, date } } }
       if (!fed) return 0;
 
       const type  = classifyByScore(fed.score);
@@ -932,14 +1125,12 @@
       const el = document.getElementById('rateTrend');
       if (!el) return;
 
-      // Use history array if provided, else simulate from current/previous
       const history = rate.history || rate.trend || null;
       let bars;
 
       if (history && Array.isArray(history) && history.length > 0) {
         bars = history.slice(-8);
       } else {
-        // Synthesise a 6-bar display from current + prev
         const cur  = parseFloat(rate.current)  || 5.25;
         const prev = parseFloat(rate.previous) || 5.50;
         bars = [prev - 0.25, prev - 0.25, prev, prev, prev, cur];
@@ -979,7 +1170,6 @@
       const banner = document.getElementById('masterBanner');
       if (banner) {
         banner.className = `border bg-[#0D1117] p-5 relative overflow-hidden ${signalGlow(type)}`;
-        // Apply border class inline since Tailwind JIT won't pick up dynamic classes
         const borderColors = { buy: 'rgba(0,255,136,0.4)', sell: 'rgba(255,59,59,0.4)', wait: 'rgba(240,180,41,0.4)' };
         banner.style.borderColor = borderColors[type];
       }
@@ -1043,7 +1233,6 @@
                           : impact.includes('med')  ? '#F0B429'
                           : '#484F58';
 
-        // Format date to local time
         let dtStr = item.date || item.datetime || item.time || '';
         let localTime = dtStr;
         try {
@@ -1112,7 +1301,10 @@
         const data = await res.json();
         if (!data.success) throw new Error(data.error || 'Unknown error');
 
-        // Render all 4 predictors, collect scores
+        // ── Render DXY Live Meter first (top of page) ──
+        renderDXY(data.dxy_live || data.dxyLive || null);
+
+        // ── Render all 4 predictors, collect scores ──
         const nfpScore    = renderNFP(data.nfp);
         const cpiScore    = renderCPI(data.cpi);
         const growthScore = renderGrowth(data.growth  || data.gdp || null);
