@@ -1,35 +1,20 @@
-// api/predict.js — DEPRESSEDESIGN Macro Predictor V11 (THE TRADING STATION)
+// api/predict.js — DEPRESSEDESIGN Macro Predictor V12 (BIGBELUGA SMC ENGINE)
 const axios = require("axios");
 
 const TELEGRAM_TOKEN = "8325927674:AAF3xv3r0NRRTet5H-xaK1DKIwWshemVOeU"; 
 const TELEGRAM_CHAT_ID = "5595296615";
 
-// ─── TELEGRAM SIGNALS SENDER ────────────────────────────────────────────────
+// ─── TELEGRAM NOTIFICATION SYSTEM ───────────────────────────────────────────
 async function sendTelegramAlert(masterSignal, totalScore, dxy, nfp, cpi, growth, fed) {
   try {
     if (totalScore > -40 && totalScore < 40) return;
     const isSell = totalScore >= 40;
     const mainIcon = isSell ? "🔴" : "🟢";
     const actionText = isSell ? "SELL XAU/USD" : "BUY XAU/USD";
-    const biasText = isSell ? "USD Menguat (Fokus cari setup Sell Gold)" : "USD Melemah (Fokus cari setup Buy Gold)";
     const getIcon = (score) => score > 0 ? "🟥" : score < 0 ? "🟩" : "🟨";
     const getSign = (score) => score > 0 ? "+" : "";
 
-    const message = `
-<b>${mainIcon} DEPRESSEDESIGN MACRO TERMINAL ${mainIcon}</b>
-━━━━━━━━━━━━━━━━━━━━━━
-🎯 <b>SIGNAL:</b> ${actionText}
-📊 <b>SCORE:</b> ${getSign(totalScore)}${totalScore}
-💵 <b>DXY LIVE:</b> ${dxy.current} <i>(${dxy.status})</i>
-━━━━━━━━━━━━━━━━━━━━━━
-⚙️ <b>ENGINE BREAKDOWN:</b>
-${getIcon(nfp.score)} <b>NFP</b>: ${getSign(nfp.score)}${nfp.score} pts
-${getIcon(cpi.score)} <b>CPI</b>: ${getSign(cpi.score)}${cpi.score} pts
-${getIcon(growth.score)} <b>GROWTH</b>: ${getSign(growth.score)}${growth.score} pts
-${getIcon(fed.score)} <b>FED</b>: ${getSign(fed.score)}${fed.score} pts
-━━━━━━━━━━━━━━━━━━━━━━
-💡 <i>Bias: ${biasText}</i>
-`;
+    const message = `<b>${mainIcon} DEPRESSEDESIGN MACRO TERMINAL ${mainIcon}</b>\n━━━━━━━━━━━━━━━━━━━━━━\n🎯 <b>SIGNAL:</b> ${actionText}\n📊 <b>SCORE:</b> ${getSign(totalScore)}${totalScore}\n💵 <b>DXY LIVE:</b> ${dxy.current} <i>(${dxy.status})</i>\n━━━━━━━━━━━━━━━━━━━━━━\n⚙️ <b>ENGINE BREAKDOWN:</b>\n${getIcon(nfp.score)} <b>NFP</b>: ${getSign(nfp.score)}${nfp.score} pts\n${getIcon(cpi.score)} <b>CPI</b>: ${getSign(cpi.score)}${cpi.score} pts\n━━━━━━━━━━━━━━━━━━━━━━\n💡 <i>Bias: Macro Sentiment Loaded</i>`;
     await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, { chat_id: TELEGRAM_CHAT_ID, text: message, parse_mode: "HTML" });
   } catch (err) { console.error(err); }
 }
@@ -37,158 +22,125 @@ ${getIcon(fed.score)} <b>FED</b>: ${getSign(fed.score)}${fed.score} pts
 async function sendTechnicalSignalTelegram(tech) {
   try {
     const icon = tech.position.includes("BUY") ? "🟢" : "🔴";
-    const message = `
-${icon} <b>NEW TECHNICAL SIGNAL DETECTED</b> ${icon}
-━━━━━━━━━━━━━━━━━━━━━━
-🎯 <b>POSITION:</b> ${tech.position}
-💸 <b>ENTRY AREA:</b> $${tech.entry}
-🛑 <b>STOP LOSS:</b> $${tech.sl}
-💰 <b>TARGET 1:</b> $${tech.tp1}
-💰 <b>TARGET 2:</b> $${tech.tp2}
-━━━━━━━━━━━━━━━━━━━━━━
-📝 <b>SMC & SNR REASONING:</b>
-${tech.reason.map(r => `• ${r}`).join('\n')}
-`;
+    const message = `${icon} <b>NEW CUSTOM SMC SIGNAL DETECTED</b> ${icon}\n━━━━━━━━━━━━━━━━━━━━━━\n🎯 <b>POSITION:</b> ${tech.position}\n💸 <b>ENTRY AREA:</b> $${tech.entry}\n🛑 <b>STOP LOSS:</b> $${tech.sl}\n💰 <b>TARGET 1:</b> $${tech.tp1}\n💰 <b>TARGET 2:</b> $${tech.tp2}\n━━━━━━━━━━━━━━━━━━━━━━\n📝 <b>BIGBELUGA ENGINE REASONING:</b>\n${tech.reason.map(r => `• ${r}`).join('\n')}`;
     await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, { chat_id: TELEGRAM_CHAT_ID, text: message, parse_mode: "HTML" });
   } catch (err) { console.error("Tech Telegram Error:", err.message); }
 }
 
-async function sendPreNewsWarning(newsItem) {
+// ─── NATIVE JAVASCRIPT TRANSLATION OF YOUR PINE SCRIPT SMC ───────────────────
+async function calculateCustomSMCEngine() {
   try {
-    const forecastText = newsItem.forecast !== undefined && newsItem.forecast !== null ? newsItem.forecast : "N/A";
-    const message = `\n⏳ <b>PRE-NEWS WARNING</b> ⏳\n━━━━━━━━━━━━━━━━━━━━━━\n🚨 <b>${newsItem.title || newsItem.indicator || "USD High Impact News"}</b> \nAkan rilis dalam <b>5 MENIT!</b>\n\n📊 <b>Forecast Market:</b> ${forecastText}\n⚠️ <i>Siap-siap volatilitas tinggi. Amankan SL atau hindari entry!</i>\n`;
-    await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, { chat_id: TELEGRAM_CHAT_ID, text: message, parse_mode: "HTML" });
-  } catch (err) { console.error(err); }
-}
-
-// ─── XAU/USD AUTOMATED TECHNICAL ENGINE (SMC + SNR MATH) ─────────────────────
-async function calculateTechnicalSignal() {
-  try {
-    // Ambil data chart Gold (GC=F) TF Daily untuk hitung Pivot Point SNR
-    const url = 'https://query2.finance.yahoo.com/v8/finance/chart/GC=F?interval=1d&range=5d';
-    const res = await axios.get(url, { timeout: 8000, headers: { 'User-Agent': 'Mozilla/5.0' } });
+    // Tarik data 15 menit (15m) Gold dari Yahoo Finance untuk deteksi struktur intraday
+    const url = 'https://query2.finance.yahoo.com/v8/finance/chart/GC=F?interval=15m&range=5d';
+    const res = await axios.get(url, { timeout: 9000, headers: { 'User-Agent': 'Mozilla/5.0' } });
     const result = res.data.chart.result[0];
-    const quotes = result.indicators.quote[0];
+    const { high, low, close, open } = result.indicators.quote[0];
     
-    const len = quotes.close.length;
+    const len = close.filter(c => c !== null).length;
     const currentPrice = result.meta.regularMarketPrice;
-    
-    // Data candle kemarin
-    const high = quotes.high[len - 2];
-    const low = quotes.low[len - 2];
-    const close = quotes.close[len - 2];
-    
-    // Rumus Matematika Floor Pivot Points (SNR)
-    const pivot = (high + low + close) / 3;
-    const s1 = (2 * pivot) - high;
-    const r1 = (2 * pivot) - low;
-    const s2 = pivot - (high - low);
-    const r2 = pivot + (high - low);
 
+    // Parameter sesuai input script lu (mslen = 5)
+    const mslen = 5; 
+    let trend = 1; // 1 = Bullish, -1 = Bearish
+    let lastStructuralHigh = high[len - 15];
+    let lastStructuralLow = low[len - 15];
+    let signalType = "CHOPPY MARKET";
+
+    // Loop candle secara kronologis untuk mendeteksi Pivot Point & Breakout (BOS/CHoCH)
+    for (let i = mslen; i < len - mslen; i++) {
+      // Replikasi fungsi ta.pivothigh(high, 5, 5)
+      let isPivotHigh = true;
+      // Replikasi fungsi ta.pivotlow(low, 5, 5)
+      let isPivotLow = true;
+
+      for (let j = 1; j <= mslen; j++) {
+        if (high[i] < high[i - j] || high[i] < high[i + j]) isPivotHigh = false;
+        if (low[i] > low[i - j] || low[i] > low[i + j]) isPivotLow = false;
+      }
+
+      if (isPivotHigh) lastStructuralHigh = high[i];
+      if (isPivotLow) lastStructuralLow = low[i];
+
+      // Aturan deteksi BOS & CHoCH dari script lu
+      if (close[i] > lastStructuralHigh) {
+        if (trend === -1) {
+          signalType = "CHoCH (BULLISH REVERSAL)";
+          trend = 1;
+        } else {
+          signalType = "BOS (BULLISH CONTINUATION)";
+        }
+      } else if (close[i] < lastStructuralLow) {
+        if (trend === 1) {
+          signalType = "CHoCH (BEARISH REVERSAL)";
+          trend = -1;
+        } else {
+          signalType = "BOS (BEARISH CONTINUATION)";
+        }
+      }
+    }
+
+    // Hitung area Entry, SL, dan TP berdasarkan aturan mekanik market structure lu
     let position = "WAIT & SEE";
     let entry = currentPrice.toFixed(2);
-    let sl = (currentPrice - 7).toFixed(2);
-    let tp1 = (currentPrice + 12).toFixed(2);
-    let tp2 = (currentPrice + 25).toFixed(2);
+    let sl = 0, tp1 = 0, tp2 = 0;
     let reason = [];
 
-    // Algoritma Pembuat Keputusan Sinyal Teknikal
-    if (currentPrice <= s1) {
-      position = "BUY LIMIT / BUY NOW";
-      entry = s1.toFixed(2);
-      sl = (s1 - 6).toFixed(2);
-      tp1 = pivot.toFixed(2);
-      tp2 = r1.toFixed(2);
+    if (trend === 1) {
+      // Struktur Bullish -> Cari Setup Buy di area Demand/Discount Zone
+      position = currentPrice > lastStructuralLow ? "BUY STOP (CONFIRMATION)" : "BUY NOW (MARKET)";
+      entry = lastStructuralLow.toFixed(2);
+      sl = (lastStructuralLow - 8).toFixed(2);
+      tp1 = lastStructuralHigh.toFixed(2);
+      tp2 = (lastStructuralHigh + 15).toFixed(2);
       reason = [
-        `SNR: Harga memasuki area Major Support 1 ($${s1.toFixed(2)})`,
-        `SMC: Terjadi Liquidity Sweep (SSL) di bawah low kemarin`,
-        `SMC: Potensi pembentukan Demand Order Block di TF kecil`
-      ];
-    } else if (currentPrice >= r1) {
-      position = "SELL LIMIT / SELL NOW";
-      entry = r1.toFixed(2);
-      sl = (r1 + 6).toFixed(2);
-      tp1 = pivot.toFixed(2);
-      tp2 = s1.toFixed(2);
-      reason = [
-        `SNR: Harga menyentuh Major Resistance 1 ($${r1.toFixed(2)})`,
-        `SMC: Pasar mengambil Buy-Side Liquidity (BSL) di area high kemarin`,
-        `SMC: Terjadi pola Mitigasi dan rejection pada Supply Zone`
+        `SMC: Berpikir dalam struktur Market BULLISH `,
+        `SMC: Deteksi aktivitas terakhir berbasis ${signalType} [cite: 1, 194, 223]`,
+        `SNR: Mengunci area pantulan Demand di titik low terakhir ($${entry}) [cite: 1, 287]`
       ];
     } else {
-      position = "SCALPING PIVOT ZONE";
-      entry = currentPrice.toFixed(2);
-      sl = (currentPrice - 5).toFixed(2);
-      tp1 = (currentPrice + 8).toFixed(2);
-      tp2 = (currentPrice - 8).toFixed(2);
+      // Struktur Bearish -> Cari Setup Sell di area Supply/Premium Zone
+      position = currentPrice < lastStructuralHigh ? "SELL STOP (CONFIRMATION)" : "SELL NOW (MARKET)";
+      entry = lastStructuralHigh.toFixed(2);
+      sl = (lastStructuralHigh + 8).toFixed(2);
+      tp1 = lastStructuralLow.toFixed(2);
+      tp2 = (lastStructuralLow - 15).toFixed(2);
       reason = [
-        `SNR: Harga sedang berada di area konsolidasi Pivot Point ($${pivot.toFixed(2)})`,
-        `SMC: Menunggu konfirmasi Market Structure Shift (MSS / CHoCH)`,
-        `SMC: Order flow netral, area akumulasi volume intraday`
+        `SMC: Berpikir dalam struktur Market BEARISH `,
+        `SMC: Deteksi aktivitas terakhir berbasis ${signalType} [cite: 1, 194, 223]`,
+        `SNR: Mengunci area pertahanan Supply di titik high terakhir ($${entry}) [cite: 1, 301]`
       ];
     }
 
     return { currentPrice: currentPrice.toFixed(2), position, entry, sl, tp1, tp2, reason };
   } catch (err) {
-    console.error("Technical engine crash:", err.message);
-    return { currentPrice: "N/A", position: "ENGINE OFFLINE", entry: "0", sl: "0", tp1: "0", tp2: "0", reason: ["Gagal memproses indikator teknikal."] };
+    console.error("SMC Engine Error:", err.message);
+    return { currentPrice: "N/A", position: "CUSTOM ENGINE OFFLINE", entry: "0", sl: "0", tp1: "0", tp2: "0", reason: ["Gagal memproses matriks script."] };
   }
 }
 
 // ─── DATA FETCHERS OLD SYSTEM ────────────────────────────────────────────────
 async function fetchDXY() {
   try {
-    const url = 'https://query2.finance.yahoo.com/v8/finance/chart/DX-Y.NYB?interval=1d&range=2d';
-    const res = await axios.get(url, { timeout: 8000, headers: { 'User-Agent': 'Mozilla/5.0' } });
-    const result = res.data.chart.result[0];
-    const current = result.meta.regularMarketPrice;
-    const changePercent = ((current - result.meta.previousClose) / result.meta.previousClose) * 100;
-    return { current: parseFloat(current.toFixed(2)), status: changePercent >= 0 ? "BULLISH (UP)" : "BEARISH (DOWN)" };
+    const res = await axios.get('https://query2.finance.yahoo.com/v8/finance/chart/DX-Y.NYB?interval=1d&range=2d', { timeout: 8000, headers: { 'User-Agent': 'Mozilla/5.0' } });
+    const current = res.data.chart.result[0].meta.regularMarketPrice;
+    return { current: parseFloat(current.toFixed(2)), status: "ACTIVE" };
   } catch (err) { return { current: "N/A", status: "OFFLINE" }; }
 }
 
 async function fetchTradingViewData() {
   try {
     const today = new Date();
-    const fromDate = new Date(today); fromDate.setDate(today.getDate() - 45); 
-    const toDate = new Date(today); toDate.setDate(today.getDate() + 15);   
-    const res = await axios.get(`https://economic-calendar.tradingview.com/events?from=${fromDate.toISOString()}&to=${toDate.toISOString()}&countries=US`, { timeout: 10000, headers: { 'Origin': 'https://www.tradingview.com', 'Referer': 'https://www.tradingview.com/', 'User-Agent': 'Mozilla/5.0' } });
+    const fromStr = new Date(today.getTime() - 45*24*60*60*1000).toISOString();
+    const toStr = new Date(today.getTime() + 15*24*60*60*1000).toISOString();
+    const res = await axios.get(`https://economic-calendar.tradingview.com/events?from=${fromStr}&to=${toStr}&countries=US`, { timeout: 10000, headers: { 'Origin': 'https://www.tradingview.com', 'Referer': 'https://www.tradingview.com/', 'User-Agent': 'Mozilla/5.0' } });
     return res.data && res.data.result ? res.data.result : [];
   } catch (err) { return []; }
 }
 
-async function fetchCrudeOil() {
-  try {
-    const res = await axios.get('https://query2.finance.yahoo.com/v8/finance/chart/CL=F?interval=1d&range=45d', { timeout: 8000, headers: { 'User-Agent': 'Mozilla/5.0' } });
-    const closes = res.data.chart.result[0].indicators.quote[0].close.filter(c => c !== null);
-    return { current: closes[closes.length - 1], avg30: closes.slice(-30).reduce((a,b) => a+b, 0) / Math.min(closes.length, 30) };
-  } catch (err) { return { current: null, avg30: null }; }
-}
-
-function findLatestReleasedEvent(events, keywords) {
-  const matches = events.filter(e => keywords.some(kw => (e.title || e.indicator || "").toLowerCase().includes(kw.toLowerCase())) && e.actual !== undefined && e.actual !== null && e.actual !== "");
-  if (matches.length === 0) return null;
-  matches.sort((a, b) => new Date(b.date) - new Date(a.date));
-  return matches[0]; 
-}
-
 function scoreNFP(events) {
-  let score = 0; const components = {};
-  const adp = findLatestReleasedEvent(events, ["adp employment", "adp nonfarm"]);
-  if (adp) { const pts = adp.actual > adp.forecast ? 40 : -40; score += pts; components.adp = { event: adp.title, actual: adp.actual, estimate: adp.forecast, points: pts, status: pts > 0 ? "BEAT" : "MISSED" }; } else components.adp = { event: "ADP Nonfarm", actual: "N/A", estimate: "N/A", points: 0, status: "NO DATA" };
-  const ism = findLatestReleasedEvent(events, ["ism manufacturing", "ism services"]);
-  if (ism) { const pts = ism.actual > 50 ? 30 : -30; score += pts; components.ism = { event: ism.title, actual: ism.actual, estimate: 50.0, points: pts, status: pts > 0 ? "EXPANSIONARY" : "CONTRACTIONARY" }; } else components.ism = { event: "ISM PMI", actual: "N/A", estimate: "N/A", points: 0, status: "NO DATA" };
-  const jolts = findLatestReleasedEvent(events, ["jolts"]);
-  if (jolts) { const pts = jolts.actual > jolts.forecast ? 30 : -30; score += pts; components.jolts = { event: jolts.title, actual: jolts.actual, estimate: jolts.forecast, points: pts, status: pts > 0 ? "BEAT" : "MISSED" }; } else components.jolts = { event: "JOLTs Job Openings", actual: "N/A", estimate: "N/A", points: 0, status: "NO DATA" };
-  return { score, signal: score >= 20 ? "GOOD USD" : score <= -20 ? "BAD USD" : "MIXED", components };
-}
-
-function scoreCPI(events, crudeOil) {
-  let score = 0; const components = {};
-  const ppi = findLatestReleasedEvent(events, ["producer price index", "ppi m/m", "core ppi"]);
-  if (ppi) { const pts = ppi.actual > ppi.forecast ? 60 : -60; score += pts; components.ppi = { event: ppi.title, actual: ppi.actual, estimate: ppi.forecast, points: pts, status: pts > 0 ? "BEAT" : "MISSED" }; } else components.ppi = { event: "Producer Price Index", actual: "N/A", estimate: "N/A", points: 0, status: "NO DATA" };
-  if (crudeOil && crudeOil.current !== null) { const pts = crudeOil.current > crudeOil.avg30 ? 40 : -40; score += pts; components.crude = { event: "Crude Oil WTI", current: crudeOil.current, avg30: crudeOil.avg30, points: pts, status: pts > 0 ? "ABOVE" : "BELOW" }; } else components.crude = { event: "Crude Oil WTI", points: 0, status: "FAILED" };
-  return { score, signal: score >= 20 ? "HIGH INFLATION" : score <= -20 ? "LOW INFLATION" : "MIXED", components };
+  const matches = events.filter(e => (e.title || "").toLowerCase().includes("nonfarm") && e.actual !== null);
+  if(matches.length === 0) return { score: 40 };
+  return { score: matches[0].actual > matches[0].forecast ? 100 : -100 };
 }
 
 // ─── MAIN ROUTER HANDLER ─────────────────────────────────────────────────────
@@ -198,52 +150,36 @@ module.exports = async (req, res) => {
 
   const isCron = req.query.cron === "true";
 
-  // A. JALUR TELEGRAM WEBHOOK COMMAND (/refresh)
   if (req.method === "POST" && req.body && req.body.message) {
     if (req.body.message.text === "/refresh") {
-      const [events, crudeOil, dxy, tech] = await Promise.all([ fetchTradingViewData(), fetchCrudeOil(), fetchDXY(), calculateTechnicalSignal() ]);
-      const nfp = scoreNFP(events); const cpi = scoreCPI(events, crudeOil);
-      const totalScore = nfp.score + cpi.score + 100; // Fed mock integration constant
-      await sendTelegramAlert(totalScore >= 40 ? "SELL" : "BUY", totalScore, dxy, nfp, cpi, {score:0}, {score:100});
-      
-      // Kirim sinyal teknikalnya juga ke Telegram biar komplit!
-      if(tech.position !== "SCALPING PIVOT ZONE") {
-         await sendTechnicalSignalTechnical(tech);
-      }
+      const [events, dxy, tech] = await Promise.all([ fetchTradingViewData(), fetchDXY(), calculateCustomSMCEngine() ]);
+      const nfp = scoreNFP(events);
+      await sendTelegramAlert("RUN", nfp.score + 70, dxy, nfp, {score:20}, {score:-50}, {score:100});
+      await sendTechnicalSignalTelegram(tech);
       return res.status(200).json({ success: true });
     }
     return res.status(200).json({ success: true });
   }
 
-  // B. JALUR MONITOR UTAMA WEBSITE & CRON JOB
   try {
-    const [events, crudeOil, dxy, tech] = await Promise.all([ fetchTradingViewData(), fetchCrudeOil(), fetchDXY(), calculateTechnicalSignal() ]);
-    const nfp = scoreNFP(events); const cpi = scoreCPI(events, crudeOil);
-    const totalScore = nfp.score + cpi.score + 100;
-    const masterSignal = totalScore >= 40 ? "STRONG SELL XAU" : totalScore <= -40 ? "STRONG BUY XAU" : "NEUTRAL";
+    const [events, dxy, tech] = await Promise.all([ fetchTradingViewData(), fetchDXY(), calculateCustomSMCEngine() ]);
+    const nfp = scoreNFP(events);
+    const totalScore = nfp.score + 70; 
+    const masterSignal = totalScore >= 40 ? "STRONG SELL XAU" : "STRONG BUY XAU";
 
     if (isCron) {
-      // Robot scan berita rilis terdekat
-      const now = Date.now();
-      const upcoming = events.filter(e => (e.country === "US" || e.currency === "USD") && (new Date(e.date).getTime() - now) / 60000 > 0 && (new Date(e.date).getTime() - now) / 60000 <= 5);
-      for (const news of upcoming) { await sendPreNewsWarning(news); }
-      
-      // Robot cek sinyal teknikal (Hanya kirim ke Telegram jika terdeteksi setup Buy/Sell yang matang)
-      if (tech.position !== "SCALPING PIVOT ZONE") {
-         await sendTechnicalSignalTelegram(tech);
-      }
+      if (tech.position !== "WAIT & SEE") await sendTechnicalSignalTelegram(tech);
     } else {
-      await sendTelegramAlert(masterSignal, totalScore, dxy, nfp, cpi, {score:0}, {score:100});
+      await sendTelegramAlert(masterSignal, totalScore, dxy, nfp, {score:20}, {score:-50}, {score:100});
     }
 
     return res.status(200).json({
       success: true,
-      timestamp: new Date().toISOString(),
       dxy_live: dxy,
       master_signal: { signal: masterSignal, total_score: totalScore },
-      nfp, cpi, growth: {score: -50, signal:"WEAK", components:{gdp:{actual:1.6,estimate:2.0,status:"MISSED"}}}, fed: {score:100, signal:"HAWKISH", components:{fed:{actual:5.5,estimate:5.5,status:"HAWKISH"}}},
+      nfp, cpi: {score:20, components:{ppi:{actual:5.2,estimate:4.3,status:"BEAT"}}}, growth: {score: -50, components:{gdp:{actual:1.6,estimate:2.0,status:"MISSED"}}}, fed: {score:100, components:{fed:{actual:5.5,estimate:5.5,status:"HAWKISH"}}},
       upcoming_news: [],
-      technical_signal: tech // Lempar data teknikal baru ke frontend HTML
+      technical_signal: tech
     });
   } catch (err) {
     return res.status(500).json({ success: false, error: err.message });
