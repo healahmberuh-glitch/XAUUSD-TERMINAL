@@ -1,54 +1,54 @@
 // api/predict.js — DEPRESSEDESIGN Macro Predictor Backend
-// Vercel Serverless Function (Node.js) - JBLANKED EDITION (100% FREE)
+// Vercel Serverless Function (Node.js) - TRADINGVIEW EDITION (100% FREE & STABLE)
 
 const axios = require("axios");
 
-// ─── Free Public Feeds (No API Key Required) ─────────────────────────────
-// Menggunakan JBlanked API untuk menembus blokir IP Vercel terhadap Forex Factory
-const API_URL = "https://www.jblanked.com/news/api/forex-factory/calendar/week/";
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-async function fetchMacroData() {
+// ─── TradingView Public API ──────────────────────────────────────────────────
+// Menembak langsung ke server kalender TradingView dengan rentang waktu dinamis
+async function fetchTradingViewData() {
   try {
-    const res = await axios.get(API_URL, { 
-      timeout: 10000,
-      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' }
-    });
+    const today = new Date();
     
-    // Fleksibilitas parsing jika struktur JSON dibungkus dalam object 'data'
-    if (res.data && Array.isArray(res.data)) {
-        return res.data;
-    } else if (res.data && res.data.data && Array.isArray(res.data.data)) {
-        return res.data.data;
-    }
-    return [];
+    // Tarik data 45 hari ke belakang
+    const fromDate = new Date(today);
+    fromDate.setDate(today.getDate() - 45);
+    
+    // Tarik jadwal 15 hari ke depan
+    const toDate = new Date(today);
+    toDate.setDate(today.getDate() + 15);
+
+    const url = `https://economic-calendar.tradingview.com/events?from=${fromDate.toISOString()}&to=${toDate.toISOString()}&countries=US`;
+
+    const res = await axios.get(url, {
+      timeout: 10000,
+      headers: {
+        'Origin': 'https://www.tradingview.com',
+        'Referer': 'https://www.tradingview.com/',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64 AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36)'
+      }
+    });
+
+    return res.data && res.data.result ? res.data.result : [];
   } catch (err) {
-    console.error("API fetch error:", err.message);
+    console.error("TradingView API fetch error:", err.message);
     return [];
   }
 }
 
-function findMacroEvent(events, keywords) {
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function findTVEvent(events, keywords) {
   const matches = events.filter(e => {
-    const currency = (e.currency || e.Currency || "").toUpperCase();
-    const title = (e.title || e.event || e.Name || "").toLowerCase();
-    
-    if (currency !== "USD") return false;
+    // TradingView menyimpan nama berita di 'title' atau 'indicator'
+    const title = (e.title || e.indicator || "").toLowerCase();
     return keywords.some(kw => title.includes(kw.toLowerCase()));
   });
 
   if (matches.length === 0) return null;
-  // Mengurutkan dari yang paling terbaru
-  matches.sort((a, b) => new Date(b.date || b.Date) - new Date(a.date || a.Date));
+  
+  // Urutkan berdasarkan tanggal terbaru (descending)
+  matches.sort((a, b) => new Date(b.date) - new Date(a.date));
   return matches[0];
-}
-
-function parseValue(str) {
-  if (str === null || str === undefined || str === "") return null;
-  // Membuang huruf K, M, B, % agar angkanya murni
-  const cleaned = String(str).replace(/[^0-9.-]/g, "");
-  const parsed = parseFloat(cleaned);
-  return isNaN(parsed) ? null : parsed;
 }
 
 // ─── Scoring Engine ───────────────────────────────────────────────────────────
@@ -58,59 +58,51 @@ function scoreNFP(events) {
   const components = {};
 
   // 1. ADP Nonfarm
-  const adp = findMacroEvent(events, ["adp non-farm", "adp nonfarm"]);
-  const adpActual = adp ? parseValue(adp.actual || adp.Actual) : null;
-  const adpForecast = adp ? parseValue(adp.forecast || adp.Forecast) : null;
-
-  if (adpActual !== null && adpForecast !== null) {
-    const pts = adpActual > adpForecast ? 50 : -50;
+  const adp = findTVEvent(events, ["adp employment", "adp nonfarm"]);
+  if (adp && adp.actual !== undefined && adp.forecast !== undefined) {
+    const pts = adp.actual > adp.forecast ? 50 : -50;
     score += pts;
     components.adp = {
-      event: adp.title || adp.event,
-      actual: adp.actual || adp.Actual,
-      estimate: adp.forecast || adp.Forecast,
+      event: adp.title || "ADP Nonfarm",
+      actual: adp.actual,
+      estimate: adp.forecast,
       points: pts,
       status: pts > 0 ? "BEAT" : "MISSED",
     };
   } else {
-    components.adp = { event: "ADP Nonfarm", actual: null, estimate: null, points: 0, status: adp ? "UPCOMING" : "NOT THIS WEEK" };
+    components.adp = { event: "ADP Nonfarm", actual: null, estimate: null, points: 0, status: adp ? "UPCOMING" : "NO DATA" };
   }
 
-  // 2. ISM PMI
-  const ism = findMacroEvent(events, ["ism manufacturing pmi", "ism services pmi"]);
-  const ismActual = ism ? parseValue(ism.actual || ism.Actual) : null;
-
-  if (ismActual !== null) {
-    const pts = ismActual > 50 ? 30 : -30;
+  // 2. ISM PMI (Cari Manufacturing atau Services)
+  const ism = findTVEvent(events, ["ism manufacturing", "ism services"]);
+  if (ism && ism.actual !== undefined) {
+    const pts = ism.actual > 50 ? 30 : -30;
     score += pts;
     components.ism = {
-      event: ism.title || ism.event,
-      actual: ism.actual || ism.Actual,
-      estimate: "50.0",
+      event: ism.title || "ISM PMI",
+      actual: ism.actual,
+      estimate: 50.0,
       points: pts,
       status: pts > 0 ? "EXPANSIONARY" : "CONTRACTIONARY",
     };
   } else {
-    components.ism = { event: "ISM PMI", actual: null, estimate: null, points: 0, status: ism ? "UPCOMING" : "NOT THIS WEEK" };
+    components.ism = { event: "ISM PMI", actual: null, estimate: null, points: 0, status: ism ? "UPCOMING" : "NO DATA" };
   }
 
   // 3. JOLTs
-  const jolts = findMacroEvent(events, ["jolts job openings"]);
-  const joltsActual = jolts ? parseValue(jolts.actual || jolts.Actual) : null;
-  const joltsForecast = jolts ? parseValue(jolts.forecast || jolts.Forecast) : null;
-
-  if (joltsActual !== null && joltsForecast !== null) {
-    const pts = joltsActual > joltsForecast ? 20 : -20;
+  const jolts = findTVEvent(events, ["jolts"]);
+  if (jolts && jolts.actual !== undefined && jolts.forecast !== undefined) {
+    const pts = jolts.actual > jolts.forecast ? 20 : -20;
     score += pts;
     components.jolts = {
-      event: jolts.title || jolts.event,
-      actual: jolts.actual || jolts.Actual,
-      estimate: jolts.forecast || jolts.Forecast,
+      event: jolts.title || "JOLTs Job Openings",
+      actual: jolts.actual,
+      estimate: jolts.forecast,
       points: pts,
       status: pts > 0 ? "BEAT" : "MISSED",
     };
   } else {
-    components.jolts = { event: "JOLTs Job Openings", actual: null, estimate: null, points: 0, status: jolts ? "UPCOMING" : "NOT THIS WEEK" };
+    components.jolts = { event: "JOLTs Job Openings", actual: null, estimate: null, points: 0, status: jolts ? "UPCOMING" : "NO DATA" };
   }
 
   let signal = score > 40 ? "GOOD USD (SELL XAU)" : score < -40 ? "BAD USD (BUY XAU)" : "MIXED (WAIT & SEE)";
@@ -122,22 +114,19 @@ function scoreCPI(events) {
   const components = {};
 
   // 1. PPI
-  const ppi = findMacroEvent(events, ["ppi m/m", "core ppi"]);
-  const ppiActual = ppi ? parseValue(ppi.actual || ppi.Actual) : null;
-  const ppiForecast = ppi ? parseValue(ppi.forecast || ppi.Forecast) : null;
-
-  if (ppiActual !== null && ppiForecast !== null) {
-    const pts = ppiActual > ppiForecast ? 60 : -60;
+  const ppi = findTVEvent(events, ["producer price index", "ppi m/m", "core ppi"]);
+  if (ppi && ppi.actual !== undefined && ppi.forecast !== undefined) {
+    const pts = ppi.actual > ppi.forecast ? 60 : -60;
     score += pts;
     components.ppi = {
-      event: ppi.title || ppi.event,
-      actual: ppi.actual || ppi.Actual,
-      estimate: ppi.forecast || ppi.Forecast,
+      event: ppi.title || "Producer Price Index",
+      actual: ppi.actual,
+      estimate: ppi.forecast,
       points: pts,
       status: pts > 0 ? "BEAT" : "MISSED",
     };
   } else {
-    components.ppi = { event: "Producer Price Index", actual: null, estimate: null, points: 0, status: ppi ? "UPCOMING" : "NOT THIS WEEK" };
+    components.ppi = { event: "Producer Price Index", actual: null, estimate: null, points: 0, status: ppi ? "UPCOMING" : "NO DATA" };
   }
 
   // 2. Crude Oil (Dinonaktifkan sementara)
@@ -160,8 +149,8 @@ module.exports = async (req, res) => {
   res.setHeader("Content-Type", "application/json");
 
   try {
-    console.log("Fetching Macro Data from Free API...");
-    const events = await fetchMacroData();
+    console.log("Fetching Macro Data from TradingView...");
+    const events = await fetchTradingViewData();
 
     const nfp = scoreNFP(events);
     const cpi = scoreCPI(events);
@@ -172,8 +161,8 @@ module.exports = async (req, res) => {
       nfp,
       cpi,
       meta: {
-        dataSource: "Free Community Macro API",
-        note: "100% Free Tier. Shows data for this week.",
+        dataSource: "TradingView Engine",
+        note: "100% Free & Unrestricted. Data synced with TradingView calendar.",
       }
     };
 
