@@ -1,45 +1,52 @@
 // api/predict.js — DEPRESSEDESIGN Macro Predictor Backend
-// Vercel Serverless Function (Node.js) - FOREX FACTORY EDITION (100% FREE)
+// Vercel Serverless Function (Node.js) - JBLANKED EDITION (100% FREE)
 
 const axios = require("axios");
 
 // ─── Free Public Feeds (No API Key Required) ─────────────────────────────
-const FF_URL_THIS = "https://nfs.faireconomy.media/ff_calendar_thisweek.json";
-const FF_URL_LAST = "https://nfs.faireconomy.media/ff_calendar_lastweek.json";
+// Menggunakan JBlanked API untuk menembus blokir IP Vercel terhadap Forex Factory
+const API_URL = "https://www.jblanked.com/news/api/forex-factory/calendar/week/";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-async function fetchForexFactoryData() {
+async function fetchMacroData() {
   try {
-    // Menarik data minggu lalu dan minggu ini sekaligus untuk jangkauan yang lebih luas
-    const [thisWeek, lastWeek] = await Promise.all([
-      axios.get(FF_URL_THIS, { timeout: 8000 }),
-      axios.get(FF_URL_LAST, { timeout: 8000 })
-    ]);
-    return [...lastWeek.data, ...thisWeek.data];
+    const res = await axios.get(API_URL, { 
+      timeout: 10000,
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' }
+    });
+    
+    // Fleksibilitas parsing jika struktur JSON dibungkus dalam object 'data'
+    if (res.data && Array.isArray(res.data)) {
+        return res.data;
+    } else if (res.data && res.data.data && Array.isArray(res.data.data)) {
+        return res.data.data;
+    }
+    return [];
   } catch (err) {
-    console.error("Forex Factory fetch error:", err.message);
+    console.error("API fetch error:", err.message);
     return [];
   }
 }
 
 function findMacroEvent(events, keywords) {
-  // Mencari event USD yang cocok dengan kata kunci
-  const matches = events.filter(e =>
-    e.country === "USD" &&
-    keywords.some(kw => e.title.toLowerCase().includes(kw.toLowerCase()))
-  );
+  const matches = events.filter(e => {
+    const currency = (e.currency || e.Currency || "").toUpperCase();
+    const title = (e.title || e.event || e.Name || "").toLowerCase();
+    
+    if (currency !== "USD") return false;
+    return keywords.some(kw => title.includes(kw.toLowerCase()));
+  });
 
   if (matches.length === 0) return null;
-
   // Mengurutkan dari yang paling terbaru
-  matches.sort((a, b) => new Date(b.date) - new Date(a.date));
+  matches.sort((a, b) => new Date(b.date || b.Date) - new Date(a.date || a.Date));
   return matches[0];
 }
 
-function parseFFValue(str) {
+function parseValue(str) {
   if (str === null || str === undefined || str === "") return null;
-  // Membuang huruf K, M, B, % agar angkanya bisa dihitung oleh sistem
-  const cleaned = str.replace(/[^0-9.-]/g, "");
+  // Membuang huruf K, M, B, % agar angkanya murni
+  const cleaned = String(str).replace(/[^0-9.-]/g, "");
   const parsed = parseFloat(cleaned);
   return isNaN(parsed) ? null : parsed;
 }
@@ -51,17 +58,17 @@ function scoreNFP(events) {
   const components = {};
 
   // 1. ADP Nonfarm
-  const adp = findMacroEvent(events, ["ADP Non-Farm"]);
-  const adpActual = adp ? parseFFValue(adp.actual) : null;
-  const adpForecast = adp ? parseFFValue(adp.forecast) : null;
+  const adp = findMacroEvent(events, ["adp non-farm", "adp nonfarm"]);
+  const adpActual = adp ? parseValue(adp.actual || adp.Actual) : null;
+  const adpForecast = adp ? parseValue(adp.forecast || adp.Forecast) : null;
 
   if (adpActual !== null && adpForecast !== null) {
     const pts = adpActual > adpForecast ? 50 : -50;
     score += pts;
     components.adp = {
-      event: adp.title,
-      actual: adp.actual,
-      estimate: adp.forecast,
+      event: adp.title || adp.event,
+      actual: adp.actual || adp.Actual,
+      estimate: adp.forecast || adp.Forecast,
       points: pts,
       status: pts > 0 ? "BEAT" : "MISSED",
     };
@@ -70,15 +77,15 @@ function scoreNFP(events) {
   }
 
   // 2. ISM PMI
-  const ism = findMacroEvent(events, ["ISM Manufacturing PMI", "ISM Services PMI"]);
-  const ismActual = ism ? parseFFValue(ism.actual) : null;
+  const ism = findMacroEvent(events, ["ism manufacturing pmi", "ism services pmi"]);
+  const ismActual = ism ? parseValue(ism.actual || ism.Actual) : null;
 
   if (ismActual !== null) {
     const pts = ismActual > 50 ? 30 : -30;
     score += pts;
     components.ism = {
-      event: ism.title,
-      actual: ism.actual,
+      event: ism.title || ism.event,
+      actual: ism.actual || ism.Actual,
       estimate: "50.0",
       points: pts,
       status: pts > 0 ? "EXPANSIONARY" : "CONTRACTIONARY",
@@ -88,17 +95,17 @@ function scoreNFP(events) {
   }
 
   // 3. JOLTs
-  const jolts = findMacroEvent(events, ["JOLTS Job Openings"]);
-  const joltsActual = jolts ? parseFFValue(jolts.actual) : null;
-  const joltsForecast = jolts ? parseFFValue(jolts.forecast) : null;
+  const jolts = findMacroEvent(events, ["jolts job openings"]);
+  const joltsActual = jolts ? parseValue(jolts.actual || jolts.Actual) : null;
+  const joltsForecast = jolts ? parseValue(jolts.forecast || jolts.Forecast) : null;
 
   if (joltsActual !== null && joltsForecast !== null) {
     const pts = joltsActual > joltsForecast ? 20 : -20;
     score += pts;
     components.jolts = {
-      event: jolts.title,
-      actual: jolts.actual,
-      estimate: jolts.forecast,
+      event: jolts.title || jolts.event,
+      actual: jolts.actual || jolts.Actual,
+      estimate: jolts.forecast || jolts.Forecast,
       points: pts,
       status: pts > 0 ? "BEAT" : "MISSED",
     };
@@ -115,17 +122,17 @@ function scoreCPI(events) {
   const components = {};
 
   // 1. PPI
-  const ppi = findMacroEvent(events, ["PPI m/m", "Core PPI"]);
-  const ppiActual = ppi ? parseFFValue(ppi.actual) : null;
-  const ppiForecast = ppi ? parseFFValue(ppi.forecast) : null;
+  const ppi = findMacroEvent(events, ["ppi m/m", "core ppi"]);
+  const ppiActual = ppi ? parseValue(ppi.actual || ppi.Actual) : null;
+  const ppiForecast = ppi ? parseValue(ppi.forecast || ppi.Forecast) : null;
 
   if (ppiActual !== null && ppiForecast !== null) {
     const pts = ppiActual > ppiForecast ? 60 : -60;
     score += pts;
     components.ppi = {
-      event: ppi.title,
-      actual: ppi.actual,
-      estimate: ppi.forecast,
+      event: ppi.title || ppi.event,
+      actual: ppi.actual || ppi.Actual,
+      estimate: ppi.forecast || ppi.Forecast,
       points: pts,
       status: pts > 0 ? "BEAT" : "MISSED",
     };
@@ -133,7 +140,7 @@ function scoreCPI(events) {
     components.ppi = { event: "Producer Price Index", actual: null, estimate: null, points: 0, status: ppi ? "UPCOMING" : "NOT THIS WEEK" };
   }
 
-  // 2. Crude Oil (API diblokir, skor dinonaktifkan sementara)
+  // 2. Crude Oil (Dinonaktifkan sementara)
   components.crude = { event: "Crude Oil WTI", current: "N/A", avg30: "N/A", points: 0, status: "DISABLED" };
 
   let signal = score > 40 ? "GOOD USD (SELL XAU)" : score < -40 ? "BAD USD (BUY XAU)" : "MIXED (WAIT & SEE)";
@@ -153,8 +160,8 @@ module.exports = async (req, res) => {
   res.setHeader("Content-Type", "application/json");
 
   try {
-    console.log("Fetching Forex Factory JSON...");
-    const events = await fetchForexFactoryData();
+    console.log("Fetching Macro Data from Free API...");
+    const events = await fetchMacroData();
 
     const nfp = scoreNFP(events);
     const cpi = scoreCPI(events);
@@ -165,8 +172,8 @@ module.exports = async (req, res) => {
       nfp,
       cpi,
       meta: {
-        dataSource: "Forex Factory Public Feed",
-        note: "100% Free Tier. Shows data for Current & Last Week only.",
+        dataSource: "Free Community Macro API",
+        note: "100% Free Tier. Shows data for this week.",
       }
     };
 
