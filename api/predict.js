@@ -1,17 +1,17 @@
 // api/predict.js — DEPRESSEDESIGN Macro Predictor Backend
-// Vercel Serverless Function (Node.js) - V16 (PREDICTIVE SNIPER CACHE)
+// Vercel Serverless Function (Node.js) - V17 (MTF AGGRESSIVE SNIPER ENGINE)
 
 const axios = require("axios");
 
 const TELEGRAM_TOKEN = "8325927674:AAF3xv3r0NRRTet5H-xaK1DKIwWshemVOeU"; 
 const TELEGRAM_CHAT_ID = "5595296615";
 
-// ─── GLOBAL CACHE MEMORY ─────────────────────────────────────────────────────
+// ─── GLOBAL MEMORY CACHE ─────────────────────────────────────────────────────
 let lastSentSignalID = "";
 let isSignalActive = false;
 let cachedEvents = [];
 let lastFetchTime = 0;
-let warnedEvents = new Set(); // Anti-spam buat Pre-News Alert
+let warnedEvents = new Set();
 
 // ─── TELEGRAM SENDERS ────────────────────────────────────────────────────────
 async function sendTelegramAlert(masterSignal, totalScore, dxy, nfp, cpi, growth, fed) {
@@ -19,12 +19,7 @@ async function sendTelegramAlert(masterSignal, totalScore, dxy, nfp, cpi, growth
     if (totalScore > -40 && totalScore < 40) return;
     const isSell = totalScore >= 40;
     const mainIcon = isSell ? "🔴" : "🟢";
-    const actionText = isSell ? "SELL XAU/USD" : "BUY XAU/USD";
-    const biasText = isSell ? "USD Menguat (Fokus cari setup Sell Gold)" : "USD Melemah (Fokus cari setup Buy Gold)";
-    const getIcon = (score) => score > 0 ? "🟥" : score < 0 ? "🟩" : "🟨";
-    const getSign = (score) => score > 0 ? "+" : "";
-
-    const message = `<b>${mainIcon} DEPRESSEDESIGN MACRO TERMINAL ${mainIcon}</b>\n━━━━━━━━━━━━━━━━━━━━━━\n🎯 <b>SIGNAL:</b> ${actionText}\n📊 <b>SCORE:</b> ${getSign(totalScore)}${totalScore}\n💵 <b>DXY LIVE:</b> ${dxy.current} <i>(${dxy.status})</i>\n━━━━━━━━━━━━━━━━━━━━━━\n⚙️ <b>ENGINE BREAKDOWN:</b>\n${getIcon(nfp.score)} <b>NFP</b>: ${getSign(nfp.score)}${nfp.score} pts\n${getIcon(cpi.score)} <b>CPI</b>: ${getSign(cpi.score)}${cpi.score} pts\n${getIcon(growth.score)} <b>GROWTH</b>: ${getSign(growth.score)}${growth.score} pts\n${getIcon(fed.score)} <b>FED</b>: ${getSign(fed.score)}${fed.score} pts\n━━━━━━━━━━━━━━━━━━━━━━\n💡 <i>Bias: ${biasText}</i>`;
+    const message = `<b>${mainIcon} DEPRESSEDESIGN MACRO TERMINAL ${mainIcon}</b>\n━━━━━━━━━━━━━━━━━━━━━━\n🎯 <b>SIGNAL:</b> ${isSell ? "SELL XAU/USD" : "BUY XAU/USD"}\n📊 <b>SCORE:</b> ${totalScore > 0 ? "+" : ""}${totalScore}\n💵 <b>DXY LIVE:</b> ${dxy.current} <i>(${dxy.status})</i>\n━━━━━━━━━━━━━━━━━━━━━━\n⚙️ <b>ENGINE BREAKDOWN:</b>\n${nfp.score > 0 ? "🟥" : nfp.score < 0 ? "🟩" : "🟨"} <b>NFP</b>: ${nfp.score > 0 ? "+" : ""}${nfp.score} pts\n${cpi.score > 0 ? "🟥" : cpi.score < 0 ? "🟩" : "🟨"} <b>CPI</b>: ${cpi.score > 0 ? "+" : ""}${cpi.score} pts\n${growth.score > 0 ? "🟥" : growth.score < 0 ? "🟩" : "🟨"} <b>GROWTH</b>: ${growth.score > 0 ? "+" : ""}${growth.score} pts\n${fed.score > 0 ? "🟥" : fed.score < 0 ? "🟩" : "🟨"} <b>FED</b>: ${fed.score > 0 ? "+" : ""}${fed.score} pts`;
     await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, { chat_id: TELEGRAM_CHAT_ID, text: message, parse_mode: "HTML", disable_web_page_preview: true });
   } catch (err) {}
 }
@@ -32,138 +27,133 @@ async function sendTelegramAlert(masterSignal, totalScore, dxy, nfp, cpi, growth
 async function sendTechnicalSignalTelegram(tech) {
   try {
     const icon = tech.position.includes("BUY") ? "🟢" : "🔴";
-    const message = `${icon} <b>NEW ALGORITHMIC SIGNAL DETECTED</b> ${icon}\n━━━━━━━━━━━━━━━━━━━━━━\n🎯 <b>POSITION:</b> ${tech.position}\n💸 <b>ENTRY AREA:</b> $${tech.entry}\n🛑 <b>STOP LOSS:</b> $${tech.sl}\n💰 <b>TARGET 1:</b> $${tech.tp1}\n💰 <b>TARGET 2:</b> $${tech.tp2}\n━━━━━━━━━━━━━━━━━━━━━━\n📝 <b>ALGORITHMIC REASONING:</b>\n${tech.reason.map(r => `• ${r}`).join('\n')}`;
+    const message = `${icon} <b>AGRESSIVE MTF SIGNAL DETECTED</b> ${icon}\n━━━━━━━━━━━━━━━━━━━━━━\n🎯 <b>POSITION:</b> ${tech.position}\n💸 <b>ENTRY AREA (M1):</b> $${tech.entry}\n🛑 <b>STOP LOSS:</b> $${tech.sl}\n💰 <b>TARGET 1:</b> $${tech.tp1}\n💰 <b>TARGET 2:</b> $${tech.tp2}\n━━━━━━━━━━━━━━━━━━━━━━\n📝 <b>TOP-DOWN ANALYSIS REASONING:</b>\n${tech.reason.map(r => `• ${r}`).join('\n')}`;
     await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, { chat_id: TELEGRAM_CHAT_ID, text: message, parse_mode: "HTML" });
   } catch (err) {}
 }
 
 async function sendInvalidSignalTelegram() {
   try {
-    const message = `⚠️ <b>SIGNAL UPDATE: INVALID / CLOSED</b> ⚠️\n━━━━━━━━━━━━━━━━━━━━━━\nHarga telah keluar dari zona eksekusi algoritma.\nSinyal teknikal sebelumnya dibatalkan.\nKembali ke mode WAIT & SEE.`;
+    const message = `⚠️ <b>SIGNAL UPDATE: INVALID / CLOSED</b> ⚠️\n━━━━━━━━━━━━━━━━━━━━━━\nHarga (M1) telah meninggalkan zona eksekusi (SL Hit / Invalidasi arah).\nSinyal teknikal dibatalkan. Kembali ke mode WAIT & SEE.`;
     await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, { chat_id: TELEGRAM_CHAT_ID, text: message, parse_mode: "HTML" });
   } catch (err) {}
-}
-
-// FUNGSI ANALISIS PREDIKSI FUNDAMENTAL
-function getEventPrediction(event) {
-  if (event.forecast === undefined || event.previous === undefined || event.forecast === null || event.previous === null) return "MIXED / DATA TIDAK LENGKAP";
-  
-  const f = parseFloat(event.forecast); const p = parseFloat(event.previous);
-  const title = (event.title || event.indicator || "").toLowerCase();
-
-  if (title.includes("cpi") || title.includes("inflation") || title.includes("ppi")) {
-    return f > p ? "🔴 <b>EXPECTATION:</b> Inflasi Naik\n📈 <b>BIAS:</b> USD Kuat -> <b>SELL XAU</b>" : "🟢 <b>EXPECTATION:</b> Inflasi Turun\n📉 <b>BIAS:</b> USD Lemah -> <b>BUY XAU</b>";
-  }
-  if (title.includes("nonfarm") || title.includes("adp") || title.includes("gdp") || title.includes("retail") || title.includes("jolts") || title.includes("ism")) {
-    return f > p ? "🔴 <b>EXPECTATION:</b> Ekonomi Ekspansi\n📈 <b>BIAS:</b> USD Kuat -> <b>SELL XAU</b>" : "🟢 <b>EXPECTATION:</b> Ekonomi Melambat\n📉 <b>BIAS:</b> USD Lemah -> <b>BUY XAU</b>";
-  }
-  if (title.includes("interest rate") || title.includes("fed")) {
-    return f >= p ? "🔴 <b>EXPECTATION:</b> Hawkish / Suku Bunga Ditahan\n📈 <b>BIAS:</b> USD Kuat -> <b>SELL XAU</b>" : "🟢 <b>EXPECTATION:</b> Dovish / Cut Rate\n📉 <b>BIAS:</b> USD Lemah -> <b>BUY XAU</b>";
-  }
-  return "⏳ MIXED / UNPREDICTABLE (Menunggu Data Actual)";
 }
 
 async function sendPreNewsWarning(newsItem) {
   try {
-    const forecastText = newsItem.forecast !== undefined && newsItem.forecast !== null ? newsItem.forecast : "N/A";
-    const priorText = newsItem.previous !== undefined && newsItem.previous !== null ? newsItem.previous : "N/A";
-    const prediction = getEventPrediction(newsItem);
-
-    const message = `⏳ <b>PRE-NEWS WARNING & PREDICTION</b> ⏳\n━━━━━━━━━━━━━━━━━━━━━━\n🚨 <b>${newsItem.title || newsItem.indicator || "USD High Impact News"}</b> \nAkan rilis dalam <b>5 MENIT!</b>\n\n📊 <b>Forecast:</b> ${forecastText} | <b>Prior:</b> ${priorText}\n\n🔮 <b>PREDIKSI FUNDAMENTAL:</b>\n${prediction}\n\n⚠️ <i>Siap-siap volatilitas tinggi. Amankan SL atau hindari entry!</i>`;
+    const message = `⏳ <b>PRE-NEWS WARNING</b> ⏳\n━━━━━━━━━━━━━━━━━━━━━━\n🚨 <b>${newsItem.title || newsItem.indicator || "USD High Impact News"}</b> \nAkan rilis dalam <b>5 MENIT!</b>\n📊 <b>Forecast:</b> ${newsItem.forecast || "N/A"}\n⚠️ <i>Siap-siap volatilitas tinggi. Amankan SL atau hindari entry!</i>`;
     await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, { chat_id: TELEGRAM_CHAT_ID, text: message, parse_mode: "HTML" });
   } catch (err) {}
 }
 
-// ─── THE SMART CACHE ENGINE (PEMBURU BERITA) ────────────────────────────────
+// ─── THE SMART CACHE ENGINE ──────────────────────────────────────────────────
 async function fetchTradingViewData() {
   const now = Date.now();
   let needFreshData = false;
-
-  // 1. Cek apakah cache kosong atau sudah 15 menit
-  if (cachedEvents.length === 0 || (now - lastFetchTime) > 900000) {
-    needFreshData = true;
-  } else {
-    // 2. CEK JADWAL BERITA: Adakah berita yang rilis di rentang SEKARANG ( -5 menit hingga +15 menit )?
+  if (cachedEvents.length === 0 || (now - lastFetchTime) > 900000) needFreshData = true;
+  else {
     const hasNewsWindow = cachedEvents.some(e => {
       if (e.country !== "US" && e.currency !== "USD") return false;
-      const eventTime = new Date(e.date).getTime();
-      const diffMins = (now - eventTime) / 60000;
-      return diffMins >= -5 && diffMins <= 15; // Jendela Agresif
+      const diffMins = (now - new Date(e.date).getTime()) / 60000;
+      return diffMins >= -5 && diffMins <= 15; 
     });
-    
-    // Kalau ada berita rilis, HANCURKAN CACHE, dobrak TradingView!
     if (hasNewsWindow) needFreshData = true;
   }
 
-  // Jika aman dan sepi, pakai ingatan cache
   if (!needFreshData) return cachedEvents;
 
-  // 3. Tarik data Actual dari TradingView
   try { 
-    const today = new Date(); 
-    const fromDate = new Date(today); fromDate.setDate(today.getDate() - 45); 
-    const toDate = new Date(today); toDate.setDate(today.getDate() + 15); 
-    const res = await axios.get(`https://economic-calendar.tradingview.com/events?from=${fromDate.toISOString()}&to=${toDate.toISOString()}&countries=US`, { 
-      timeout: 10000, 
-      headers: { 
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        'Accept': 'application/json',
-        'Origin': 'https://www.tradingview.com',
-        'Referer': 'https://www.tradingview.com/'
-      } 
-    }); 
-    if (res.data && res.data.result && res.data.result.length > 0) {
-      cachedEvents = res.data.result;
-      lastFetchTime = now;
-    }
+    const today = new Date(); const fromDate = new Date(today); fromDate.setDate(today.getDate() - 45); const toDate = new Date(today); toDate.setDate(today.getDate() + 15); 
+    const res = await axios.get(`https://economic-calendar.tradingview.com/events?from=${fromDate.toISOString()}&to=${toDate.toISOString()}&countries=US`, { timeout: 10000, headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json', 'Origin': 'https://www.tradingview.com', 'Referer': 'https://www.tradingview.com/' } }); 
+    if (res.data && res.data.result && res.data.result.length > 0) { cachedEvents = res.data.result; lastFetchTime = now; }
     return cachedEvents;
   } catch (err) { return cachedEvents; } 
 }
 
-// ─── NATIVE ALGORITHM PORTING UTILITIES ──────────────────────────────────────
+// ─── MULTI-TIMEFRAME (MTF) MATH UTILITIES ────────────────────────────────────
 function calculateEMA(data, period) { const k = 2 / (period + 1); let emaArray = [data[0]]; for (let i = 1; i < data.length; i++) { emaArray.push(data[i] * k + emaArray[i - 1] * (1 - k)); } return emaArray; }
 function findPivots(highs, lows, leftBars, rightBars) { let pivotHighs = []; let pivotLows = []; for (let i = leftBars; i < highs.length - rightBars; i++) { let isHigh = true; let isLow = true; for (let j = i - leftBars; j <= i + rightBars; j++) { if (i === j) continue; if (highs[j] >= highs[i]) isHigh = false; if (lows[j] <= lows[i]) isLow = false; } if (isHigh) pivotHighs.push({ index: i, val: highs[i] }); if (isLow) pivotLows.push({ index: i, val: lows[i] }); } return { pivotHighs, pivotLows }; }
 
-async function calculateNativeAlgorithms() {
-  try {
-    const url = 'https://query2.finance.yahoo.com/v8/finance/chart/GC=F?interval=1h&range=14d';
-    const res = await axios.get(url, { timeout: 8000, headers: { 'User-Agent': 'Mozilla/5.0' } });
-    const quotes = res.data.chart.result[0].indicators.quote[0];
-    let closes = [], opens = [], highs = [], lows = [], volumes = [];
-    for(let i = 0; i < quotes.close.length; i++) { if(quotes.close[i] !== null && quotes.open[i] !== null && quotes.high[i] !== null && quotes.low[i] !== null) { closes.push(quotes.close[i]); opens.push(quotes.open[i]); highs.push(quotes.high[i]); lows.push(quotes.low[i]); volumes.push(quotes.volume[i] || 0); } }
-    if (closes.length === 0) throw new Error("Data candle kosong");
-    const currentPrice = closes[closes.length - 1]; const prevClose = closes[closes.length - 2];
-    
-    const { pivotHighs, pivotLows } = findPivots(highs, lows, 15, 15);
-    const lastRes = pivotHighs.length > 0 ? pivotHighs[pivotHighs.length - 1].val : highs[highs.length - 2];
-    const lastSup = pivotLows.length > 0 ? pivotLows[pivotLows.length - 1].val : lows[lows.length - 2];
-    
-    const emaVol5 = calculateEMA(volumes, 5); const emaVol10 = calculateEMA(volumes, 10);
-    const volumeOsc = 100 * (emaVol5[emaVol5.length - 1] - emaVol10[emaVol10.length - 1]) / emaVol10[emaVol10.length - 1];
-    
-    let isBreakRes = (currentPrice > lastRes && prevClose <= lastRes) && (volumeOsc > 20);
-    let isBreakSup = (currentPrice < lastSup && prevClose >= lastSup) && (volumeOsc > 20);
-
-    const swings = findPivots(highs, lows, 5, 5);
-    const recentSwingHigh = swings.pivotHighs.length > 0 ? swings.pivotHighs[swings.pivotHighs.length - 1].val : highs[highs.length - 5];
-    const recentSwingLow = swings.pivotLows.length > 0 ? swings.pivotLows[swings.pivotLows.length - 1].val : lows[lows.length - 5];
-    
-    let bullishOB = recentSwingLow; let bearishOB = recentSwingHigh;
-    let isBuySignal = false; let isSellSignal = false; let reasonArr = [];
-
-    if (isBreakRes || (currentPrice <= bullishOB + 3 && currentPrice >= bullishOB - 3)) { isBuySignal = true; if(isBreakRes) reasonArr.push(`SNR: Harga break Resistance ($${lastRes.toFixed(2)}) dengan ledakan Volume (Osc: ${volumeOsc.toFixed(2)}%)`); else reasonArr.push(`SMC: Harga memitigasi Bullish Order Block di area Demand ($${bullishOB.toFixed(2)})`); } 
-    else if (isBreakSup || (currentPrice >= bearishOB - 3 && currentPrice <= bearishOB + 3)) { isSellSignal = true; if(isBreakSup) reasonArr.push(`SNR: Harga breakdown Support ($${lastSup.toFixed(2)}) dengan ledakan Volume (Osc: ${volumeOsc.toFixed(2)}%)`); else reasonArr.push(`SMC: Harga memitigasi Bearish Order Block di area Supply ($${bearishOB.toFixed(2)})`); }
-
-    let position = "WAIT & SEE / SCALPING PIVOT"; let entry = currentPrice.toFixed(2); let sl = (currentPrice - 5).toFixed(2); let tp1 = (currentPrice + 8).toFixed(2); let tp2 = (currentPrice + 15).toFixed(2);
-    let reason = [`SMC: Market structure netral, konsolidasi di area $${currentPrice.toFixed(2)}`, `SNR: Menunggu akumulasi volume breakout harian`];
-
-    if (isBuySignal) { position = currentPrice < (bullishOB - 2) ? "BUY STOP / BUY NOW (MARKET)" : "BUY LIMIT (PENDING ORDER)"; entry = currentPrice.toFixed(2); sl = (currentPrice - 8).toFixed(2); tp1 = (currentPrice + 12).toFixed(2); tp2 = (currentPrice + 25).toFixed(2); reason = reasonArr; } 
-    else if (isSellSignal) { position = currentPrice > (bearishOB + 2) ? "SELL STOP / SELL NOW (MARKET)" : "SELL LIMIT (PENDING ORDER)"; entry = currentPrice.toFixed(2); sl = (currentPrice + 8).toFixed(2); tp1 = (currentPrice - 12).toFixed(2); tp2 = (currentPrice - 25).toFixed(2); reason = reasonArr; }
-    return { currentPrice: currentPrice.toFixed(2), position, entry, sl, tp1, tp2, reason };
-  } catch (err) { return { currentPrice: "N/A", position: "WAIT & SEE / SCALPING PIVOT", entry: "0", sl: "0", tp1: "0", tp2: "0", reason: ["Menunggu sinkronisasi data chart."] }; }
+async function fetchChartData(interval, range) {
+  const res = await axios.get(`https://query2.finance.yahoo.com/v8/finance/chart/GC=F?interval=${interval}&range=${range}`, { timeout: 8000, headers: { 'User-Agent': 'Mozilla/5.0' } });
+  const q = res.data.chart.result[0].indicators.quote[0];
+  let c = [], o = [], h = [], l = [], v = [];
+  for(let i=0; i<q.close.length; i++) { if(q.close[i] !== null) { c.push(q.close[i]); o.push(q.open[i]); h.push(q.high[i]); l.push(q.low[i]); v.push(q.volume[i] || 0); } }
+  return { c, o, h, l, v, current: c[c.length - 1] };
 }
 
-// ─── DATA FETCHERS & DYNAMIC SCORING ENGINES ─────────────────────────────────
+// ─── THE NEW MTF AGGRESSIVE ENGINE ───────────────────────────────────────────
+async function calculateNativeAlgorithms() {
+  try {
+    // Tarik 3 Timeframe Sekaligus: H1 (Trend), M15 (Structure), M1 (Execution)
+    const [h1, m15, m1] = await Promise.all([
+      fetchChartData('1h', '5d'),
+      fetchChartData('15m', '2d'),
+      fetchChartData('1m', '1d')
+    ]);
+
+    const currentPrice = m1.current;
+
+    // 1. HTF ANALYSIS (H1) - Tren Utama
+    const h1Ema20 = calculateEMA(h1.c, 20);
+    const h1Ema50 = calculateEMA(h1.c, 50);
+    const h1Trend = h1Ema20[h1Ema20.length - 1] > h1Ema50[h1Ema50.length - 1] ? "BULLISH" : "BEARISH";
+
+    // 2. MTF ANALYSIS (M15) - Penentuan Area Konfirmasi / POI
+    const m15Pivots = findPivots(m15.h, m15.l, 5, 5);
+    const m15Res = m15Pivots.pivotHighs.length > 0 ? m15Pivots.pivotHighs[m15Pivots.pivotHighs.length - 1].val : m15.h[m15.h.length - 5];
+    const m15Sup = m15Pivots.pivotLows.length > 0 ? m15Pivots.pivotLows[m15Pivots.pivotLows.length - 1].val : m15.l[m15.l.length - 5];
+
+    let position = "WAIT & SEE / NO SETUP";
+    let entry = currentPrice.toFixed(2);
+    let sl = (currentPrice - 2).toFixed(2);
+    let tp1 = (currentPrice + 4).toFixed(2);
+    let tp2 = (currentPrice + 8).toFixed(2);
+    let reasonArr = [];
+
+    // 3. LTF EXECUTION (M1) - Penembak Jitu Agresif
+    // SETUP BUY: H1 Bullish, dan harga (M1) jatuh menyentuh Support/Demand M15
+    if (h1Trend === "BULLISH" && currentPrice <= (m15Sup + 2.5) && currentPrice >= (m15Sup - 1.5)) {
+      position = "BUY LIMIT / BUY NOW (LTF AGGRESSIVE)";
+      entry = currentPrice.toFixed(2);
+      sl = (m15Sup - 3).toFixed(2); // SL super tipis di bawah Support M15
+      tp1 = (currentPrice + 5).toFixed(2);
+      tp2 = (currentPrice + 12).toFixed(2);
+      reasonArr = [
+        `HTF (H1): Market structure & EMA Trend adalah BULLISH`,
+        `MTF (M15): Harga terkoreksi ke zona Demand / Order Block ($${m15Sup.toFixed(2)})`,
+        `LTF (M1): Momentum oversold agresif, siap eksekusi rejection ke atas`
+      ];
+    }
+    // SETUP SELL: H1 Bearish, dan harga (M1) meroket menyentuh Resistance/Supply M15
+    else if (h1Trend === "BEARISH" && currentPrice >= (m15Res - 2.5) && currentPrice <= (m15Res + 1.5)) {
+      position = "SELL LIMIT / SELL NOW (LTF AGGRESSIVE)";
+      entry = currentPrice.toFixed(2);
+      sl = (m15Res + 3).toFixed(2); // SL super tipis di atas Resistance M15
+      tp1 = (currentPrice - 5).toFixed(2);
+      tp2 = (currentPrice - 12).toFixed(2);
+      reasonArr = [
+        `HTF (H1): Market structure & EMA Trend adalah BEARISH`,
+        `MTF (M15): Harga *rally* ke zona Supply / Order Block ($${m15Res.toFixed(2)})`,
+        `LTF (M1): Momentum overbought agresif, siap eksekusi penolakan ke bawah`
+      ];
+    } else {
+      // Kondisi No Setup (Menunggu)
+      const targetArea = h1Trend === "BULLISH" ? m15Sup : m15Res;
+      reasonArr = [
+        `HTF (H1): Trend skala besar terpantau ${h1Trend}`,
+        `MTF (M15): Menunggu harga masuk ke zona eksekusi SMC ($${targetArea.toFixed(2)})`,
+        `LTF (M1): Harga saat ini ($${currentPrice.toFixed(2)}) belum memicu sinyal agresif`
+      ];
+    }
+
+    return { currentPrice: currentPrice.toFixed(2), position, entry, sl, tp1, tp2, reason: reasonArr };
+  } catch (err) {
+    return { currentPrice: "N/A", position: "WAIT & SEE / NO SETUP", entry: "0", sl: "0", tp1: "0", tp2: "0", reason: ["Menunggu sinkronisasi data chart MTF."] };
+  }
+}
+
+// ─── DATA FETCHERS & SCORING ENGINES ─────────────────────────────────────────
 async function fetchDXY() { try { const res = await axios.get('https://query2.finance.yahoo.com/v8/finance/chart/DX-Y.NYB?interval=1d&range=2d', { timeout: 8000, headers: { 'User-Agent': 'Mozilla/5.0' } }); const current = res.data.chart.result[0].meta.regularMarketPrice; return { current: parseFloat(current.toFixed(2)), status: current >= res.data.chart.result[0].meta.previousClose ? "BULLISH (UP)" : "BEARISH (DOWN)" }; } catch (err) { return { current: "N/A", status: "OFFLINE" }; } }
 async function fetchCrudeOil() { try { const res = await axios.get('https://query2.finance.yahoo.com/v8/finance/chart/CL=F?interval=1d&range=45d', { timeout: 8000, headers: { 'User-Agent': 'Mozilla/5.0' } }); const closes = res.data.chart.result[0].indicators.quote[0].close.filter(c => c !== null); return { current: closes[closes.length - 1], avg30: closes.slice(-30).reduce((a,b) => a+b, 0) / Math.min(closes.length, 30) }; } catch (err) { return { current: null, avg30: null }; } }
 function findLatestReleasedEvent(events, keywords) { const matches = events.filter(e => keywords.some(kw => (e.title || e.indicator || "").toLowerCase().includes(kw.toLowerCase())) && e.actual !== undefined && e.actual !== null && e.actual !== ""); if (matches.length === 0) return null; matches.sort((a, b) => new Date(b.date) - new Date(a.date)); return matches[0]; }
@@ -198,35 +188,38 @@ module.exports = async (req, res) => {
     const masterSignal = totalScore >= 40 ? "STRONG SELL XAU" : totalScore <= -40 ? "STRONG BUY XAU" : "NEUTRAL";
 
     if (isCron) {
-      // Logic Anti-Spam Technical
+      // Logic Anti-Spam (Agresif M1)
       const currentSignalID = tech.position + "_" + tech.entry;
-      if (tech.position !== "WAIT & SEE / SCALPING PIVOT") {
+      
+      if (!tech.position.includes("WAIT & SEE")) {
+        // Kalau ketemu setup agresif baru
         if (currentSignalID !== lastSentSignalID) {
           await sendTechnicalSignalTelegram(tech);
-          lastSentSignalID = currentSignalID; isSignalActive = true;
+          lastSentSignalID = currentSignalID; 
+          isSignalActive = true;
         }
       } else {
+        // Kalau harga udah kabur dari zona / invalid
         if (isSignalActive === true) {
           await sendInvalidSignalTelegram();
-          lastSentSignalID = ""; isSignalActive = false;
+          lastSentSignalID = ""; 
+          isSignalActive = false;
         }
       }
 
-      // Logic Pre-News Prediction & Memory Cleanup
+      // Logic Pre-News Warning
       const nowMs = Date.now();
       const upcomingNews = events.filter(e => {
         if (e.country !== "US" && e.currency !== "USD") return false;
-        const eventTime = new Date(e.date).getTime();
-        const diffMins = (eventTime - nowMs) / 60000;
+        const diffMins = (new Date(e.date).getTime() - nowMs) / 60000;
         return diffMins > 0 && diffMins <= 5;
       });
-
       for (const news of upcomingNews) {
         const eventId = (news.title || "news") + "_" + news.date;
         if (!warnedEvents.has(eventId)) {
           await sendPreNewsWarning(news);
           warnedEvents.add(eventId);
-          if (warnedEvents.size > 100) warnedEvents.clear(); // Hapus ingatan lama biar server enteng
+          if (warnedEvents.size > 100) warnedEvents.clear(); 
         }
       }
     } else {
