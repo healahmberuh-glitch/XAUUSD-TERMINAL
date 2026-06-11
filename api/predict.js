@@ -1,5 +1,5 @@
 // api/predict.js — DEPRESSEDESIGN Macro Predictor Backend
-// Vercel Serverless Function (Node.js) - V20 (GLOBAL SENTINEL)
+// Vercel Serverless Function (Node.js) - V19 (THE INSTITUTIONAL GOD ENGINE)
 
 const axios = require("axios");
 
@@ -46,14 +46,13 @@ async function sendPreNewsWarning(newsItem) {
   } catch (err) {}
 }
 
-// ─── THE SMART CACHE ENGINE (GLOBAL NEWS UNLOCKED) ───────────────────────────
+// ─── THE SMART CACHE ENGINE ──────────────────────────────────────────────────
 async function fetchTradingViewData() {
   const now = Date.now();
   let needFreshData = false;
   if (cachedEvents.length === 0 || (now - lastFetchTime) > 900000) needFreshData = true;
   else {
     const hasNewsWindow = cachedEvents.some(e => {
-      // Alert Telegram & trigger agresif tetap fokus ke USD aja biar aman
       if (e.country !== "US" && e.currency !== "USD") return false;
       const diffMins = (now - new Date(e.date).getTime()) / 60000;
       return diffMins >= -5 && diffMins <= 15; 
@@ -62,9 +61,8 @@ async function fetchTradingViewData() {
   }
   if (!needFreshData) return cachedEvents;
   try { 
-    const today = new Date(); const fromDate = new Date(today); fromDate.setDate(today.getDate() - 2); const toDate = new Date(today); toDate.setDate(today.getDate() + 7); 
-    // HAPUS FILTER &countries=US UNTUK MENDAPATKAN SEMUA BERITA GLOBAL
-    const res = await axios.get(`https://economic-calendar.tradingview.com/events?from=${fromDate.toISOString()}&to=${toDate.toISOString()}`, { timeout: 10000, headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json', 'Origin': 'https://www.tradingview.com', 'Referer': 'https://www.tradingview.com/' } }); 
+    const today = new Date(); const fromDate = new Date(today); fromDate.setDate(today.getDate() - 45); const toDate = new Date(today); toDate.setDate(today.getDate() + 15); 
+    const res = await axios.get(`https://economic-calendar.tradingview.com/events?from=${fromDate.toISOString()}&to=${toDate.toISOString()}&countries=US`, { timeout: 10000, headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json', 'Origin': 'https://www.tradingview.com', 'Referer': 'https://www.tradingview.com/' } }); 
     if (res.data && res.data.result && res.data.result.length > 0) { cachedEvents = res.data.result; lastFetchTime = now; }
     return cachedEvents;
   } catch (err) { return cachedEvents; } 
@@ -97,9 +95,9 @@ function calculateATR(h, l, c, period = 14) {
 
 function findFVG(o, h, l, c) {
   let bullFVG = null; let bearFVG = null;
-  for(let i = h.length - 3; i > h.length - 30; i--) { 
-    if(l[i+2] > h[i] && c[i+2] > o[i+2] && !bullFVG) bullFVG = { top: l[i+2], btm: h[i] }; 
-    if(h[i+2] < l[i] && c[i+2] < o[i+2] && !bearFVG) bearFVG = { top: l[i], btm: h[i+2] }; 
+  for(let i = h.length - 3; i > h.length - 30; i--) { // Scan 30 candle terakhir
+    if(l[i+2] > h[i] && c[i+2] > o[i+2] && !bullFVG) bullFVG = { top: l[i+2], btm: h[i] }; // Bullish FVG
+    if(h[i+2] < l[i] && c[i+2] < o[i+2] && !bearFVG) bearFVG = { top: l[i], btm: h[i+2] }; // Bearish FVG
   }
   return { bullFVG, bearFVG };
 }
@@ -127,28 +125,33 @@ async function calculateNativeAlgorithms() {
     const currentPrice = m1.current;
     const sessionName = getSession();
 
+    // 1. HTF ANALYSIS (H1)
     const h1Ema20 = calculateEMA(h1.c, 20); const h1Ema50 = calculateEMA(h1.c, 50);
     const h1Trend = h1Ema20[h1Ema20.length - 1] > h1Ema50[h1Ema50.length - 1] ? "BULLISH" : "BEARISH";
 
+    // 2. MTF ANALYSIS (M5) - Structure & FVG
     const m5Pivots = findPivots(m5.h, m5.l, 3, 3);
     const m5Res = m5Pivots.pivotHighs.length > 0 ? m5Pivots.pivotHighs[m5Pivots.pivotHighs.length - 1].val : m5.h[m5.h.length - 3];
     const m5Sup = m5Pivots.pivotLows.length > 0 ? m5Pivots.pivotLows[m5Pivots.pivotLows.length - 1].val : m5.l[m5.l.length - 3];
     const fvg = findFVG(m5.o, m5.h, m5.l, m5.c);
 
+    // 3. LTF DYNAMICS (M1) - Momentum & Volatility
     const m1Rsi = calculateRSI(m1.c, 14);
-    const m1Atr = calculateATR(m1.h, m1.l, m1.c, 14);
+    const m1Atr = calculateATR(m1.h, m1.l, m1.c, 14); // Dynamic pip measurement
 
     let position = "WAIT & SEE / NO SETUP"; let entry = "0.00"; let sl = "0.00"; let tp1 = "0.00"; let tp2 = "0.00"; let reasonArr = [];
 
+    // FVG Magnet Logic: Jika ada FVG, harga eksekusi ditarik sedikit ke area FVG
     let buyTarget = fvg.bullFVG && fvg.bullFVG.top < m5Sup + 2 ? fvg.bullFVG.top : m5Sup;
     let sellTarget = fvg.bearFVG && fvg.bearFVG.btm > m5Res - 2 ? fvg.bearFVG.btm : m5Res;
 
+    // SETUP BUY: H1 Bullish + Harga masuk Demand/FVG + RSI Hook Up (Oversold)
     if (h1Trend === "BULLISH" && currentPrice <= (buyTarget + 2.0) && currentPrice >= (buyTarget - 1.5)) {
-      if (m1Rsi < 40) { 
+      if (m1Rsi < 40) { // Momentum filter
         position = "BUY LIMIT / BUY NOW (LTF SNIPER)";
         entry = currentPrice.toFixed(2);
-        sl = (buyTarget - (m1Atr * 1.5)).toFixed(2); 
-        tp1 = (currentPrice + (m1Atr * 3)).toFixed(2); 
+        sl = (buyTarget - (m1Atr * 1.5)).toFixed(2); // SL Dinamis
+        tp1 = (currentPrice + (m1Atr * 3)).toFixed(2); // TP Dinamis
         tp2 = (currentPrice + (m1Atr * 6)).toFixed(2);
         reasonArr = [
           `HTF (H1): Market structure sejajar dengan tren BULLISH`,
@@ -158,12 +161,13 @@ async function calculateNativeAlgorithms() {
         ];
       }
     }
+    // SETUP SELL: H1 Bearish + Harga masuk Supply/FVG + RSI Hook Down (Overbought)
     else if (h1Trend === "BEARISH" && currentPrice >= (sellTarget - 2.0) && currentPrice <= (sellTarget + 1.5)) {
-      if (m1Rsi > 60) { 
+      if (m1Rsi > 60) { // Momentum filter
         position = "SELL LIMIT / SELL NOW (LTF SNIPER)";
         entry = currentPrice.toFixed(2);
-        sl = (sellTarget + (m1Atr * 1.5)).toFixed(2); 
-        tp1 = (currentPrice - (m1Atr * 3)).toFixed(2); 
+        sl = (sellTarget + (m1Atr * 1.5)).toFixed(2); // SL Dinamis
+        tp1 = (currentPrice - (m1Atr * 3)).toFixed(2); // TP Dinamis
         tp2 = (currentPrice - (m1Atr * 6)).toFixed(2);
         reasonArr = [
           `HTF (H1): Market structure sejajar dengan tren BEARISH`,
@@ -222,13 +226,6 @@ module.exports = async (req, res) => {
     const totalScore = nfp.score + cpi.score + growth.score + fed.score;
     const masterSignal = totalScore >= 40 ? "STRONG SELL XAU" : totalScore <= -40 ? "STRONG BUY XAU" : "NEUTRAL";
 
-    // GLOBAL NEWS EXTRACTION FOR FRONTEND UI (V20 Feature)
-    const nowMs = Date.now();
-    const globalUpcoming = events.filter(e => {
-        const diffMins = (new Date(e.date).getTime() - nowMs) / 60000;
-        return diffMins > 0; // Filter data masa depan
-    }).sort((a,b) => new Date(a.date) - new Date(b.date)).slice(0, 10); // Kirim 10 berita terdekat
-
     if (isCron) {
       const currentSignalID = tech.position + "_" + tech.entry;
       if (!tech.position.includes("WAIT & SEE")) {
@@ -245,6 +242,7 @@ module.exports = async (req, res) => {
         }
       }
 
+      const nowMs = Date.now();
       const upcomingNews = events.filter(e => {
         if (e.country !== "US" && e.currency !== "USD") return false;
         const diffMins = (new Date(e.date).getTime() - nowMs) / 60000;
@@ -258,6 +256,8 @@ module.exports = async (req, res) => {
           if (warnedEvents.size > 100) warnedEvents.clear(); 
         }
       }
+    } else {
+      await sendTelegramAlert(masterSignal, totalScore, dxy, nfp, cpi, growth, fed);
     }
 
     return res.status(200).json({
@@ -266,8 +266,7 @@ module.exports = async (req, res) => {
       dxy_live: dxy,
       master_signal: { signal: masterSignal, total_score: totalScore },
       nfp, cpi, growth, fed,
-      technical_signal: tech,
-      global_upcoming: globalUpcoming // DATA BARU UNTUK LIST GLOBAL NEWS DI WEB
+      technical_signal: tech
     });
   } catch (err) {
     return res.status(500).json({ success: false, error: err.message });
