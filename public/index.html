@@ -28,54 +28,128 @@
   </script>
 
   <style>
+    /* ── Base ──────────────────────────────────────────── */
     body { background-color: #080B0F; font-family: 'Inter', sans-serif; }
-    body::before { content: ''; position: fixed; inset: 0; background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 4px); pointer-events: none; z-index: 1000; }
-    .grid-bg { background-image: linear-gradient(rgba(33,38,45,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(33,38,45,0.6) 1px, transparent 1px); background-size: 48px 48px; }
+
+    /* CRT scanline overlay */
+    body::before {
+      content: ''; position: fixed; inset: 0;
+      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 4px);
+      pointer-events: none; z-index: 1000;
+    }
+
+    /* Grid background */
+    .grid-bg {
+      background-image:
+        linear-gradient(rgba(33,38,45,0.6) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(33,38,45,0.6) 1px, transparent 1px);
+      background-size: 48px 48px;
+    }
+
+    /* ── Signal colours ────────────────────────────────── */
     .glow-buy  { box-shadow: 0 0 20px rgba(0,255,136,0.15), 0 0 40px rgba(0,255,136,0.05); }
     .glow-sell { box-shadow: 0 0 20px rgba(255,59,59,0.15),  0 0 40px rgba(255,59,59,0.05); }
     .glow-wait { box-shadow: 0 0 20px rgba(240,180,41,0.15), 0 0 40px rgba(240,180,41,0.05); }
+
     .bg-buy-dim  { background-color: rgba(0,255,136,0.06); }
     .bg-sell-dim { background-color: rgba(255,59,59,0.06); }
     .bg-wait-dim { background-color: rgba(240,180,41,0.06); }
+
+    /* ── Score bars ────────────────────────────────────── */
     .score-track { background:#161B22; border-radius:2px; height:6px; overflow:hidden; }
     .score-fill  { height:100%; border-radius:2px; transition:width 0.8s cubic-bezier(0.4,0,0.2,1); }
     .master-track { background:#0D1117; height:8px; border-radius:2px; overflow:hidden; border:1px solid #21262D; }
     .master-fill  { height:100%; border-radius:2px; transition:width 1s cubic-bezier(0.4,0,0.2,1); }
 
-    .tab-bar { background: #080B0F; border-bottom: 1px solid #21262D; display: flex; align-items: stretch; position: sticky; top: 0; z-index: 50; }
-    .tab-btn { position: relative; display: flex; align-items: center; gap: 8px; padding: 0 28px; height: 46px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #484F58; background: transparent; border: none; border-right: 1px solid #21262D; cursor: pointer; transition: color 0.2s ease, background 0.2s ease; white-space: nowrap; }
+    /* ── TAB SYSTEM ────────────────────────────────────── */
+    .tab-bar {
+      background: #080B0F;
+      border-bottom: 1px solid #21262D;
+      display: flex;
+      align-items: stretch;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .tab-btn {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 28px;
+      height: 46px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #484F58;
+      background: transparent;
+      border: none;
+      border-right: 1px solid #21262D;
+      cursor: pointer;
+      transition: color 0.2s ease, background 0.2s ease;
+      white-space: nowrap;
+    }
     .tab-btn:hover { color: #8B949E; background: rgba(255,255,255,0.02); }
+
     .tab-btn.active { color: #E6EDF3; background: #0D1117; }
-    .tab-btn.active::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: #00FF88; box-shadow: 0 0 12px rgba(0,255,136,0.6); }
+    .tab-btn.active::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: #00FF88; box-shadow: 0 0 12px rgba(0,255,136,0.6);
+    }
     .tab-btn.active .tab-icon { color: #00FF88; }
-    .tab-btn.active.tab-tech::before { background: #38BDF8; box-shadow: 0 0 12px rgba(56,189,248,0.5); }
+
+    .tab-btn.active.tab-tech::before {
+      background: #38BDF8; box-shadow: 0 0 12px rgba(56,189,248,0.5);
+    }
     .tab-btn.active.tab-tech .tab-icon { color: #38BDF8; }
-    .tab-badge { font-mono: 'IBM Plex Mono', monospace; font-size: 8px; padding: 1px 5px; border: 1px solid #21262D; color: #484F58; background: #161B22; letter-spacing: 0.05em; }
+
+    .tab-badge {
+      font-mono: 'IBM Plex Mono', monospace; font-size: 8px; padding: 1px 5px;
+      border: 1px solid #21262D; color: #484F58; background: #161B22; letter-spacing: 0.05em;
+    }
     .tab-btn.active .tab-badge { border-color: rgba(0,255,136,0.3); color: #00FF88; background: rgba(0,255,136,0.08); }
     .tab-btn.active.tab-tech .tab-badge { border-color: rgba(56,189,248,0.3); color: #38BDF8; background: rgba(56,189,248,0.08); }
+
     .tab-bar-right { margin-left: auto; display: flex; align-items: center; padding: 0 20px; gap: 16px; border-left: 1px solid #21262D; }
+
     .tab-panel { display: none; }
     .tab-panel.active { display: block; }
 
+    /* ── DXY Live Meter ────────────────────────────────── */
     .dxy-bar { background:#0D1117; border-bottom:1px solid #21262D; position:relative; overflow:hidden; }
-    .dxy-bar::after { content:''; position:absolute; top:0; left:-100%; width:60%; height:100%; background:linear-gradient(90deg,transparent,rgba(255,255,255,0.015),transparent); animation:dxySweep 4s ease-in-out infinite; pointer-events:none; }
+    .dxy-bar::after {
+      content:''; position:absolute; top:0; left:-100%; width:60%; height:100%;
+      background:linear-gradient(90deg,transparent,rgba(255,255,255,0.015),transparent);
+      animation:dxySweep 4s ease-in-out infinite; pointer-events:none;
+    }
     @keyframes dxySweep { 0%{left:-60%;} 100%{left:160%;} }
-    .dxy-price-pill { display:inline-flex; align-items:center; gap:6px; padding:2px 10px 2px 8px; border:1px solid; border-radius:2px; font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:700; letter-spacing:0.04em; transition:all 0.4s ease; }
+
+    .dxy-price-pill {
+      display:inline-flex; align-items:center; gap:6px; padding:2px 10px 2px 8px; border:1px solid; border-radius:2px;
+      font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:700; letter-spacing:0.04em; transition:all 0.4s ease;
+    }
     .dxy-price-pill.bullish { color:#FF3B3B; border-color:rgba(255,59,59,0.35); background:rgba(255,59,59,0.07); box-shadow:0 0 12px rgba(255,59,59,0.1); }
     .dxy-price-pill.bearish { color:#00FF88; border-color:rgba(0,255,136,0.35); background:rgba(0,255,136,0.07); box-shadow:0 0 12px rgba(0,255,136,0.1); }
     .dxy-price-pill.neutral { color:#F0B429; border-color:rgba(240,180,41,0.35); background:rgba(240,180,41,0.07); }
 
+    /* ── Technical Signal Panel ────────────────────────── */
     .tech-panel { background: #0D1117; border: 1px solid #21262D; position: relative; overflow: hidden; }
     .tech-panel::before, .tech-panel::after { content: ''; position: absolute; width: 14px; height: 14px; border-color: #21262D; border-style: solid; pointer-events: none; }
     .tech-panel::before { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
     .tech-panel::after  { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
+
     .position-badge { font-family: 'IBM Plex Mono', monospace; font-size: clamp(22px, 3vw, 32px); font-weight: 700; letter-spacing: 0.08em; line-height: 1; }
     .position-badge.buy      { color: #00FF88; text-shadow: 0 0 30px rgba(0,255,136,0.4); }
     .position-badge.sell     { color: #FF3B3B; text-shadow: 0 0 30px rgba(255,59,59,0.4); }
     .position-badge.scalping { color: #F0B429; text-shadow: 0 0 30px rgba(240,180,41,0.4); }
     .position-badge.neutral  { color: #484F58; }
+
     .price-cell { background: #161B22; border: 1px solid #21262D; padding: 10px 14px; transition: border-color 0.2s ease; }
     .price-cell:hover { border-color: #484F58; }
+
     .reason-item { display: flex; align-items: flex-start; gap: 10px; padding: 7px 0; border-bottom: 1px solid #161B22; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #8B949E; line-height: 1.5; transition: color 0.15s ease; }
     .reason-item:last-child { border-bottom: none; }
     .reason-item:hover { color: #E6EDF3; }
@@ -85,6 +159,7 @@
     .chart-wrapper iframe { display: block; width: 100%; height: 520px; border: none; }
     @media (min-height: 900px) { .chart-wrapper iframe { height: 600px; } }
 
+    /* ── Misc / Shared ─────────────────────────────────── */
     @keyframes ticker     { 0%{transform:translateX(0);} 100%{transform:translateX(-50%);} }
     @keyframes blink      { 0%,100%{opacity:1;} 50%{opacity:0;} }
     @keyframes spin       { to{transform:rotate(360deg);} }
@@ -164,7 +239,10 @@
   <header class="border-b border-[#21262D] px-6 py-4">
     <div class="max-w-[1400px] mx-auto flex items-center justify-between gap-4 flex-wrap">
       <div class="flex items-center gap-4">
-        <img src="logo.png" alt="Terminal Logo" class="w-9 h-9 object-contain" style="filter: drop-shadow(0 0 8px #00ffcc) brightness(1.2); border-radius: 4px;">
+        <div class="w-9 h-9 border border-[#00FF88] flex items-center justify-center relative">
+          <div class="w-2 h-2 bg-[#00FF88]"></div>
+          <div class="absolute inset-0 bg-[#00FF88] opacity-5"></div>
+        </div>
         
         <div>
           <div class="font-mono text-sm font-bold tracking-[0.15em] text-[#E6EDF3] uppercase">XAU/USD TERMINAL</div>
@@ -405,12 +483,37 @@
           </div>
           <span class="font-mono text-[9px] text-[#484F58]">XAU/USD</span>
         </div>
-        <div class="p-4 flex-1 flex flex-col items-center justify-center">
-            <img src="fed-chart.png" class="w-full rounded-md border border-[#333]" style="filter: drop-shadow(0 0 10px rgba(0,255,204,0.15)) brightness(1.1);" alt="FED Interest Rate Chart">
+        <div id="fedSignalBanner" class="px-4 py-4 border-b border-[#21262D]">
+          <div class="flex items-start justify-between gap-2 mb-3">
+            <div><div class="font-mono text-[9px] text-[#484F58] uppercase tracking-widest mb-1">Signal</div><div id="fedSignal" class="font-mono text-sm font-bold text-[#484F58] leading-snug">— AWAITING —</div></div>
+            <div class="text-right shrink-0"><div class="font-mono text-[9px] text-[#484F58] mb-1">Score</div><div id="fedScore" class="font-mono text-2xl font-bold text-[#484F58]">—</div></div>
+          </div>
+          <div class="score-track"><div id="fedBar" class="score-fill w-1/2 bg-[#484F58]"></div></div>
+          <div class="flex justify-between font-mono text-[8px] text-[#484F58] mt-1"><span>-100</span><span>Threshold ±20</span><span>+100</span></div>
+        </div>
+        <div class="divide-y divide-[#21262D] flex-1">
+          <div class="data-row px-4 py-3">
+            <div class="flex items-center justify-between mb-2"><div class="flex items-center gap-1.5"><div class="w-[3px] h-3.5 bg-[#484F58] rounded-full" id="fedRateBar"></div><span class="font-mono text-[10px] font-semibold text-[#8B949E] uppercase tracking-wider">Fed Interest Rate</span></div><div id="fedRatePoints" class="font-mono text-[10px] font-bold text-[#484F58]">±100</div></div>
+            <div class="bg-[#161B22] px-3 py-3 mb-2 flex items-center justify-between">
+              <div><div class="font-mono text-[8px] text-[#484F58] mb-1">CURRENT RATE</div><div id="fedRateDisplay" class="font-mono text-3xl font-bold text-[#484F58]">—%</div></div>
+              <div class="text-right"><div class="font-mono text-[8px] text-[#484F58] mb-1">PREV RATE</div><div id="fedPrevRate" class="font-mono text-lg font-bold text-[#484F58]">—%</div></div>
+            </div>
+            <div class="grid grid-cols-2 gap-1" id="fedRateRow">
+              <div class="bg-[#161B22] px-2 py-1.5"><div class="font-mono text-[8px] text-[#484F58] mb-0.5">CHANGE</div><div class="skeleton h-3 w-12"></div></div>
+              <div class="bg-[#161B22] px-2 py-1.5"><div class="font-mono text-[8px] text-[#484F58] mb-0.5">BIAS</div><div class="skeleton h-3 w-12"></div></div>
+            </div>
+            <div class="font-mono text-[8px] text-[#484F58] mt-1" id="fedRateDate"></div>
+          </div>
+          <div class="px-4 py-3">
+            <div class="font-mono text-[8px] text-[#484F58] uppercase tracking-widest mb-2">Rate Trend</div>
+            <div id="rateTrend" class="flex items-end gap-[3px] h-8"><div class="skeleton h-full w-full rounded-sm"></div></div>
+            <div class="flex justify-between font-mono text-[8px] text-[#484F58] mt-1"><span>Older</span><span>Current</span></div>
+          </div>
+          <div class="flex-1 px-4 py-3 opacity-0 select-none pointer-events-none" aria-hidden="true"><div class="h-3"></div></div>
         </div>
         <div class="px-4 py-2 bg-[#080B0F] border-t border-[#21262D] flex items-center justify-between mt-auto">
           <span class="font-mono text-[8px] text-[#484F58]">Higher rate → SELL XAU &nbsp;|&nbsp; Lower rate → BUY XAU</span>
-          <span class="font-mono text-[8px] text-[#484F58]">STATIC VISUAL</span>
+          <span class="font-mono text-[8px] text-[#484F58]">MAX ±100</span>
         </div>
       </div>
 
@@ -752,6 +855,11 @@
       el.innerHTML = [{l:labels[0],v:col1},{l:labels[1],v:col2},{l:labels[2],v:col3}]
         .map(({l,v})=>`<div class="bg-[#161B22] px-2 py-1.5"><div class="font-mono text-[8px] text-[#484F58] mb-0.5">${l}</div><div class="font-mono text-[10px] font-semibold text-[#E6EDF3] leading-tight">${v}</div></div>`).join('');
     }
+    function renderRow2(id, col1, col2, labels) {
+      const el = document.getElementById(id); if (!el) return;
+      el.innerHTML = [{l:labels[0],v:col1},{l:labels[1],v:col2}]
+        .map(({l,v})=>`<div class="bg-[#161B22] px-2 py-1.5"><div class="font-mono text-[8px] text-[#484F58] mb-0.5">${l}</div><div class="font-mono text-[10px] font-semibold text-[#E6EDF3] leading-tight">${v}</div></div>`).join('');
+    }
     function applyCardStyle(cardId, bannerId, type) {
       const card   = document.getElementById(cardId);
       const banner = document.getElementById(bannerId);
@@ -914,7 +1022,50 @@
 
     function renderFed(fed) {
       if (!fed) return 0;
-      return fed.score || 0;
+      const type  = classifyByScore(fed.score);
+      const color = signalColor(type);
+      setEl('fedSignal',fed.signal,color);
+      setEl('fedScore',fmtScore(fed.score),color);
+      applyCardStyle('fedCard','fedSignalBanner',type);
+      updateScoreBar('fedBar',fed.score,type);
+      const comp = fed.components||{};
+      const rate = comp.fed||comp.fed_rate||comp.fedRate||comp.interest_rate||{};
+      
+      const actualStr = rate.actual != null ? parseFloat(rate.actual).toFixed(2)+'%' : rate.current != null ? parseFloat(rate.current).toFixed(2)+'%' : '—%';
+      const estimateStr = rate.estimate != null ? parseFloat(rate.estimate).toFixed(2)+'%' : rate.previous != null ? parseFloat(rate.previous).toFixed(2)+'%' : '—%';
+
+      setEl('fedRateDisplay', actualStr, color);
+      setEl('fedPrevRate', estimateStr);
+      setAccentBar('fedRateBar',rate.points||0);
+      setEl('fedRatePoints',fmtPoints(rate.points||0),(rate.points||0)>0?'#00FF88':(rate.points||0)<0?'#FF3B3B':'#484F58');
+      
+      let changeVal = null;
+      if (rate.actual != null && rate.estimate != null) changeVal = rate.actual - rate.estimate;
+      else if (rate.current != null && rate.previous != null) changeVal = rate.current - rate.previous;
+
+      const changeStr = changeVal != null ? (changeVal>0?'+':'')+parseFloat(changeVal).toFixed(2)+'%' : rate.change != null ? (rate.change>0?'+':'')+parseFloat(rate.change).toFixed(2)+'bps' : 'N/A';
+      renderRow2('fedRateRow', changeStr, rate.status||rate.bias||'N/A', ['CHANGE','BIAS']);
+      setEl('fedRateDate',rate.date?'Date: '+rate.date:'');
+      renderRateTrend(rate);
+      return fed.score;
+    }
+
+    function renderRateTrend(rate) {
+      const el = document.getElementById('rateTrend'); if (!el) return;
+      const history = rate.history||rate.trend||null;
+      let bars;
+      if (history&&Array.isArray(history)&&history.length>0) { bars=history.slice(-8); }
+      else { 
+        const cur = parseFloat(rate.actual || rate.current) || 5.25; 
+        const prev = parseFloat(rate.estimate || rate.previous) || 5.50; 
+        bars=[prev-0.25,prev-0.25,prev,prev,prev,cur]; 
+      }
+      const minV=Math.min(...bars)-0.25, maxV=Math.max(...bars)+0.25, range=maxV-minV||1;
+      el.innerHTML = bars.map((v,i)=>{
+        const h=Math.max(10,((v-minV)/range)*100), last=i===bars.length-1;
+        const bg=last?signalColor(classifyByScore(rate.points||0)):'#21262D';
+        return `<div class="flex-1 rounded-sm transition-all duration-500" style="height:${h}%;background:${bg};${last?`box-shadow:0 0 6px ${bg}66`:''}"></div>`;
+      }).join('');
     }
 
     function renderMaster(scores) {
