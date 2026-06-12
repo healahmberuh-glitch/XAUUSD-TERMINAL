@@ -723,6 +723,15 @@
     const CARD_THRESHOLD   = 20;
     const MASTER_THRESHOLD = 40;
 
+    // ─── TELEGRAM ALERT STATE ───
+    function sendTelegramAlertFrontend(action, signalData) {
+      fetch('/api/predict', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: action, data: signalData })
+      }).catch(e => console.error("Alert err:", e));
+    }
+
     // ─── TAB SYSTEM ─────────────────────────────────────────────────
     function switchTab(tab) {
       document.getElementById('panelMacro').classList.toggle('active', tab === 'macro');
