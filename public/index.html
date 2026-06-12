@@ -73,7 +73,6 @@
     .dxy-price-pill.bullish { color:#FF3B3B; border-color:rgba(255,59,59,0.35); background:rgba(255,59,59,0.07); box-shadow:0 0 12px rgba(255,59,59,0.1); }
     .dxy-price-pill.bearish { color:#00FF88; border-color:rgba(0,255,136,0.35); background:rgba(0,255,136,0.07); box-shadow:0 0 12px rgba(0,255,136,0.1); }
     .dxy-price-pill.neutral { color:#F0B429; border-color:rgba(240,180,41,0.35); background:rgba(240,180,41,0.07); }
-    /* ── Signal Panels ── */
     .signal-panel { background:#0D1117; border:1px solid #21262D; position:relative; overflow:hidden; }
     .signal-panel::before,.signal-panel::after { content:''; position:absolute; width:14px; height:14px; border-style:solid; pointer-events:none; }
     .swing-panel::before { top:-1px; left:-1px; border-width:2px 0 0 2px; border-color:#F0B429; }
@@ -133,7 +132,6 @@
 
 <body class="min-h-screen text-[#E6EDF3] grid-bg">
 
-  <!-- Scrolling Ticker -->
   <div class="overflow-hidden bg-[#0D1117] border-b border-[#21262D] h-8 flex items-center">
     <div class="ticker-inner font-mono text-xs text-[#484F58]">
       <span class="px-8">DEPRESSEDESIGN TRADING STATION &nbsp;·&nbsp; XAU/USD · DUAL SIGNAL ENGINE &nbsp;·&nbsp; SWING H4/H1 &nbsp;·&nbsp; SCALP M5 &nbsp;·&nbsp; NFP &nbsp;·&nbsp; CPI &nbsp;·&nbsp; GDP &nbsp;·&nbsp; FED RATE &nbsp;·&nbsp; ADP &nbsp;·&nbsp; JOLTS &nbsp;·&nbsp; ISM PMI &nbsp;·&nbsp; PPI &nbsp;·&nbsp; WTI CRUDE &nbsp;·&nbsp; NOT FINANCIAL ADVICE &nbsp;·&nbsp;</span>
@@ -141,7 +139,6 @@
     </div>
   </div>
 
-  <!-- DXY Live Meter -->
   <div class="dxy-bar px-6 py-2">
     <div class="max-w-[1400px] mx-auto flex items-center justify-between gap-4 flex-wrap">
       <div class="flex items-center gap-3">
@@ -183,7 +180,6 @@
     </div>
   </div>
 
-  <!-- Header -->
   <header class="border-b border-[#21262D] px-6 py-4">
     <div class="max-w-[1400px] mx-auto flex items-center justify-between gap-4 flex-wrap">
       <div class="flex items-center gap-4">
@@ -212,7 +208,6 @@
     </div>
   </header>
 
-  <!-- Tab Bar -->
   <div class="tab-bar">
     <button class="tab-btn active" id="tabBtnMacro" onclick="switchTab('macro')">
       <span class="tab-icon text-base leading-none">🦅</span>
@@ -232,14 +227,12 @@
     </div>
   </div>
 
-  <!-- ══ TAB 1 — MACRO ══════════════════════════════════════════════ -->
   <div id="panelMacro" class="tab-panel active">
     <div class="max-w-[1400px] mx-auto px-6 pt-8 pb-4">
       <h1 class="font-mono text-2xl md:text-3xl font-bold tracking-tight text-[#E6EDF3] mb-1">MACRO SENTIMENT<span class="cursor text-[#00FF88]">_</span></h1>
       <p class="font-sans text-sm text-[#8B949E] max-w-2xl">4-predictor composite engine. Threshold ±20 per card. Master signal fires at ±40 composite. Directional bias for XAU/USD.</p>
     </div>
 
-    <!-- Master Signal Banner -->
     <div class="max-w-[1400px] mx-auto px-6 pb-6">
       <div id="masterBanner" class="border border-[#21262D] bg-[#0D1117] p-5 relative overflow-hidden">
         <div class="absolute inset-0 flex items-center justify-end pr-6 pointer-events-none select-none">
@@ -277,9 +270,7 @@
       </div>
     </div>
 
-    <!-- 4-Card Grid -->
     <main class="max-w-[1400px] mx-auto px-6 pb-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-      <!-- ① NFP -->
       <div id="nfpCard" class="macro-card bg-[#0D1117] border border-[#21262D] flex flex-col">
         <div class="flex items-center justify-between px-4 py-3 border-b border-[#21262D]">
           <div class="flex items-center gap-2"><span class="font-mono text-[9px] tracking-[0.2em] text-[#484F58]">01</span><div><div class="font-mono text-xs font-bold text-[#E6EDF3] tracking-wide">NFP PREDICTOR</div><div class="font-mono text-[9px] text-[#484F58]">Nonfarm Payrolls</div></div></div>
@@ -313,7 +304,6 @@
         <div class="px-4 py-2 bg-[#080B0F] border-t border-[#21262D] flex items-center justify-between"><span class="font-mono text-[8px] text-[#484F58]">≥+20 SELL XAU &nbsp;|&nbsp; ≤−20 BUY XAU</span><span class="font-mono text-[8px] text-[#484F58]">MAX ±100</span></div>
       </div>
 
-      <!-- ② CPI -->
       <div id="cpiCard" class="macro-card bg-[#0D1117] border border-[#21262D] flex flex-col">
         <div class="flex items-center justify-between px-4 py-3 border-b border-[#21262D]">
           <div class="flex items-center gap-2"><span class="font-mono text-[9px] tracking-[0.2em] text-[#484F58]">02</span><div><div class="font-mono text-xs font-bold text-[#E6EDF3] tracking-wide">CPI PREDICTOR</div><div class="font-mono text-[9px] text-[#484F58]">Inflation Pressure</div></div></div>
@@ -341,7 +331,6 @@
         <div class="px-4 py-2 bg-[#080B0F] border-t border-[#21262D] flex items-center justify-between"><span class="font-mono text-[8px] text-[#484F58]">≥+20 SELL XAU &nbsp;|&nbsp; ≤−20 BUY XAU</span><span class="font-mono text-[8px] text-[#484F58]">MAX ±100</span></div>
       </div>
 
-      <!-- ③ GROWTH -->
       <div id="growthCard" class="macro-card bg-[#0D1117] border border-[#21262D] flex flex-col">
         <div class="flex items-center justify-between px-4 py-3 border-b border-[#21262D]">
           <div class="flex items-center gap-2"><span class="font-mono text-[9px] tracking-[0.2em] text-[#484F58]">03</span><div><div class="font-mono text-xs font-bold text-[#E6EDF3] tracking-wide">GROWTH PREDICTOR</div><div class="font-mono text-[9px] text-[#484F58]">GDP &amp; Retail Sales</div></div></div>
@@ -370,7 +359,6 @@
         <div class="px-4 py-2 bg-[#080B0F] border-t border-[#21262D] flex items-center justify-between"><span class="font-mono text-[8px] text-[#484F58]">≥+20 SELL XAU &nbsp;|&nbsp; ≤−20 BUY XAU</span><span class="font-mono text-[8px] text-[#484F58]">MAX ±100</span></div>
       </div>
 
-      <!-- ④ FED -->
       <div id="fedCard" class="macro-card bg-[#0D1117] border border-[#21262D] flex flex-col">
         <div class="flex items-center justify-between px-4 py-3 border-b border-[#21262D]">
           <div class="flex items-center gap-2"><span class="font-mono text-[9px] tracking-[0.2em] text-[#484F58]">04</span><div><div class="font-mono text-xs font-bold text-[#E6EDF3] tracking-wide">FED PREDICTOR</div><div class="font-mono text-[9px] text-[#484F58]">Interest Rate Bias</div></div></div>
@@ -404,7 +392,6 @@
       </div>
     </main>
 
-    <!-- USD News Radar -->
     <div class="max-w-[1400px] mx-auto px-6 pb-8">
       <div class="border border-[#21262D] bg-[#0D1117]">
         <div class="flex items-center justify-between px-5 py-3 border-b border-[#21262D] bg-[#080B0F]">
@@ -431,13 +418,8 @@
         </div>
       </div>
     </div>
-  </div><!-- /panelMacro -->
+  </div><div id="panelTech" class="tab-panel">
 
-
-  <!-- ══ TAB 2 — LIVE TECHNICAL TERMINAL ══════════════════════════ -->
-  <div id="panelTech" class="tab-panel">
-
-    <!-- TradingView Chart -->
     <div class="max-w-[1400px] mx-auto px-6 pt-6 pb-4">
       <div class="flex items-center justify-between mb-3 flex-wrap gap-3">
         <div>
@@ -478,7 +460,6 @@
       </div>
     </div>
 
-    <!-- ══ DUAL SIGNAL PANELS ══ -->
     <div class="max-w-[1400px] mx-auto px-6 pb-4">
       <div class="flex items-center gap-4 mb-4">
         <div class="font-mono text-[9px] text-[#484F58] tracking-[0.3em] uppercase">◈ Dual Signal Engine</div>
@@ -493,9 +474,7 @@
 
       <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
 
-        <!-- ── SWING SIGNAL PANEL ── -->
         <div class="signal-panel swing-panel" id="swingPanel">
-          <!-- Header -->
           <div class="flex items-center justify-between px-5 py-3 border-b border-[#21262D] bg-[#080B0F]">
             <div class="flex items-center gap-3">
               <div class="relative w-7 h-7 flex items-center justify-center shrink-0">
@@ -514,7 +493,6 @@
             </div>
           </div>
 
-          <!-- H4 Bias Bar -->
           <div class="px-5 py-2 border-b border-[#21262D] flex items-center justify-between bg-[#0D1117]">
             <div class="flex items-center gap-3">
               <span class="font-mono text-[8px] text-[#484F58] tracking-widest uppercase">H4 Bias</span>
@@ -529,15 +507,12 @@
             </div>
           </div>
 
-          <!-- Awaiting -->
           <div id="swingAwaiting" class="px-5 py-10 flex flex-col items-center gap-3 text-center">
             <div class="flex items-center gap-2"><div class="skeleton w-2 h-2 rounded-full"></div><div class="skeleton w-2 h-2 rounded-full"></div><div class="skeleton w-2 h-2 rounded-full"></div></div>
             <div class="font-mono text-[10px] text-[#484F58] tracking-widest uppercase">Awaiting swing data<span class="cursor">_</span></div>
           </div>
 
-          <!-- Content -->
           <div id="swingContent" class="hidden">
-            <!-- Position + Price Grid -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-px border-b border-[#21262D]" style="background:#21262D;">
               <div class="bg-[#080B0F] px-5 py-5 flex flex-col gap-2">
                 <div class="font-mono text-[8px] text-[#484F58] tracking-[0.25em] uppercase">Position Signal</div>
@@ -546,7 +521,6 @@
                   <div class="w-2 h-2 rounded-full bg-[#484F58]" id="swingPosDot"></div>
                   <span class="font-mono text-[8px] text-[#484F58]" id="swingPosSub">No active signal</span>
                 </div>
-                <!-- Confluence progress bar -->
                 <div class="mt-2">
                   <div class="flex justify-between font-mono text-[8px] text-[#484F58] mb-1"><span>Confluence</span><span id="swingConfLabel">0/5</span></div>
                   <div class="conf-track"><div id="swingConfBar" class="conf-fill bg-[#484F58]" style="width:0%"></div></div>
@@ -573,13 +547,11 @@
                 </div>
               </div>
             </div>
-            <!-- Zones Info -->
             <div class="px-5 py-2 border-b border-[#21262D] bg-[#0D1117] flex flex-wrap gap-4">
               <div class="flex items-center gap-2"><span class="font-mono text-[8px] text-[#484F58]">H1 Demand:</span><span class="font-mono text-[8px] font-bold text-[#00FF88]" id="swingDemandZone">—</span></div>
               <div class="flex items-center gap-2"><span class="font-mono text-[8px] text-[#484F58]">H1 Supply:</span><span class="font-mono text-[8px] font-bold text-[#FF3B3B]" id="swingSupplyZone">—</span></div>
               <div class="flex items-center gap-2"><span class="font-mono text-[8px] text-[#484F58]">H1 RSI:</span><span class="font-mono text-[8px] font-bold text-[#F0B429]" id="swingRsi">—</span></div>
             </div>
-            <!-- Reasoning -->
             <div class="px-5 py-4">
               <div class="flex items-center gap-3 mb-3">
                 <div class="font-mono text-[8px] text-[#484F58] tracking-[0.3em] uppercase">Analysis</div>
@@ -593,11 +565,7 @@
               <span class="font-mono text-[8px] text-[#FF3B3B] opacity-60">NOT FINANCIAL ADVICE</span>
             </div>
           </div>
-        </div><!-- /swingPanel -->
-
-        <!-- ── SCALP SIGNAL PANEL ── -->
-        <div class="signal-panel scalp-panel" id="scalpPanel">
-          <!-- Header -->
+        </div><div class="signal-panel scalp-panel" id="scalpPanel">
           <div class="flex items-center justify-between px-5 py-3 border-b border-[#21262D] bg-[#080B0F]">
             <div class="flex items-center gap-3">
               <div class="relative w-7 h-7 flex items-center justify-center shrink-0">
@@ -616,7 +584,6 @@
             </div>
           </div>
 
-          <!-- Gate Status Bar -->
           <div class="px-5 py-2 border-b border-[#21262D] flex items-center justify-between bg-[#0D1117]">
             <div class="flex items-center gap-3">
               <span class="font-mono text-[8px] text-[#484F58] tracking-widest uppercase">Swing Gate</span>
@@ -631,15 +598,12 @@
             </div>
           </div>
 
-          <!-- Awaiting -->
           <div id="scalpAwaiting" class="px-5 py-10 flex flex-col items-center gap-3 text-center">
             <div class="flex items-center gap-2"><div class="skeleton w-2 h-2 rounded-full"></div><div class="skeleton w-2 h-2 rounded-full"></div><div class="skeleton w-2 h-2 rounded-full"></div></div>
             <div class="font-mono text-[10px] text-[#484F58] tracking-widest uppercase">Awaiting scalp data<span class="cursor">_</span></div>
           </div>
 
-          <!-- Content -->
           <div id="scalpContent" class="hidden">
-            <!-- Position + Price Grid -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-px border-b border-[#21262D]" style="background:#21262D;">
               <div class="bg-[#080B0F] px-5 py-5 flex flex-col gap-2">
                 <div class="font-mono text-[8px] text-[#484F58] tracking-[0.25em] uppercase">Position Signal</div>
@@ -648,7 +612,6 @@
                   <div class="w-2 h-2 rounded-full bg-[#484F58]" id="scalpPosDot"></div>
                   <span class="font-mono text-[8px] text-[#484F58]" id="scalpPosSub">No active signal</span>
                 </div>
-                <!-- Confluence progress bar -->
                 <div class="mt-2">
                   <div class="flex justify-between font-mono text-[8px] text-[#484F58] mb-1"><span>Confluence</span><span id="scalpConfLabel">0/5</span></div>
                   <div class="conf-track"><div id="scalpConfBar" class="conf-fill bg-[#484F58]" style="width:0%"></div></div>
@@ -675,13 +638,11 @@
                 </div>
               </div>
             </div>
-            <!-- M5 Stats -->
             <div class="px-5 py-2 border-b border-[#21262D] bg-[#0D1117] flex flex-wrap gap-4">
               <div class="flex items-center gap-2"><span class="font-mono text-[8px] text-[#484F58]">M5 RSI:</span><span class="font-mono text-[8px] font-bold text-[#38BDF8]" id="scalpRsi">—</span></div>
               <div class="flex items-center gap-2"><span class="font-mono text-[8px] text-[#484F58]">M5 ATR:</span><span class="font-mono text-[8px] font-bold text-[#38BDF8]" id="scalpAtr">—</span></div>
               <div class="flex items-center gap-2"><span class="font-mono text-[8px] text-[#484F58]">Vol Threshold:</span><span class="font-mono text-[8px] font-bold text-[#F0B429]" id="scalpVolMult">—×</span></div>
             </div>
-            <!-- Reasoning -->
             <div class="px-5 py-4">
               <div class="flex items-center gap-3 mb-3">
                 <div class="font-mono text-[8px] text-[#484F58] tracking-[0.3em] uppercase">Analysis</div>
@@ -695,22 +656,13 @@
               <span class="font-mono text-[8px] text-[#FF3B3B] opacity-60">NOT FINANCIAL ADVICE</span>
             </div>
           </div>
-        </div><!-- /scalpPanel -->
-
-      </div><!-- /dual grid -->
-    </div><!-- /max-w -->
-
-  </div><!-- /panelTech -->
-
-  <!-- Footer -->
-  <footer class="border-t border-[#21262D] px-6 py-4">
+        </div></div></div></div><footer class="border-t border-[#21262D] px-6 py-4">
     <div class="max-w-[1400px] mx-auto flex flex-col md:flex-row items-center justify-between gap-2">
       <span class="font-mono text-[10px] text-[#484F58] tracking-widest uppercase">Dual Signal Engine v5.0 by Han — For research only. Not financial advice.</span>
       <span class="font-mono text-[10px] text-[#484F58]">Data: Yahoo Finance + TradingView &nbsp;·&nbsp; Swing H4/H1 · Scalp M5 &nbsp;·&nbsp; Macro ±20/±40 thresholds</span>
     </div>
   </footer>
 
-  <!-- Error Toast -->
   <div id="errorToast" class="fixed bottom-6 right-6 hidden border border-[#FF3B3B] bg-[#0D1117] px-4 py-3 max-w-sm z-50 shadow-lg">
     <div class="flex items-start gap-2">
       <span class="text-[#FF3B3B] font-mono text-xs mt-0.5">✕</span>
@@ -718,10 +670,18 @@
     </div>
   </div>
 
-  <!-- ══ JAVASCRIPT ══════════════════════════════════════════════════ -->
   <script>
     const CARD_THRESHOLD   = 20;
     const MASTER_THRESHOLD = 40;
+
+    // ─── TELEGRAM ALERT STATE (Stored in LocalStorage to prevent refresh spam) ───
+    function sendTelegramAlertFrontend(action, signalData) {
+      fetch('/api/predict', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: action, data: signalData })
+      }).catch(e => console.error("Alert err:", e));
+    }
 
     // ─── TAB SYSTEM ─────────────────────────────────────────────────
     function switchTab(tab) {
@@ -751,7 +711,7 @@
     function fmtScore(s)     { return (s>0?'+':'')+s; }
     function fmtPrice(v)     { return (v!=null&&!isNaN(parseFloat(v)))?parseFloat(v).toFixed(2):'—'; }
     function setEl(id,text,color) { const e=document.getElementById(id); if(!e)return; if(text!==undefined)e.textContent=text; if(color)e.style.color=color; }
-    function setAccentBar(id,pts) { const e=document.getElementById(id); if(!e)return; const c=pts>0?'#00FF88':pts<0?'#FF3B3B':'#484F58'; e.style.background=c; e.style.boxShadow=pts!==0?`0 0 6px ${c}99`:'none'; }
+    function setAccentBar(id,pts) { const e=document.getElementById(id); if(!e)return; const c=pts>0:'#00FF88':pts<0?'#FF3B3B':'#484F58'; e.style.background=c; e.style.boxShadow=pts!==0?`0 0 6px ${c}99`:'none'; }
     function updateScoreBar(id,score,type,maxAbs=100) { const b=document.getElementById(id); if(!b)return; const pct=((score+maxAbs)/(2*maxAbs))*100; const c=signalColor(type); b.style.width=Math.max(0,Math.min(100,pct))+'%'; b.style.background=c; b.style.boxShadow=`0 0 8px ${c}66`; }
     function renderRow3(id,c1,c2,c3,labels) { const e=document.getElementById(id); if(!e)return; e.innerHTML=[{l:labels[0],v:c1},{l:labels[1],v:c2},{l:labels[2],v:c3}].map(({l,v})=>`<div class="bg-[#161B22] px-2 py-1.5"><div class="font-mono text-[8px] text-[#484F58] mb-0.5">${l}</div><div class="font-mono text-[10px] font-semibold text-[#E6EDF3] leading-tight">${v}</div></div>`).join(''); }
     function renderRow2(id,c1,c2,labels) { const e=document.getElementById(id); if(!e)return; e.innerHTML=[{l:labels[0],v:c1},{l:labels[1],v:c2}].map(({l,v})=>`<div class="bg-[#161B22] px-2 py-1.5"><div class="font-mono text-[8px] text-[#484F58] mb-0.5">${l}</div><div class="font-mono text-[10px] font-semibold text-[#E6EDF3] leading-tight">${v}</div></div>`).join(''); }
@@ -1085,6 +1045,35 @@
         // Dual signal rendering
         renderSwing(data.swing_signal || null);
         renderScalp(data.scalp_signal || null);
+
+        // ─── FRONTEND ALERT TRIGGER LOGIC ───
+        if (data.swing_signal) {
+          const swing = data.swing_signal;
+          const isActive = swing.position.includes("ACTIVE");
+          const currentId = swing.position + "_" + swing.entry;
+          const lastId = localStorage.getItem("lastSwingId");
+
+          if (isActive && currentId !== lastId) {
+            sendTelegramAlertFrontend("send_swing_alert", swing);
+            localStorage.setItem("lastSwingId", currentId);
+          } else if (!isActive) {
+            localStorage.removeItem("lastSwingId"); // Reset saat sinyal tidak valid/berubah ke PENDING
+          }
+        }
+
+        if (data.scalp_signal) {
+          const scalp = data.scalp_signal;
+          const isActive = scalp.position.includes("ACTIVE");
+          const currentId = scalp.position + "_" + scalp.entry;
+          const lastId = localStorage.getItem("lastScalpId");
+
+          if (isActive && currentId !== lastId) {
+            sendTelegramAlertFrontend("send_scalp_alert", scalp);
+            localStorage.setItem("lastScalpId", currentId);
+          } else if (!isActive) {
+            localStorage.removeItem("lastScalpId");
+          }
+        }
 
         const ts=new Date(data.timestamp);
         status.textContent='UPDATED '+ts.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
