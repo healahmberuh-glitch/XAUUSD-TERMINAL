@@ -30,7 +30,6 @@ async function sendTelegramAlert(masterSignal, totalScore, dxy, nfp, cpi, growth
   } catch (err) {}
 }
 
-// NEW: Swing Signal Alert
 async function sendSwingSignalTelegram(swing) {
   try {
     const icon    = swing.position.includes("BUY") ? "🟢" : "🔴";
@@ -41,7 +40,6 @@ async function sendSwingSignalTelegram(swing) {
   } catch (err) {}
 }
 
-// NEW: Scalp Signal Alert
 async function sendScalpSignalTelegram(scalp) {
   try {
     const icon    = scalp.position.includes("BUY") ? "🟢" : "🔴";
@@ -161,7 +159,6 @@ function findSwingHighsLows(highs, lows, leftBars = 5, rightBars = 5) {
   return { swingHighs, swingLows };
 }
 
-// NEW: Displacement-based ChoCH (body must close beyond prev candle range)
 function isDisplacementChoCH(o, h, l, c, direction) {
   const len = c.length;
   if (len < 3) return false;
@@ -170,18 +167,14 @@ function isDisplacementChoCH(o, h, l, c, direction) {
   const bodySize     = Math.abs(curr.c - curr.o);
   const candleRange  = curr.h - curr.l;
   const bodyRatio    = candleRange > 0 ? bodySize / candleRange : 0;
-  // Body must be at least 55% of candle range (no wick-dominated candles)
   if (bodyRatio < 0.55) return false;
   if (direction === 'buy') {
-    // Bullish displacement: close above prev candle HIGH (not just prev close)
     return curr.c > prev.h && curr.c > curr.o;
   } else {
-    // Bearish displacement: close below prev candle LOW
     return curr.c < prev.l && curr.c < curr.o;
   }
 }
 
-// NEW: RSI Hook with 5-candle lookback + 2 consecutive ticks
 function isRsiHook(rsiArr, direction) {
   if (rsiArr.length < 6) return false;
   const recent5 = rsiArr.slice(-5);
@@ -199,12 +192,11 @@ function isRsiHook(rsiArr, direction) {
   }
 }
 
-// NEW: Session-aware volume multiplier
 function getVolumeMultiplier(sessionName) {
   if (sessionName.includes("ASIAN"))  return 1.3;
   if (sessionName.includes("LONDON")) return 2.0;
   if (sessionName.includes("NEW YORK")) return 2.0;
-  return 1.5; // Late NY
+  return 1.5; 
 }
 
 function getSession() {
@@ -235,14 +227,12 @@ async function fetchChartData(interval, range) {
 // ─── SWING SIGNAL ENGINE (H4 Bias + H1 Structure) ────────────────────────────
 async function calculateSwingSignal(h4, h1, sessionName) {
   try {
-    // ── LAYER 1: H4 TREND BIAS ──────────────────────────────────────────────
     const h4Ema21 = calculateEMA(h4.c, 21);
     const h4Ema50 = calculateEMA(h4.c, 50);
     const h4Last  = h4.c[h4.c.length - 1];
     const h4E21   = h4Ema21[h4Ema21.length - 1];
     const h4E50   = h4Ema50[h4Ema50.length - 1];
 
-    // Neutral zone: EMAs within 0.3% of each other
     const emaDiffPct = Math.abs(h4E21 - h4E50) / h4E50 * 100;
     let h4Bias = "NEUTRAL";
     if (emaDiffPct >= 0.3) {
@@ -252,71 +242,47 @@ async function calculateSwingSignal(h4, h1, sessionName) {
       else h4Bias = "BEARISH_WEAK";
     }
 
-    // No trade on neutral H4
     if (h4Bias === "NEUTRAL") {
       return {
-        position: "WAIT & SEE / NEUTRAL H4",
-        h4Bias: "NEUTRAL",
-        entry: "0.00", sl: "0.00", tp1: "0.00", tp2: "0.00",
-        tp1Pips: "0", tp2Pips: "0",
-        confluenceScore: 0,
+        position: "WAIT & SEE / NEUTRAL H4", h4Bias: "NEUTRAL",
+        entry: "0.00", sl: "0.00", tp1: "0.00", tp2: "0.00", tp1Pips: "0", tp2Pips: "0", confluenceScore: 0,
         reason: ["H4 EMA21 dan EMA50 terlalu dekat — tidak ada bias directional yang jelas. Tidak ada swing trade."],
         session: sessionName
       };
     }
 
-    // ── LAYER 2: H1 STRUCTURE & KEY LEVELS ──────────────────────────────────
     const h1Swings  = findSwingHighsLows(h1.h, h1.l, 5, 5);
     const h1Atr     = calculateATR(h1.h, h1.l, h1.c, 14);
     const currentPrice = h1.current;
 
-    // Last significant swing levels
-    const lastSwingHigh = h1Swings.swingHighs.length > 0
-      ? h1Swings.swingHighs[h1Swings.swingHighs.length - 1].val : h1.h[h1.h.length - 3];
-    const lastSwingLow  = h1Swings.swingLows.length > 0
-      ? h1Swings.swingLows[h1Swings.swingLows.length - 1].val  : h1.l[h1.l.length - 3];
+    const lastSwingHigh = h1Swings.swingHighs.length > 0 ? h1Swings.swingHighs[h1Swings.swingHighs.length - 1].val : h1.h[h1.h.length - 3];
+    const lastSwingLow  = h1Swings.swingLows.length > 0 ? h1Swings.swingLows[h1Swings.swingLows.length - 1].val  : h1.l[h1.l.length - 3];
 
-    // H1 Demand Zone (for BUY): area around last swing low
     const demandZoneTop = lastSwingLow + (h1Atr * 0.5);
     const demandZoneBtm = lastSwingLow - (h1Atr * 0.3);
-
-    // H1 Supply Zone (for SELL): area around last swing high
     const supplyZoneBtm = lastSwingHigh - (h1Atr * 0.5);
     const supplyZoneTop = lastSwingHigh + (h1Atr * 0.3);
 
-    // H1 Volume confirmation
     const h1VolEma = calculateEMA(h1.v, 20);
     const h1AvgVol = h1VolEma[h1VolEma.length - 1];
     const h1RecentVol = h1.v[h1.v.length - 1];
     const h1VolSpike  = h1RecentVol > (h1AvgVol * 1.5);
 
-    // H1 RSI for state check
     const h1RsiArr = calculateRSI(h1.c, 14, true);
     const h1Rsi    = h1RsiArr[h1RsiArr.length - 1];
 
-    // ── CONFLUENCE SCORING (0–5) ─────────────────────────────────────────────
     let score = 0;
-    const confluence = {
-      h4Trend: false, zoneTouch: false,
-      structureAlign: false, volume: false, rsiState: false
-    };
+    const confluence = { h4Trend: false, zoneTouch: false, structureAlign: false, volume: false, rsiState: false };
 
-    // +1: H4 Trend (strong bias scores, weak bias still counts)
     if (h4Bias === "BULLISH" || h4Bias === "BEARISH") { score++; confluence.h4Trend = true; }
     else if (h4Bias === "BULLISH_WEAK" || h4Bias === "BEARISH_WEAK") { score += 0.5; }
 
     const isBullishBias = h4Bias.includes("BULLISH");
     const isBearishBias = h4Bias.includes("BEARISH");
 
-    // +1: Zone Touch — price within H1 Demand/Supply zone
-    if (isBullishBias && currentPrice >= demandZoneBtm && currentPrice <= demandZoneTop + h1Atr) {
-      score++; confluence.zoneTouch = true;
-    }
-    if (isBearishBias && currentPrice >= supplyZoneBtm - h1Atr && currentPrice <= supplyZoneTop) {
-      score++; confluence.zoneTouch = true;
-    }
+    if (isBullishBias && currentPrice >= demandZoneBtm && currentPrice <= demandZoneTop + h1Atr) { score++; confluence.zoneTouch = true; }
+    if (isBearishBias && currentPrice >= supplyZoneBtm - h1Atr && currentPrice <= supplyZoneTop) { score++; confluence.zoneTouch = true; }
 
-    // +1: Structure Alignment — H1 higher high/low for bull, lower high/low for bear
     if (h1Swings.swingHighs.length >= 2 && h1Swings.swingLows.length >= 2) {
       const sh = h1Swings.swingHighs, sl = h1Swings.swingLows;
       const isHH = sh[sh.length-1].val > sh[sh.length-2].val;
@@ -327,31 +293,23 @@ async function calculateSwingSignal(h4, h1, sessionName) {
       if (isBearishBias && isLH && isLL) { score++; confluence.structureAlign = true; }
     }
 
-    // +1: Volume spike on H1
     if (h1VolSpike) { score++; confluence.volume = true; }
-
-    // +1: RSI State (not extreme, has room to run)
     if (isBullishBias && h1Rsi >= 35 && h1Rsi <= 65) { score++; confluence.rsiState = true; }
     if (isBearishBias && h1Rsi >= 35 && h1Rsi <= 65) { score++; confluence.rsiState = true; }
 
     const finalScore = Math.round(score);
 
-    // ── SIGNAL DECISION ──────────────────────────────────────────────────────
     let position = "WAIT & SEE / NO SWING SETUP";
-    let entry = "0.00", sl = "0.00", tp1 = "0.00", tp2 = "0.00";
-    let tp1Pips = "0", tp2Pips = "0";
+    let entry = "0.00", sl = "0.00", tp1 = "0.00", tp2 = "0.00", tp1Pips = "0", tp2Pips = "0";
     let reasonArr = [];
 
     if (isBullishBias && confluence.zoneTouch && finalScore >= 3) {
       position = finalScore >= 4 ? "SWING BUY — ACTIVE SIGNAL" : "SWING BUY — PENDING (Low Confluence)";
       entry = currentPrice.toFixed(2);
-      // SL: below demand zone bottom with buffer
       sl    = (demandZoneBtm - h1Atr * 0.5).toFixed(2);
-      // TP1: 150 pips, TP2: 400 pips (dynamic ATR scaled)
       tp1   = (currentPrice + h1Atr * 3).toFixed(2);
       tp2   = (currentPrice + h1Atr * 7).toFixed(2);
-      tp1Pips = (h1Atr * 3).toFixed(0);
-      tp2Pips = (h1Atr * 7).toFixed(0);
+      tp1Pips = (h1Atr * 3).toFixed(0); tp2Pips = (h1Atr * 7).toFixed(0);
       reasonArr = [
         `H4 Bias: ${h4Bias} — EMA21 (${h4E21.toFixed(2)}) ${h4Bias.includes("BULLISH") ? ">" : "<"} EMA50 (${h4E50.toFixed(2)})`,
         `H1 Demand Zone: $${demandZoneBtm.toFixed(2)} – $${demandZoneTop.toFixed(2)} (Price di zona demand)`,
@@ -365,8 +323,7 @@ async function calculateSwingSignal(h4, h1, sessionName) {
       sl    = (supplyZoneTop + h1Atr * 0.5).toFixed(2);
       tp1   = (currentPrice - h1Atr * 3).toFixed(2);
       tp2   = (currentPrice - h1Atr * 7).toFixed(2);
-      tp1Pips = (h1Atr * 3).toFixed(0);
-      tp2Pips = (h1Atr * 7).toFixed(0);
+      tp1Pips = (h1Atr * 3).toFixed(0); tp2Pips = (h1Atr * 7).toFixed(0);
       reasonArr = [
         `H4 Bias: ${h4Bias} — EMA21 (${h4E21.toFixed(2)}) < EMA50 (${h4E50.toFixed(2)})`,
         `H1 Supply Zone: $${supplyZoneBtm.toFixed(2)} – $${supplyZoneTop.toFixed(2)} (Price di zona supply)`,
@@ -375,9 +332,7 @@ async function calculateSwingSignal(h4, h1, sessionName) {
         `RSI H1: ${h1Rsi.toFixed(1)} — ${confluence.rsiState ? "Valid range, ada ruang turun" : "Perlu perhatian"}`
       ];
     } else {
-      const waitFor = isBullishBias
-        ? `Menunggu pullback ke Demand Zone $${demandZoneBtm.toFixed(2)} – $${demandZoneTop.toFixed(2)}`
-        : `Menunggu pullback ke Supply Zone $${supplyZoneBtm.toFixed(2)} – $${supplyZoneTop.toFixed(2)}`;
+      const waitFor = isBullishBias ? `Menunggu pullback ke Demand Zone $${demandZoneBtm.toFixed(2)} – $${demandZoneTop.toFixed(2)}` : `Menunggu pullback ke Supply Zone $${supplyZoneBtm.toFixed(2)} – $${supplyZoneTop.toFixed(2)}`;
       reasonArr = [
         `H4 Bias: ${h4Bias} — Market direction sudah teridentifikasi`,
         waitFor,
@@ -386,26 +341,17 @@ async function calculateSwingSignal(h4, h1, sessionName) {
     }
 
     return {
-      position, h4Bias, entry, sl, tp1, tp2,
-      tp1Pips, tp2Pips,
-      confluenceScore: finalScore,
-      confluenceDetail: confluence,
-      reason: reasonArr,
-      session: sessionName,
+      position, h4Bias, entry, sl, tp1, tp2, tp1Pips, tp2Pips,
+      confluenceScore: finalScore, confluenceDetail: confluence, reason: reasonArr, session: sessionName,
       demandZone: { top: demandZoneTop.toFixed(2), btm: demandZoneBtm.toFixed(2) },
       supplyZone: { top: supplyZoneTop.toFixed(2), btm: supplyZoneBtm.toFixed(2) },
-      h1Rsi: h1Rsi.toFixed(1),
-      currentPrice: currentPrice.toFixed(2)
+      h1Rsi: h1Rsi.toFixed(1), currentPrice: currentPrice.toFixed(2)
     };
   } catch (err) {
     return {
-      position: "WAIT & SEE / DATA ERROR",
-      h4Bias: "UNKNOWN",
-      entry: "0.00", sl: "0.00", tp1: "0.00", tp2: "0.00",
-      tp1Pips: "0", tp2Pips: "0",
-      confluenceScore: 0,
-      reason: ["Error sinkronisasi data swing: " + err.message],
-      session: sessionName
+      position: "WAIT & SEE / DATA ERROR", h4Bias: "UNKNOWN",
+      entry: "0.00", sl: "0.00", tp1: "0.00", tp2: "0.00", tp1Pips: "0", tp2Pips: "0", confluenceScore: 0,
+      reason: ["Error sinkronisasi data swing: " + err.message], session: sessionName
     };
   }
 }
@@ -414,100 +360,69 @@ async function calculateSwingSignal(h4, h1, sessionName) {
 async function calculateScalpSignal(m5, swingSignal, sessionName) {
   try {
     const currentPrice = m5.current;
-
-    // ── GATE CHECK: Scalp only fires if Swing is active and directional ───────
     const swingIsBuy  = swingSignal.position.includes("BUY");
     const swingIsSell = swingSignal.position.includes("SELL");
     const swingActive = swingIsBuy || swingIsSell;
 
     if (!swingActive) {
       return {
-        position: "BLOCKED — Waiting for Swing Signal",
-        gatedBySwing: false,
-        swingBias: swingSignal.h4Bias || "NEUTRAL",
-        entry: "0.00", sl: "0.00", tp1: "0.00", tp2: "0.00",
-        tp1Pips: "0", tp2Pips: "0",
-        confluenceScore: 0,
+        position: "BLOCKED — Waiting for Swing Signal", gatedBySwing: false, swingBias: swingSignal.h4Bias || "NEUTRAL",
+        entry: "0.00", sl: "0.00", tp1: "0.00", tp2: "0.00", tp1Pips: "0", tp2Pips: "0", confluenceScore: 0,
         reason: ["Scalp signal diblok — Swing signal belum aktif. Scalp hanya fire saat Swing confirmed dan searah."],
         session: sessionName
       };
     }
 
-    // ── M5 INDICATORS ────────────────────────────────────────────────────────
     const m5Atr    = calculateATR(m5.h, m5.l, m5.c, 14);
     const m5RsiArr = calculateRSI(m5.c, 14, true);
     const m5Rsi    = m5RsiArr[m5RsiArr.length - 1];
 
-    // Session-aware volume threshold
     const volMultiplier = getVolumeMultiplier(sessionName);
     const m5VolEma  = calculateEMA(m5.v, 20);
     const m5AvgVol  = m5VolEma[m5VolEma.length - 1];
     const recentVols = m5.v.slice(-3);
     const hasVolSpike = recentVols.some(vol => vol > (m5AvgVol * volMultiplier));
 
-    // M5 Engulfing detection (proper displacement)
     const chochBuy  = isDisplacementChoCH(m5.o, m5.h, m5.l, m5.c, 'buy');
     const chochSell = isDisplacementChoCH(m5.o, m5.h, m5.l, m5.c, 'sell');
 
-    // RSI Hook (new 5-candle, 2-tick logic)
     const rsiHookBuy  = isRsiHook(m5RsiArr, 'buy');
     const rsiHookSell = isRsiHook(m5RsiArr, 'sell');
 
-    // RSI State filter (not overbought/oversold for entry)
     const rsiValidBuy  = m5Rsi >= 35 && m5Rsi <= 55;
     const rsiValidSell = m5Rsi >= 45 && m5Rsi <= 65;
 
-    // Swing zone proximity check (price near H1 Demand/Supply)
-    const nearDemand = swingSignal.demandZone
-      ? currentPrice >= parseFloat(swingSignal.demandZone.btm) - m5Atr
-        && currentPrice <= parseFloat(swingSignal.demandZone.top) + m5Atr * 2
-      : true;
-    const nearSupply = swingSignal.supplyZone
-      ? currentPrice >= parseFloat(swingSignal.supplyZone.btm) - m5Atr * 2
-        && currentPrice <= parseFloat(swingSignal.supplyZone.top) + m5Atr
-      : true;
+    const nearDemand = swingSignal.demandZone ? currentPrice >= parseFloat(swingSignal.demandZone.btm) - m5Atr && currentPrice <= parseFloat(swingSignal.demandZone.top) + m5Atr * 2 : true;
+    const nearSupply = swingSignal.supplyZone ? currentPrice >= parseFloat(swingSignal.supplyZone.btm) - m5Atr * 2 && currentPrice <= parseFloat(swingSignal.supplyZone.top) + m5Atr : true;
 
-    // ── CONFLUENCE SCORING (0–5) ─────────────────────────────────────────────
     let score = 0;
-    const confluence = {
-      swingAligned: false, zoneProximity: false,
-      engulfing: false, volume: false, rsiHook: false
-    };
+    const confluence = { swingAligned: false, zoneProximity: false, engulfing: false, volume: false, rsiHook: false };
 
-    // +1: Swing gate (already confirmed above, always add)
     score++; confluence.swingAligned = true;
 
-    // +1: Zone proximity
     if (swingIsBuy  && nearDemand) { score++; confluence.zoneProximity = true; }
     if (swingIsSell && nearSupply) { score++; confluence.zoneProximity = true; }
 
-    // +1: M5 Displacement Engulfing
     if (swingIsBuy  && chochBuy)  { score++; confluence.engulfing = true; }
     if (swingIsSell && chochSell) { score++; confluence.engulfing = true; }
 
-    // +1: Session-aware volume spike
     if (hasVolSpike) { score++; confluence.volume = true; }
 
-    // +1: RSI Hook + State
     if (swingIsBuy  && rsiHookBuy  && rsiValidBuy)  { score++; confluence.rsiHook = true; }
     if (swingIsSell && rsiHookSell && rsiValidSell) { score++; confluence.rsiHook = true; }
 
-    // ── SIGNAL DECISION ──────────────────────────────────────────────────────
     let position = "WAIT & SEE / NO SCALP SETUP";
-    let entry = "0.00", sl = "0.00", tp1 = "0.00", tp2 = "0.00";
-    let tp1Pips = "0", tp2Pips = "0";
+    let entry = "0.00", sl = "0.00", tp1 = "0.00", tp2 = "0.00", tp1Pips = "0", tp2Pips = "0";
     let reasonArr = [];
 
     if (swingIsBuy && score >= 4) {
       position = "SCALP BUY — ACTIVE (M5 SNIPER)";
       entry    = currentPrice.toFixed(2);
-      // SL: below M5 entry candle low + ATR buffer (tighter than swing)
       const entryLow = m5.l[m5.l.length - 1];
       sl  = (entryLow - m5Atr * 1.2).toFixed(2);
       tp1 = (currentPrice + m5Atr * 2).toFixed(2);
       tp2 = (currentPrice + m5Atr * 4).toFixed(2);
-      tp1Pips = (m5Atr * 2).toFixed(0);
-      tp2Pips = (m5Atr * 4).toFixed(0);
+      tp1Pips = (m5Atr * 2).toFixed(0); tp2Pips = (m5Atr * 4).toFixed(0);
       reasonArr = [
         `Swing Gate: AKTIF — Swing BUY confirmed, scalp searah`,
         `Zone Proximity: Price ${nearDemand ? "berada di" : "mendekati"} H1 Demand Zone ($${swingSignal.demandZone?.btm} – $${swingSignal.demandZone?.top})`,
@@ -522,8 +437,7 @@ async function calculateScalpSignal(m5, swingSignal, sessionName) {
       sl  = (entryHigh + m5Atr * 1.2).toFixed(2);
       tp1 = (currentPrice - m5Atr * 2).toFixed(2);
       tp2 = (currentPrice - m5Atr * 4).toFixed(2);
-      tp1Pips = (m5Atr * 2).toFixed(0);
-      tp2Pips = (m5Atr * 4).toFixed(0);
+      tp1Pips = (m5Atr * 2).toFixed(0); tp2Pips = (m5Atr * 4).toFixed(0);
       reasonArr = [
         `Swing Gate: AKTIF — Swing SELL confirmed, scalp searah`,
         `Zone Proximity: Price ${nearSupply ? "berada di" : "mendekati"} H1 Supply Zone ($${swingSignal.supplyZone?.btm} – $${swingSignal.supplyZone?.top})`,
@@ -532,7 +446,6 @@ async function calculateScalpSignal(m5, swingSignal, sessionName) {
         confluence.rsiHook ? `RSI M5: ${m5Rsi.toFixed(1)} — Hook DOWN terkonfirmasi (5-candle lookback, 2 consecutive ticks)` : `RSI M5: ${m5Rsi.toFixed(1)} — Menunggu hook formation`
       ];
     } else {
-      // Pending state — show what's missing
       const missing = [];
       if (!confluence.zoneProximity) missing.push("Zone Proximity");
       if (!confluence.engulfing) missing.push("M5 Engulfing");
@@ -548,72 +461,46 @@ async function calculateScalpSignal(m5, swingSignal, sessionName) {
     }
 
     return {
-      position, gatedBySwing: true,
-      swingBias: swingSignal.h4Bias,
-      entry, sl, tp1, tp2,
-      tp1Pips, tp2Pips,
-      confluenceScore: score,
-      confluenceDetail: confluence,
-      reason: reasonArr,
-      session: sessionName,
-      m5Rsi: m5Rsi.toFixed(1),
-      m5Atr: m5Atr.toFixed(2),
-      volMultiplier,
-      currentPrice: currentPrice.toFixed(2)
+      position, gatedBySwing: true, swingBias: swingSignal.h4Bias, entry, sl, tp1, tp2, tp1Pips, tp2Pips,
+      confluenceScore: score, confluenceDetail: confluence, reason: reasonArr, session: sessionName,
+      m5Rsi: m5Rsi.toFixed(1), m5Atr: m5Atr.toFixed(2), volMultiplier, currentPrice: currentPrice.toFixed(2)
     };
   } catch (err) {
     return {
-      position: "BLOCKED — DATA ERROR",
-      gatedBySwing: false,
-      swingBias: "UNKNOWN",
-      entry: "0.00", sl: "0.00", tp1: "0.00", tp2: "0.00",
-      tp1Pips: "0", tp2Pips: "0",
-      confluenceScore: 0,
-      reason: ["Error sinkronisasi data scalp: " + err.message],
-      session: sessionName
+      position: "BLOCKED — DATA ERROR", gatedBySwing: false, swingBias: "UNKNOWN",
+      entry: "0.00", sl: "0.00", tp1: "0.00", tp2: "0.00", tp1Pips: "0", tp2Pips: "0", confluenceScore: 0,
+      reason: ["Error sinkronisasi data scalp: " + err.message], session: sessionName
     };
   }
 }
 
-// ─── MAIN DUAL SIGNAL ORCHESTRATOR ───────────────────────────────────────────
 async function calculateDualSignals() {
   const sessionName = getSession();
   try {
-    // Fetch all timeframes in parallel
-    // H4: Yahoo Finance supports '1h' reliably; use 1d as H4 proxy via '4h' attempt
     const [h4Raw, h1, m5] = await Promise.all([
-      fetchChartData('1d', '60d').catch(() => fetchChartData('1h', '10d')), // Daily as H4 bias proxy
+      fetchChartData('1d', '60d').catch(() => fetchChartData('1h', '10d')),
       fetchChartData('1h', '7d'),
       fetchChartData('5m', '2d')
     ]);
-
     const swing = await calculateSwingSignal(h4Raw, h1, sessionName);
     const scalp = await calculateScalpSignal(m5, swing, sessionName);
-
     return { swing, scalp };
   } catch (err) {
     const fallback = {
-      position: "WAIT & SEE / DATA ERROR",
-      h4Bias: "UNKNOWN", entry: "0.00", sl: "0.00", tp1: "0.00", tp2: "0.00",
-      tp1Pips: "0", tp2Pips: "0", confluenceScore: 0,
-      reason: ["Sinkronisasi data multi-timeframe gagal: " + err.message],
-      session: sessionName
+      position: "WAIT & SEE / DATA ERROR", h4Bias: "UNKNOWN", entry: "0.00", sl: "0.00", tp1: "0.00", tp2: "0.00",
+      tp1Pips: "0", tp2Pips: "0", confluenceScore: 0, reason: ["Sinkronisasi data multi-timeframe gagal: " + err.message], session: sessionName
     };
     return { swing: fallback, scalp: { ...fallback, gatedBySwing: false, swingBias: "UNKNOWN" } };
   }
 }
 
 // ─── DATA FETCHERS & MACRO SCORING ENGINES ───────────────────────────────────
-// BAGIAN INI TIDAK DIUBAH SAMA SEKALI
 async function fetchDXY() {
   try {
     const res = await axios.get('https://query2.finance.yahoo.com/v8/finance/chart/DX-Y.NYB?interval=1d&range=2d',
       { timeout: 8000, headers: { 'User-Agent': 'Mozilla/5.0' } });
     const current = res.data.chart.result[0].meta.regularMarketPrice;
-    return {
-      current: parseFloat(current.toFixed(2)),
-      status: current >= res.data.chart.result[0].meta.previousClose ? "BULLISH (UP)" : "BEARISH (DOWN)"
-    };
+    return { current: parseFloat(current.toFixed(2)), status: current >= res.data.chart.result[0].meta.previousClose ? "BULLISH (UP)" : "BEARISH (DOWN)" };
   } catch (err) { return { current: "N/A", status: "OFFLINE" }; }
 }
 
@@ -622,10 +509,7 @@ async function fetchCrudeOil() {
     const res = await axios.get('https://query2.finance.yahoo.com/v8/finance/chart/CL=F?interval=1d&range=45d',
       { timeout: 8000, headers: { 'User-Agent': 'Mozilla/5.0' } });
     const closes = res.data.chart.result[0].indicators.quote[0].close.filter(c => c !== null);
-    return {
-      current: closes[closes.length - 1],
-      avg30: closes.slice(-30).reduce((a, b) => a + b, 0) / Math.min(closes.length, 30)
-    };
+    return { current: closes[closes.length - 1], avg30: closes.slice(-30).reduce((a, b) => a + b, 0) / Math.min(closes.length, 30) };
   } catch (err) { return { current: null, avg30: null }; }
 }
 
@@ -694,8 +578,20 @@ module.exports = async (req, res) => {
 
   const isCron = req.query.cron === "true";
 
-  if (req.method === "POST" && req.body && req.body.message) {
-    if (req.body.message.text === "/refresh") {
+  // ─── NEW FRONTEND TRIGGER HANDLERS ─────────────────────────────────────────
+  if (req.method === "POST" && req.body) {
+    // 1. Alert Triggered from the Frontend Web App
+    if (req.body.action === "send_swing_alert") {
+      await sendSwingSignalTelegram(req.body.data);
+      return res.status(200).json({ success: true, message: "Swing Alert Sent" });
+    }
+    if (req.body.action === "send_scalp_alert") {
+      await sendScalpSignalTelegram(req.body.data);
+      return res.status(200).json({ success: true, message: "Scalp Alert Sent" });
+    }
+    
+    // 2. Legacy /refresh command handling for Macro Data
+    if (req.body.message && req.body.message.text === "/refresh") {
       const [events, crudeOil, dxy, signals] = await Promise.all([
         fetchTradingViewData(), fetchCrudeOil(), fetchDXY(), calculateDualSignals()
       ]);
@@ -723,7 +619,6 @@ module.exports = async (req, res) => {
     const { swing, scalp } = signals;
 
     if (isCron) {
-      // ── Swing signal tracking ────────────────────────────────────────────
       const swingID = swing.position + "_" + swing.entry;
       const swingIsActive = swing.position.includes("SWING BUY — ACTIVE") || swing.position.includes("SWING SELL — ACTIVE");
       if (swingIsActive) {
@@ -740,7 +635,6 @@ module.exports = async (req, res) => {
         }
       }
 
-      // ── Scalp signal tracking ────────────────────────────────────────────
       const scalpID = scalp.position + "_" + scalp.entry;
       const scalpIsActive = scalp.position.includes("SCALP BUY — ACTIVE") || scalp.position.includes("SCALP SELL — ACTIVE");
       if (scalpIsActive) {
@@ -757,7 +651,6 @@ module.exports = async (req, res) => {
         }
       }
 
-      // ── Pre-news warnings ────────────────────────────────────────────────
       const nowMs = Date.now();
       const upcomingNews = events.filter(e => {
         if (e.country !== "US" && e.currency !== "USD") return false;
@@ -784,7 +677,6 @@ module.exports = async (req, res) => {
       nfp, cpi, growth, fed,
       swing_signal: swing,
       scalp_signal: scalp,
-      // Legacy key for backward compat
       technical_signal: scalp
     });
   } catch (err) {
