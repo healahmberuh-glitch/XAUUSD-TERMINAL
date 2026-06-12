@@ -723,15 +723,6 @@
     const CARD_THRESHOLD   = 20;
     const MASTER_THRESHOLD = 40;
 
-    // ─── TELEGRAM ALERT STATE ───
-    function sendTelegramAlertFrontend(action, signalData) {
-      fetch('/api/predict', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: action, data: signalData })
-      }).catch(e => console.error("Alert err:", e));
-    }
-
     // ─── TAB SYSTEM ─────────────────────────────────────────────────
     function switchTab(tab) {
       document.getElementById('panelMacro').classList.toggle('active', tab === 'macro');
@@ -1068,16 +1059,6 @@
       }).join('');
     }
 
-    // ─── DYNAMIC POLLING STATE ───
-    let pollInterval = 60000; // Default 60 detik (Standar)
-    let pollTimer = null;
-
-    function startAutoPoll(interval) {
-      if (pollTimer) clearInterval(pollTimer);
-      pollInterval = interval;
-      pollTimer = setInterval(loadData, pollInterval);
-    }
-
     // ─── MAIN LOAD ───────────────────────────────────────────────────
     async function loadData() {
       const btn=document.getElementById('refreshBtn');
@@ -1099,70 +1080,14 @@
         const fedScore    = renderFed(data.fed||data.fed_rate||null);
         renderMiniScores(nfpScore,cpiScore,growthScore,fedScore);
         renderMaster([nfpScore,cpiScore,growthScore,fedScore]);
-        
-        const newsData = data.upcoming_news||data.upcomingNews||[];
-        renderNews(newsData);
+        renderNews(data.upcoming_news||data.upcomingNews||[]);
 
         // Dual signal rendering
         renderSwing(data.swing_signal || null);
         renderScalp(data.scalp_signal || null);
 
-        // ─── FRONTEND ALERT TRIGGER LOGIC ───
-        if (data.swing_signal) {
-          const swing = data.swing_signal;
-          const isActive = swing.position.includes("ACTIVE");
-          const currentId = swing.position + "_" + swing.entry;
-          const lastId = localStorage.getItem("lastSwingId");
-
-          if (isActive && currentId !== lastId) {
-            sendTelegramAlertFrontend("send_swing_alert", swing);
-            localStorage.setItem("lastSwingId", currentId);
-          } else if (!isActive) {
-            localStorage.removeItem("lastSwingId");
-          }
-        }
-
-        if (data.scalp_signal) {
-          const scalp = data.scalp_signal;
-          const isActive = scalp.position.includes("ACTIVE");
-          const currentId = scalp.position + "_" + scalp.entry;
-          const lastId = localStorage.getItem("lastScalpId");
-
-          if (isActive && currentId !== lastId) {
-            sendTelegramAlertFrontend("send_scalp_alert", scalp);
-            localStorage.setItem("lastScalpId", currentId);
-          } else if (!isActive) {
-            localStorage.removeItem("lastScalpId");
-          }
-        }
-
-        // ─── DYNAMIC POLLING LOGIC (NEWS RADAR) ───
-        const nowMs = Date.now();
-        let isNewsLive = false;
-        
-        // Cek apakah ada High/Medium Impact news dalam -5 hingga +15 menit
-        for (const news of newsData) {
-            let newsTime = new Date(news.date || news.datetime || news.time).getTime();
-            if (!isNaN(newsTime)) {
-                let diffMins = (newsTime - nowMs) / 60000;
-                if (diffMins > -5 && diffMins <= 15) {
-                    isNewsLive = true;
-                    break;
-                }
-            }
-        }
-
-        if (isNewsLive && pollInterval !== 10000) {
-            startAutoPoll(10000); // Mode Agresif: 10 detik
-            status.style.color = '#FF3B3B'; // Ubah text warna merah
-            status.textContent = 'LIVE NEWS MODE (10s)';
-        } else if (!isNewsLive && pollInterval !== 60000) {
-            startAutoPoll(60000); // Mode Santai: 60 detik
-            status.style.color = '#8B949E';
-        }
-
         const ts=new Date(data.timestamp);
-        if (!isNewsLive) status.textContent='UPDATED '+ts.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+        status.textContent='UPDATED '+ts.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
       } catch(err) {
         console.error(err);
         document.getElementById('errorMsg').textContent='Error: '+err.message;
@@ -1179,8 +1104,8 @@
       const lbl=document.getElementById('tabModeLabel');
       ind.style.background='#00FF88'; ind.style.boxShadow='0 0 6px rgba(0,255,136,0.7)';
       lbl.style.color='#00FF88';
-      
-      // Initial Load & Start Polling
       loadData();
-      startAutoPoll(60000); // Start dengan default 1 menit
     });
+  </script>
+</body>
+</html>
