@@ -301,6 +301,12 @@ function scanPreviousHL(h1, session) {
   swings.swingHighs.slice(-5).forEach((sh, i) => {
     const zHigh = sh.val + atr * 0.2;
     const zLow  = sh.val - atr * 0.4;
+const midpoint = (zHigh + zLow) / 2;
+
+// Supply harus di atas harga
+if (midpoint <= price) return;
+const broken = price > sh.val;
+if (broken) return;
     const dist  = Math.abs(price - sh.val);
     if (dist > atr * 8) return; // too far
     const strength = 5 - i;
@@ -317,6 +323,12 @@ function scanPreviousHL(h1, session) {
   swings.swingLows.slice(-5).forEach((sl, i) => {
     const zHigh = sl.val + atr * 0.4;
     const zLow  = sl.val - atr * 0.2;
+const midpoint = (zHigh + zLow) / 2;
+
+// Demand harus di bawah harga
+if (midpoint >= price) return;
+const broken = price < sl.val;
+if (broken) return;
     const dist  = Math.abs(price - sl.val);
     if (dist > atr * 8) return;
     const strength = 5 - i;
@@ -334,51 +346,111 @@ function scanPreviousHL(h1, session) {
 
 function scanFVG(m5, session) {
   const zones = [];
-  const atr   = calculateATR(m5.h, m5.l, m5.c, 14);
+  const atr = calculateATR(m5.h, m5.l, m5.c, 14);
   const price = m5.current;
-  const len   = m5.c.length;
+  const len = m5.c.length;
+
   // Scan last 30 candles for unfilled FVGs
   for (let i = len - 30; i < len - 2; i++) {
     if (i < 2) continue;
-    // Bullish FVG: gap between candle[i].low and candle[i+2].high
-    const bullGapLow  = m5.l[i];
-    const bullGapHigh = m5.h[i+2];
-    if (bullGapLow > bullGapHigh) { // valid upward FVG
-      // Check unfilled: price has not entered the gap since formation
+
+    // =========================
+    // BULLISH FVG
+    // =========================
+    const bullGapLow = m5.l[i];
+    const bullGapHigh = m5.h[i + 2];
+
+    if (bullGapLow > bullGapHigh) {
+
       let filled = false;
-      for (let j = i+3; j < len; j++) {
-        if (m5.l[j] <= bullGapHigh && m5.h[j] >= bullGapLow) { filled = true; break; }
+
+      for (let j = i + 3; j < len; j++) {
+        if (
+          m5.l[j] <= bullGapHigh &&
+          m5.h[j] >= bullGapLow
+        ) {
+          filled = true;
+          break;
+        }
       }
-      if (!filled && Math.abs(price - (bullGapLow + bullGapHigh)/2) < atr * 10) {
-        const strength = bullGapLow - bullGapHigh > atr * 0.5 ? 5 : 3;
+
+      const midpoint = (bullGapLow + bullGapHigh) / 2;
+      const isBelowPrice = midpoint < price;
+
+      if (
+        !filled &&
+        Math.abs(price - midpoint) < atr * 3
+      ) {
+
+        const strength =
+          (bullGapLow - bullGapHigh) > atr * 0.5
+            ? 5
+            : 3;
+
         zones.push({
-          type: "FVG", typeLabel: "Fair Value Gap (Demand)",
-          bias: "BUY", high: bullGapLow, low: bullGapHigh,
-          strength, reason: `Bullish FVG unfilled di $${bullGapHigh.toFixed(2)}–$${bullGapLow.toFixed(2)} — imbalance magnet`,
-          session, id: `FVG_BULL_${i}_${bullGapLow.toFixed(2)}`
+          type: "FVG",
+          typeLabel: "Fair Value Gap (Demand)",
+          bias: isBelowPrice ? "BUY" : "TARGET",
+          high: bullGapLow,
+          low: bullGapHigh,
+          strength,
+          reason: `Bullish FVG unfilled di $${bullGapHigh.toFixed(2)}-$${bullGapLow.toFixed(2)} — imbalance magnet`,
+          session,
+          id: `FVG_BULL_${i}_${bullGapLow.toFixed(2)}`
         });
       }
     }
-    // Bearish FVG
+
+    // =========================
+    // BEARISH FVG
+    // =========================
     const bearGapHigh = m5.h[i];
-    const bearGapLow  = m5.l[i+2];
-    if (bearGapHigh < bearGapLow) { // valid downward FVG — note: inverted
+    const bearGapLow = m5.l[i + 2];
+
+    if (bearGapHigh < bearGapLow) {
+
       let filled = false;
-      for (let j = i+3; j < len; j++) {
-        if (m5.h[j] >= bearGapLow && m5.l[j] <= bearGapHigh) { filled = true; break; }
+
+      for (let j = i + 3; j < len; j++) {
+        if (
+          m5.h[j] >= bearGapLow &&
+          m5.l[j] <= bearGapHigh
+        ) {
+          filled = true;
+          break;
+        }
       }
-      if (!filled && Math.abs(price - (bearGapHigh + bearGapLow)/2) < atr * 10) {
-        const strength = bearGapLow - bearGapHigh > atr * 0.5 ? 5 : 3;
+
+      const midpoint = (bearGapHigh + bearGapLow) / 2;
+      const isAbovePrice = midpoint > price;
+
+      if (
+        !filled &&
+        Math.abs(price - midpoint) < atr * 3
+      ) {
+
+        const strength =
+          (bearGapLow - bearGapHigh) > atr * 0.5
+            ? 5
+            : 3;
+
         zones.push({
-          type: "FVG", typeLabel: "Fair Value Gap (Supply)",
-          bias: "SELL", high: bearGapLow, low: bearGapHigh,
-          strength, reason: `Bearish FVG unfilled di $${bearGapHigh.toFixed(2)}–$${bearGapLow.toFixed(2)} — imbalance magnet`,
-          session, id: `FVG_BEAR_${i}_${bearGapHigh.toFixed(2)}`
+          type: "FVG",
+          typeLabel: "Fair Value Gap (Supply)",
+          bias: isAbovePrice ? "SELL" : "TARGET",
+          high: bearGapLow,
+          low: bearGapHigh,
+          strength,
+          reason: `Bearish FVG unfilled di $${bearGapHigh.toFixed(2)}-$${bearGapLow.toFixed(2)} — imbalance magnet`,
+          session,
+          id: `FVG_BEAR_${i}_${bearGapHigh.toFixed(2)}`
         });
       }
     }
   }
+
   return zones;
+}
 }
 
 function scanOrderBlocks(m5, session) {
@@ -515,7 +587,7 @@ const belowPrice = lvl < price;
         if (dist < atr * 10 && dist > atr * 0.5) {
           zones.push({
             type: "LIQ", typeLabel: "Liquidity Level (Equal Lows)",
-            bias: belowPrice ? "BUY" : "TARGET",
+            bias: "BUY",
             high: lvl + tolerance * 0.5, low: lvl - tolerance,
             strength: 4,
             reason: `Equal lows di ~$${lvl.toFixed(2)} — stop hunt zone, potensi reversal setelah sweep`,
