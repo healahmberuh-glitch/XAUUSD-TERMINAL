@@ -1286,10 +1286,20 @@ function renderNews(newsArr) {
         renderNews(data.upcoming_news||data.upcomingNews||[]);
 
         // Dual signal rendering
-        renderSwing(data.swing_signal || null);
-        renderScalp(data.scalp_signal || null);
-console.log("ZONE:", data.zone_pantau);
-console.log("ENTRY:", data.entry_triggers);
+renderSwing(data.swing_signal || null);
+renderScalp(data.scalp_signal || null);
+
+document.getElementById('zoneTotalCount').textContent =
+    `${(data.zone_pantau || []).length} zones`;
+
+document.getElementById('zoneGrid').innerHTML =
+    JSON.stringify(data.zone_pantau || [], null, 2);
+
+document.getElementById('entryTriggerCount').textContent =
+    `${(data.entry_triggers || []).length} active`;
+
+document.getElementById('entryTriggerGrid').innerHTML =
+    JSON.stringify(data.entry_triggers || [], null, 2);
 
 
         const ts=new Date(data.timestamp);
