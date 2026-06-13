@@ -454,7 +454,17 @@ function scanBreakers(m5, session) {
       for (let j = i+2; j < Math.min(i+15, len); j++) {
         if (m5.l[j] > obHigh) { wasBroken = true; break; }
       }
-      if (wasBroken && Math.abs(price - obHigh) < atr * 8) {
+      const retestedBreaker =
+    m5.l[len - 1] <= obHigh + atr * 0.2;
+
+const stillAboveBreaker =
+    price > obHigh;
+
+if (
+    wasBroken &&
+    retestedBreaker &&
+    stillAboveBreaker
+) {
         zones.push({
           type: "BRK", typeLabel: "Breaker Block (Flipped Support)",
           bias: "BUY",
@@ -484,11 +494,12 @@ function scanLiquidityLevels(h1, m5, session) {
 
       if (diffH < tolerance) {
         const lvl  = (h1.h[i] + h1.h[j]) / 2;
+const abovePrice = lvl > price;
         const dist = Math.abs(price - lvl);
         if (dist < atr * 10 && dist > atr * 0.5) {
           zones.push({
             type: "LIQ", typeLabel: "Liquidity Level (Equal Highs)",
-            bias: "SELL",
+            bias: abovePrice ? "SELL" : "TARGET",
             high: lvl + tolerance, low: lvl - tolerance * 0.5,
             strength: 4,
             reason: `Equal highs di ~$${lvl.toFixed(2)} — stop hunt zone, potensi reversal setelah sweep`,
@@ -499,11 +510,12 @@ function scanLiquidityLevels(h1, m5, session) {
 
       if (diffL < tolerance) {
         const lvl  = (h1.l[i] + h1.l[j]) / 2;
+const belowPrice = lvl < price;
         const dist = Math.abs(price - lvl);
         if (dist < atr * 10 && dist > atr * 0.5) {
           zones.push({
             type: "LIQ", typeLabel: "Liquidity Level (Equal Lows)",
-            bias: "BUY",
+            bias: belowPrice ? "BUY" : "TARGET",
             high: lvl + tolerance * 0.5, low: lvl - tolerance,
             strength: 4,
             reason: `Equal lows di ~$${lvl.toFixed(2)} — stop hunt zone, potensi reversal setelah sweep`,
