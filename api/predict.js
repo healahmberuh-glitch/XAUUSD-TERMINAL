@@ -549,6 +549,11 @@ function scanBreakers(m5, session) {
 
       if (!retestedBreaker) continue;
 
+      const zoneMidpoint = (obHigh + obLow) / 2;
+
+if (zoneMidpoint > price) {
+  continue;
+}
       zones.push({
         type: "BRK",
         typeLabel: "Breaker Block (Flipped Support)",
@@ -586,6 +591,9 @@ function scanBreakers(m5, session) {
 
       const midpoint = (obHigh + obLow) / 2;
 
+if (Math.abs(price - midpoint) > atr * 5)
+  continue;
+
       // resistance harus masih berada di atas harga sekarang
       if (price > midpoint) continue;
 
@@ -593,7 +601,12 @@ function scanBreakers(m5, session) {
         m5.h[len - 1] >= obLow - atr * 0.2;
 
       if (!retestedBreaker) continue;
+      
+const zoneMidpoint = (obHigh + obLow) / 2;
 
+if (zoneMidpoint < price) {
+  continue;
+}
       zones.push({
         type: "BRK",
         typeLabel: "Breaker Block (Flipped Resistance)",
