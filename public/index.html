@@ -1289,10 +1289,10 @@ function renderNews(newsArr) {
 renderSwing(data.swing_signal || null);
 renderScalp(data.scalp_signal || null);
 
+const zones = data.zone_pantau || [];
+
 document.getElementById('zoneTotalCount').textContent =
 `${zones.length} zones`;
-
-const zones = data.zone_pantau || [];
 
 document.getElementById('zoneGrid').innerHTML =
 zones.map(z => {
