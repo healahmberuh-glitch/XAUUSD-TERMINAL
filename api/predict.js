@@ -562,7 +562,23 @@ async function scanAllZones(h1, m5, session) {
 
     // Sort by strength desc, then proximity to current price
     const price = m5.current;
-    deduped.sort((a, b) => {
+const filtered = deduped.filter(z => {
+
+  const midpoint = (z.high + z.low) / 2;
+
+  // BUY zone harus berada di bawah harga
+  if (z.bias === "BUY") {
+    return midpoint <= price;
+  }
+
+  // SELL zone harus berada di atas harga
+  if (z.bias === "SELL") {
+    return midpoint >= price;
+  }
+
+  return true;
+});
+     filtered.sort((a, b) => {
       if (b.strength !== a.strength) return b.strength - a.strength;
       const dA = Math.abs(price - (a.high + a.low) / 2);
       const dB = Math.abs(price - (b.high + b.low) / 2);
@@ -570,7 +586,7 @@ async function scanAllZones(h1, m5, session) {
     });
 
     // Return top 8
-    return deduped.slice(0, 8).map(z => ({
+    return filtered.slice(0, 8).map(z => ({
       ...z,
       midpoint:   ((z.high + z.low) / 2).toFixed(2),
       highStr:    z.high.toFixed(2),
