@@ -448,9 +448,7 @@ function scanFVG(m5, session) {
       }
     }
   }
-
   return zones;
-}
 }
 
 function scanOrderBlocks(m5, session) {
