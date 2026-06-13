@@ -714,17 +714,16 @@ async function scanAllZones(h1, m5, session) {
     const price = m5.current;
 const filtered = deduped.filter(z => {
 
+  if (z.bias === "TARGET")
+    return false;
+
   const midpoint = (z.high + z.low) / 2;
 
-  // BUY zone harus berada di bawah harga
-  if (z.bias === "BUY") {
-    return midpoint <= price;
-  }
+  if (z.bias === "BUY")
+    return midpoint < price;
 
-  // SELL zone harus berada di atas harga
-  if (z.bias === "SELL") {
-    return midpoint >= price;
-  }
+  if (z.bias === "SELL")
+    return midpoint > price;
 
   return true;
 });
