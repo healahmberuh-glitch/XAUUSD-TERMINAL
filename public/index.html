@@ -1340,37 +1340,66 @@ ${z.session || ""}
 }).join('');
 
 
-const entries = data.entry_triggers || [];
+// ─── MEMORY LATCH LOGIC UNTUK M1 ENTRY ───
+        const currentEntries = data.entry_triggers || [];
+        const nowMs = Date.now();
 
-document.getElementById('entryTriggerCount').textContent =
-`${entries.length} active`;
+        // 1. Simpan (Latch) sinyal baru ke memori jika belum ada
+        currentEntries.forEach(newEntry => {
+          const exists = activeEntryMemory.find(e => e.triggerId === newEntry.triggerId);
+          if (!exists) {
+            newEntry.latchedAt = nowMs; // Catat waktu sinyal muncul
+            activeEntryMemory.push(newEntry);
+          }
+        });
 
-if(!entries.length){
+        // 2. Bersihkan sinyal yang usianya sudah lebih dari 15 menit (900000 ms)
+        activeEntryMemory = activeEntryMemory.filter(e => nowMs - e.latchedAt < 900000);
 
-  document.getElementById('entryTriggerGrid').innerHTML = `
-    <div class="flex items-center justify-center py-10">
-      <span class="font-mono text-xs text-[#484F58]">
-        Menunggu price masuk zona<span class="cursor">_</span>
-      </span>
-    </div>
-  `;
+        // 3. Render sinyal dari memori (bukan dari API langsung)
+        document.getElementById('entryTriggerCount').textContent = `${activeEntryMemory.length} active`;
 
-} else {
-
-  document.getElementById('entryTriggerGrid').innerHTML =
-  entries.map(e => `
-    <div class="border border-[#21262D] bg-[#0D1117] p-3">
-      <div class="font-mono text-[10px] text-[#F0B429]">
-        ${e.signal || 'ENTRY'}
-      </div>
-      <div class="font-mono text-[12px] text-[#E6EDF3] mt-1">
-        ${e.entry || '-'}
-      </div>
-    </div>
-  `).join('');
-
-}
-
+        if (!activeEntryMemory.length) {
+          document.getElementById('entryTriggerGrid').innerHTML = `
+            <div class="col-span-full flex items-center justify-center py-10">
+              <span class="font-mono text-xs text-[#484F58]">
+                Menunggu price masuk zona<span class="cursor">_</span>
+              </span>
+            </div>
+          `;
+        } else {
+          document.getElementById('entryTriggerGrid').innerHTML = activeEntryMemory.map(e => {
+            // Hitung menit berlalu
+            const diffMins = Math.floor((nowMs - e.latchedAt) / 60000);
+            const timeLabel = diffMins === 0 ? "BARU SAJA" : `${diffMins} MNT LALU`;
+            
+            return `
+            <div class="border border-[#21262D] bg-[#0D1117] p-4 relative" style="animation: techReveal 0.3s ease forwards;">
+              <div class="absolute top-2 right-2 font-mono text-[8px] text-[#00FF88] bg-[#00FF8811] px-1.5 py-0.5 border border-[#00FF8833]">
+                ${timeLabel}
+              </div>
+              <div class="font-mono text-[10px] text-[#F0B429] tracking-widest uppercase mb-1">
+                ${e.bias || 'ENTRY'} TRIGGERED
+              </div>
+              <div class="font-mono text-[16px] text-[#E6EDF3] font-bold">
+                $${e.entry || '-'}
+              </div>
+              <div class="font-mono text-[9px] text-[#8B949E] mt-1">
+                Zona: ${e.zoneType || 'M1 Validated'}
+              </div>
+              <div class="flex items-center gap-3 mt-3 pt-3 border-t border-[#21262D]">
+                <div class="flex flex-col">
+                  <span class="font-mono text-[8px] text-[#FF3B3B] mb-0.5">SL</span>
+                  <span class="font-mono text-[9px] text-[#E6EDF3]">$${parseFloat(e.sl).toFixed(2)}</span>
+                </div>
+                <div class="flex flex-col">
+                  <span class="font-mono text-[8px] text-[#38BDF8] mb-0.5">TP1</span>
+                  <span class="font-mono text-[9px] text-[#E6EDF3]">$${parseFloat(e.tp1).toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
+          `}).join('');
+        }
 
         const ts=new Date(data.timestamp);
         status.textContent='UPDATED '+ts.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
@@ -1388,7 +1417,10 @@ if(!entries.length){
     // ─── AUTO POLLING SYSTEM (REALTIME DISPLAY) ──────────────────────
     let pollTimer = null;
     const POLL_INTERVAL = 3000; // Refresh otomatis setiap 3 detik (super cepat)
-
+    
+// TAMBAHKAN BARIS INI: Memori untuk menahan sinyal M1 agar tidak hilang
+    let activeEntryMemory = [];
+    
     function startAutoRefresh() {
       if (pollTimer) clearInterval(pollTimer);
       pollTimer = setInterval(() => {
