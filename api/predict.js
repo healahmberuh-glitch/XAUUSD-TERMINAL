@@ -1,5 +1,5 @@
 // api/predict.js — DEPRESSEDESIGN Trading Station
-// v6.0 — Zone Pantau Engine + Dual Signal + Telegram Full Alerts (INSTITUTIONAL UPGRADE)
+// v6.1 — SMC SL/TP Upgrade + Zone Pantau Engine + Dual Signal + Telegram Full Alerts
 
 const axios = require("axios");
 
@@ -557,7 +557,7 @@ function scanSessionLevels(h1, session) {
   return zones;
 }
 
-// ─── SPATIAL CONFLUENCE & LIMIT ORDER ENGINE (NEW) ───────────────────────────
+// ─── SPATIAL CONFLUENCE & LIMIT ORDER ENGINE (SMC UPGRADE) ───────────────────────────
 async function scanAllZones(h1, m5, session, swing) {
   try {
     if (!h1.c || h1.c.length === 0 || !m5.c || m5.c.length === 0) return []; 
@@ -621,16 +621,36 @@ async function scanAllZones(h1, m5, session, swing) {
       return scoreB - scoreA;
     });
 
+    // ─── SMC SL/TP ENGINE (berbasis swing terdekat + ATR) ───
+    const m5Swings = findSwingHighsLows(m5.h, m5.l, 3, 3);
     const m5Atr = calculateATR(m5.h, m5.l, m5.c, 14);
 
-    // Inject SMC Limit Order Logic (SL & TP)
     return deduped.slice(0, 8).map(z => {
       const isBuy = z.bias === "BUY";
-      const entryPrice = isBuy ? z.high : z.low; 
-      const slPrice = isBuy ? (z.low - m5Atr * 0.2) : (z.high + m5Atr * 0.2);
+      const entryPrice = isBuy ? z.high : z.low;
+
+      // Cari swing high terdekat di ATAS entry (untuk SELL)
+      const nearestSwingHigh = m5Swings.swingHighs
+        .filter(sh => sh.val > entryPrice)
+        .sort((a,b) => a.val - b.val)[0]?.val;
+      // Cari swing low terdekat di BAWAH entry (untuk BUY)
+      const nearestSwingLow = m5Swings.swingLows
+        .filter(sl => sl.val < entryPrice)
+        .sort((a,b) => b.val - a.val)[0]?.val;
+
+      // SL ditempatkan di luar swing terdekat + buffer ATR
+      let slPrice;
+      if (isBuy) {
+        const baseSL = nearestSwingLow ? nearestSwingLow - m5Atr * 0.3 : z.low - m5Atr;
+        slPrice = Math.min(baseSL, z.low - m5Atr * 0.5);
+      } else {
+        const baseSL = nearestSwingHigh ? nearestSwingHigh + m5Atr * 0.3 : z.high + m5Atr;
+        slPrice = Math.max(baseSL, z.high + m5Atr * 0.5);
+      }
+
       const risk = Math.abs(entryPrice - slPrice);
-      const tp1 = isBuy ? (entryPrice + risk * 2) : (entryPrice - risk * 2); 
-      const tp2 = isBuy ? (entryPrice + risk * 3) : (entryPrice - risk * 3); 
+      const tp1 = isBuy ? entryPrice + risk * 2 : entryPrice - risk * 2;
+      const tp2 = isBuy ? entryPrice + risk * 3 : entryPrice - risk * 3;
 
       return {
         ...z,
@@ -645,7 +665,8 @@ async function scanAllZones(h1, m5, session, swing) {
           tp1: tp1.toFixed(2),
           tp2: tp2.toFixed(2),
           riskPips: risk.toFixed(1),
-          tp1Pips: (risk * 2).toFixed(1)
+          tp1Pips: (risk * 2).toFixed(1),
+          tp2Pips: (risk * 3).toFixed(1)
         }
       };
     });
