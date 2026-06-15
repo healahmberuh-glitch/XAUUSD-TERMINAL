@@ -273,7 +273,7 @@ function getVolumeMultiplier(session) {
 
 async function fetchChartData(interval, range) {
   const res = await axios.get(
-    `https://query2.finance.yahoo.com/v8/finance/chart/GC=F?interval=${interval}&range=${range}`,
+    `https://query2.finance.yahoo.com/v8/finance/chart/XAUUSD=X?interval=${interval}&range=${range}`,
     { timeout: 12000, headers: { "User-Agent": "Mozilla/5.0" } }
   );
   const q = res.data.chart.result[0].indicators.quote[0];
