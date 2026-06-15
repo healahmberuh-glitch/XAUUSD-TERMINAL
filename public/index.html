@@ -1340,65 +1340,112 @@ ${z.session || ""}
 }).join('');
 
 
-// ─── MEMORY LATCH LOGIC UNTUK M1 ENTRY ───
-        const currentEntries = data.entry_triggers || [];
+// ─── LIVE TRADE MANAGER (SMC SIGNAL TRACKER) ───
+        const currentPrice = parseFloat(data.technical_signal?.currentPrice || 0);
         const nowMs = Date.now();
 
-        // 1. Simpan (Latch) sinyal baru ke memori jika belum ada
-        currentEntries.forEach(newEntry => {
-          const exists = activeEntryMemory.find(e => e.triggerId === newEntry.triggerId);
-          if (!exists) {
-            newEntry.latchedAt = nowMs; // Catat waktu sinyal muncul
-            activeEntryMemory.push(newEntry);
+        // 1. Cek apakah ada Zone Pantau yang tersentuh harga saat ini
+        zones.forEach(z => {
+          if (!z.signal) return;
+          const entry = parseFloat(z.signal.entry);
+          const isBuy = z.bias === "BUY";
+          
+          // Deteksi sentuhan entry (toleransi 0.5 poin/pips agar lebih responsif)
+          const isTriggered = isBuy ? currentPrice <= entry + 0.5 : currentPrice >= entry - 0.5;
+          
+          if (isTriggered) {
+            const exists = activeEntryMemory.find(e => e.id === z.id);
+            if (!exists) {
+              activeEntryMemory.push({
+                ...z,
+                triggeredAt: nowMs,
+                status: 'RUNNING', // Status awal: Sedang berjalan
+                statusColor: '#38BDF8' // Cyan color untuk indikator berjalan
+              });
+            }
           }
         });
 
-        // 2. Bersihkan sinyal yang usianya sudah lebih dari 15 menit (900000 ms)
-        activeEntryMemory = activeEntryMemory.filter(e => nowMs - e.latchedAt < 900000);
+        // 2. Evaluasi Status Sinyal yang sedang Running (Apakah kena TP atau SL?)
+        activeEntryMemory.forEach(trade => {
+          if (trade.status !== 'RUNNING') return; // Lewati yang sudah close
 
-        // 3. Render sinyal dari memori (bukan dari API langsung)
-        document.getElementById('entryTriggerCount').textContent = `${activeEntryMemory.length} active`;
+          const isBuy = trade.bias === "BUY";
+          const sl = parseFloat(trade.signal.sl);
+          const tp1 = parseFloat(trade.signal.tp1);
+
+          if (isBuy) {
+            if (currentPrice <= sl) { trade.status = 'LOSS (SL HIT)'; trade.statusColor = '#FF3B3B'; trade.closedAt = nowMs; }
+            else if (currentPrice >= tp1) { trade.status = 'WIN (TP1 HIT)'; trade.statusColor = '#00FF88'; trade.closedAt = nowMs; }
+          } else {
+            if (currentPrice >= sl) { trade.status = 'LOSS (SL HIT)'; trade.statusColor = '#FF3B3B'; trade.closedAt = nowMs; }
+            else if (currentPrice <= tp1) { trade.status = 'WIN (TP1 HIT)'; trade.statusColor = '#00FF88'; trade.closedAt = nowMs; }
+          }
+        });
+
+        // 3. Bersihkan memori (Hapus sinyal yang sudah Close lebih dari 30 menit)
+        activeEntryMemory = activeEntryMemory.filter(e => {
+          if (e.status === 'RUNNING') return true;
+          return nowMs - e.closedAt < 1800000; // Tahan history di layar selama 30 menit (1800000 ms)
+        });
+
+        // 4. Render ke UI Panel Bawah
+        const activeCount = activeEntryMemory.filter(e => e.status === 'RUNNING').length;
+        document.getElementById('entryTriggerCount').textContent = `${activeCount} running, ${activeEntryMemory.length - activeCount} closed`;
+
+        const trackerGrid = document.getElementById('entryTriggerGrid');
+        
+        // Ubah Judul Panel Bawah Secara Dinamis
+        const panelTitle = document.querySelector('#entryTriggerGrid').previousElementSibling.querySelector('span');
+        if(panelTitle) panelTitle.textContent = '⚡ LIVE TRADE MANAGER — SIGNAL TRACKER';
 
         if (!activeEntryMemory.length) {
-          document.getElementById('entryTriggerGrid').innerHTML = `
+          trackerGrid.innerHTML = `
             <div class="col-span-full flex items-center justify-center py-10">
               <span class="font-mono text-xs text-[#484F58]">
-                Menunggu price masuk zona<span class="cursor">_</span>
+                Belum ada Limit Order SMC yang tersentuh harga<span class="cursor">_</span>
               </span>
             </div>
           `;
         } else {
-          document.getElementById('entryTriggerGrid').innerHTML = activeEntryMemory.map(e => {
-            // Hitung menit berlalu
-            const diffMins = Math.floor((nowMs - e.latchedAt) / 60000);
-            const timeLabel = diffMins === 0 ? "BARU SAJA" : `${diffMins} MNT LALU`;
-            
-            return `
-            <div class="border border-[#21262D] bg-[#0D1117] p-4 relative" style="animation: techReveal 0.3s ease forwards;">
-              <div class="absolute top-2 right-2 font-mono text-[8px] text-[#00FF88] bg-[#00FF8811] px-1.5 py-0.5 border border-[#00FF8833]">
-                ${timeLabel}
+          // Sortir agar trade yang sedang RUNNING selalu muncul di urutan teratas
+          activeEntryMemory.sort((a,b) => (a.status === 'RUNNING' ? -1 : 1));
+
+          trackerGrid.innerHTML = activeEntryMemory.map(e => `
+            <div class="border border-[#21262D] bg-[#0D1117] p-4 relative" style="border-left: 3px solid ${e.statusColor}; animation: techReveal 0.3s ease forwards;">
+              <div class="absolute top-3 right-3 flex items-center gap-1.5">
+                 ${e.status === 'RUNNING' ? '<div class="w-1.5 h-1.5 rounded-full bg-[#38BDF8] animate-ping"></div>' : ''}
+                 <span class="font-mono text-[9px] font-bold" style="color:${e.statusColor}">${e.status}</span>
               </div>
               <div class="font-mono text-[10px] text-[#F0B429] tracking-widest uppercase mb-1">
-                ${e.bias || 'ENTRY'} TRIGGERED
+                ${e.bias} LIMIT TRIGGERED
               </div>
-              <div class="font-mono text-[16px] text-[#E6EDF3] font-bold">
-                $${e.entry || '-'}
+              <div class="flex items-end gap-2 mb-2">
+                <div class="font-mono text-[18px] text-[#E6EDF3] font-bold">
+                  $${e.signal.entry}
+                </div>
+                <div class="font-mono text-[9px] text-[#8B949E] mb-1">
+                  via ${e.typeLabel}
+                </div>
               </div>
-              <div class="font-mono text-[9px] text-[#8B949E] mt-1">
-                Zona: ${e.zoneType || 'M1 Validated'}
-              </div>
-              <div class="flex items-center gap-3 mt-3 pt-3 border-t border-[#21262D]">
+              <div class="flex items-center gap-4 pt-3 border-t border-[#21262D]">
                 <div class="flex flex-col">
-                  <span class="font-mono text-[8px] text-[#FF3B3B] mb-0.5">SL</span>
-                  <span class="font-mono text-[9px] text-[#E6EDF3]">$${parseFloat(e.sl).toFixed(2)}</span>
+                  <span class="font-mono text-[8px] text-[#FF3B3B] mb-0.5">STOP LOSS</span>
+                  <span class="font-mono text-[10px] text-[#E6EDF3]">$${e.signal.sl}</span>
                 </div>
                 <div class="flex flex-col">
-                  <span class="font-mono text-[8px] text-[#38BDF8] mb-0.5">TP1</span>
-                  <span class="font-mono text-[9px] text-[#E6EDF3]">$${parseFloat(e.tp1).toFixed(2)}</span>
+                  <span class="font-mono text-[8px] text-[#00FF88] mb-0.5">TAKE PROFIT (1:2)</span>
+                  <span class="font-mono text-[10px] text-[#E6EDF3]">$${e.signal.tp1}</span>
+                </div>
+                <div class="flex flex-col ml-auto text-right">
+                  <span class="font-mono text-[8px] text-[#484F58] mb-0.5">LIVE PNL</span>
+                  <span class="font-mono text-[10px] font-bold ${e.bias === 'BUY' ? (currentPrice > e.signal.entry ? 'text-[#00FF88]' : 'text-[#FF3B3B]') : (currentPrice < e.signal.entry ? 'text-[#00FF88]' : 'text-[#FF3B3B]')}">
+                    $${currentPrice.toFixed(2)}
+                  </span>
                 </div>
               </div>
             </div>
-          `}).join('');
+          `).join('');
         }
 
         const ts=new Date(data.timestamp);
