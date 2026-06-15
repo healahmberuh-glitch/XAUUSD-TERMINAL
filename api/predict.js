@@ -1,5 +1,5 @@
 // api/predict.js — DEPRESSEDESIGN Trading Station
-// v6.1 — Zone Pantau Profitability Engine + Dual Signal + Telegram Full Alerts
+// v6.0 — Zone Pantau Engine + Dual Signal + Telegram Full Alerts (INSTITUTIONAL UPGRADE)
 
 const axios = require("axios");
 
@@ -17,13 +17,6 @@ let cachedEvents     = [];
 let lastFetchTime    = 0;
 let warnedEvents     = new Set();
 
-// Zone profitability state
-let pendingZones = new Map();        // key: zone.id, value: { zone, createdAt, hitCount }
-const ZONE_EXPIRY_MS = 4 * 60 * 60 * 1000; // 4 jam
-const CLUSTER_DISTANCE_ATR_MULTIPLIER = 0.5;
-const MIN_REACTION_ATR = 0.3;
-const MAX_MITIGATION_ATR = 0.8;
-
 // ─── TELEGRAM HELPERS ─────────────────────────────────────────────────────────
 
 async function tgSend(message) {
@@ -35,7 +28,7 @@ async function tgSend(message) {
   } catch (e) {}
 }
 
-// 1. Macro Fundamental Alert (unchanged)
+// 1. Macro Fundamental Alert
 async function sendTelegramAlert(masterSignal, totalScore, dxy, nfp, cpi, growth, fed) {
   if (totalScore > -40 && totalScore < 40) return;
   const isSell = totalScore >= 40;
@@ -55,28 +48,26 @@ async function sendTelegramAlert(masterSignal, totalScore, dxy, nfp, cpi, growth
   );
 }
 
-// 2. Zone Pantau Alert — ENHANCED with probability badge
-async function sendZoneAlertEnhanced(zone, extraMsg = "") {
+// 2. Zone Pantau Alert
+async function sendZoneAlert(zone) {
   const icon     = zone.bias === "BUY" ? "🟢" : "🔴";
-  const typeIcon = { FVG:"🔷", OB:"🔶", PHP:"⬜", PHL:"⬜", LIQ:"💧", BRK:"🔀", SESSION:"🕐", CLUSTER:"🔗" }[zone.type] || "📍";
-  const probBadge = zone.strength >= 4 ? "🔥 HIGH PROBABILITY" : (zone.strength >= 3 ? "⚡ MEDIUM" : "📉 LOW");
+  const typeIcon = { FVG:"🔷", OB:"🔶", PHP:"⬜", PHL:"⬜", LIQ:"💧", BRK:"🔀", SESSION:"🕐" }[zone.type] || "📍";
   await tgSend(
-    `${icon} <b>ZONA PANTAU — ${probBadge}</b> ${icon}\n` +
+    `${icon} <b>ZONA PANTAU BARU — XAU/USD</b> ${icon}\n` +
     `━━━━━━━━━━━━━━━━━━━━━━\n` +
-    `${typeIcon} <b>TYPE:</b> ${zone.typeLabel}${zone.isCluster ? " (CLUSTER)" : ""}${zone.isFresh ? " • FRESH" : ""}\n` +
+    `${typeIcon} <b>TYPE:</b> ${zone.typeLabel}\n` +
     `📐 <b>BIAS:</b> ${zone.bias}\n` +
     `📍 <b>ZONA:</b> $${zone.low.toFixed(2)} – $${zone.high.toFixed(2)}\n` +
     `💡 <b>MIDPOINT:</b> $${((zone.low + zone.high) / 2).toFixed(2)}\n` +
-    `📊 <b>STRENGTH:</b> ${zone.strength}/5\n` +
+    `📊 <b>STRENGTH:</b> ${zone.strength}/10\n` +
     `━━━━━━━━━━━━━━━━━━━━━━\n` +
     `📝 <b>ALASAN:</b> ${zone.reason}\n` +
     `🕒 <b>SESSION:</b> ${zone.session}\n` +
-    `${extraMsg}\n` +
-    `⚠️ <i>Entry setelah konfirmasi M1 ChoCH + RSI hook!</i>`
+    `⚠️ <i>Ini ZONA PANTAU — tunggu reaksi price sebelum entry!</i>`
   );
 }
 
-// 3. Entry Trigger Alert — unchanged
+// 3. Entry Trigger Alert
 async function sendEntryTriggerAlert(entry) {
   const icon = entry.bias === "BUY" ? "🟢" : "🔴";
   await tgSend(
@@ -90,13 +81,13 @@ async function sendEntryTriggerAlert(entry) {
     `💰 <b>TP2:</b> $${entry.tp2.toFixed(2)} (~${entry.tp2Pips} pips)\n` +
     `━━━━━━━━━━━━━━━━━━━━━━\n` +
     `📊 <b>CONFLUENCE:</b> ${entry.confluence}/5\n` +
-    `🔍 <b>TRIGGER:</b> M1 ChoCH displacement confirmed\n` +
+    `🔍 <b>TRIGGER:</b> Liquidity Sweep + M1 ChoCH confirmed\n` +
     `🕒 <b>SESSION:</b> ${entry.session}\n` +
     `⚠️ <i>Hold: 5–30 menit | Min RR 1:2 | NOT FINANCIAL ADVICE</i>`
   );
 }
 
-// 4. Swing Signal Alert (unchanged)
+// 4. Swing Signal Alert
 async function sendSwingSignalTelegram(swing) {
   const icon = swing.position.includes("BUY") ? "🟢" : "🔴";
   await tgSend(
@@ -117,7 +108,7 @@ async function sendSwingSignalTelegram(swing) {
   );
 }
 
-// 5. Scalp Signal Alert (unchanged)
+// 5. Scalp Signal Alert
 async function sendScalpSignalTelegram(scalp) {
   const icon = scalp.position.includes("BUY") ? "🟢" : "🔴";
   await tgSend(
@@ -138,7 +129,7 @@ async function sendScalpSignalTelegram(scalp) {
   );
 }
 
-// 6. Swing Invalidated (unchanged)
+// 6. Swing Invalidated
 async function sendSwingInvalidTelegram() {
   await tgSend(
     `⚠️ <b>SWING SIGNAL: INVALIDATED</b>\n` +
@@ -149,7 +140,7 @@ async function sendSwingInvalidTelegram() {
   );
 }
 
-// 7. Scalp Invalidated (unchanged)
+// 7. Scalp Invalidated
 async function sendScalpInvalidTelegram() {
   await tgSend(
     `⚡ <b>SCALP SIGNAL: CLOSED</b>\n` +
@@ -159,7 +150,7 @@ async function sendScalpInvalidTelegram() {
   );
 }
 
-// 8. Pre-news Warning (unchanged)
+// 8. Pre-news Warning
 async function sendPreNewsWarning(newsItem) {
   await tgSend(
     `⏳ <b>PRE-NEWS WARNING</b>\n` +
@@ -196,7 +187,7 @@ async function fetchTradingViewData() {
   } catch (e) { return cachedEvents; }
 }
 
-// ─── MATH PRIMITIVES (unchanged) ─────────────────────────────────────────────
+// ─── MATH PRIMITIVES ─────────────────────────────────────────────────────────
 function calculateEMA(data, period) {
   const k = 2 / (period + 1);
   let arr = [data[0]];
@@ -297,100 +288,8 @@ async function fetchChartData(interval, range) {
   return { c, o, h, l, v, current: c[c.length-1] };
 }
 
-// ─── ZONE PROFITABILITY ENHANCEMENT FUNCTIONS ─────────────────────────────────
-function detectZoneClusters(zones, atr) {
-  if (!zones.length) return zones;
-  const clusters = [];
-  const used = new Set();
-  const distanceThreshold = atr * CLUSTER_DISTANCE_ATR_MULTIPLIER;
-  for (let i = 0; i < zones.length; i++) {
-    if (used.has(i)) continue;
-    const zoneA = zones[i];
-    const clusterZones = [zoneA];
-    const clusterIds = [zoneA.id];
-    for (let j = i + 1; j < zones.length; j++) {
-      if (used.has(j)) continue;
-      const zoneB = zones[j];
-      const midA = (zoneA.high + zoneA.low) / 2;
-      const midB = (zoneB.high + zoneB.low) / 2;
-      const distance = Math.abs(midA - midB);
-      const overlap = (zoneA.low <= zoneB.high && zoneA.high >= zoneB.low);
-      if (overlap || distance <= distanceThreshold) {
-        clusterZones.push(zoneB);
-        clusterIds.push(zoneB.id);
-        used.add(j);
-      }
-    }
-    if (clusterZones.length >= 2) {
-      const mergedHigh = Math.max(...clusterZones.map(z => z.high));
-      const mergedLow = Math.min(...clusterZones.map(z => z.low));
-      const avgStrength = clusterZones.reduce((s, z) => s + z.strength, 0) / clusterZones.length;
-      zoneA.strength = Math.min(5, Math.floor(avgStrength + 1.5));
-      zoneA.high = mergedHigh;
-      zoneA.low = mergedLow;
-      zoneA.typeLabel = `CLUSTER: ${zoneA.typeLabel} +${clusterZones.length - 1} more`;
-      zoneA.isCluster = true;
-      zoneA.clusterMembers = clusterIds;
-      zoneA.reason = `[CLUSTER] ${zoneA.reason} | Berdekatan dengan ${clusterZones.length - 1} zone lain → probabilitas tinggi.`;
-    }
-    clusters.push(zoneA);
-    used.add(i);
-  }
-  return clusters;
-}
+// ─── RAW ZONE SCANNERS ──────────────────────────────────────────────────────
 
-function isFreshZone(zone, h1, m5, atr) {
-  const lookbackCandles = 20;
-  const startIdx = Math.max(0, h1.h.length - lookbackCandles);
-  for (let i = startIdx; i < h1.h.length; i++) {
-    const candleHigh = h1.h[i];
-    const candleLow = h1.l[i];
-    if (candleLow <= zone.high + atr * 0.1 && candleHigh >= zone.low - atr * 0.1) {
-      return false;
-    }
-  }
-  return true;
-}
-
-function isZoneMitigated(zone, currentPrice, atr) {
-  const midpoint = (zone.high + zone.low) / 2;
-  const distanceFromMid = Math.abs(currentPrice - midpoint);
-  if (zone.bias === "BUY" && currentPrice > midpoint + (atr * MAX_MITIGATION_ATR)) return true;
-  if (zone.bias === "SELL" && currentPrice < midpoint - (atr * MAX_MITIGATION_ATR)) return true;
-  return false;
-}
-
-function hasPriceReacted(zone, m5, atr) {
-  const lookbackCandles = 5;
-  const startIdx = Math.max(0, m5.c.length - lookbackCandles);
-  const zoneBoundary = zone.bias === "BUY" ? zone.low : zone.high;
-  const reactionThreshold = atr * MIN_REACTION_ATR;
-  for (let i = startIdx; i < m5.c.length; i++) {
-    if (zone.bias === "BUY") {
-      if (m5.l[i] <= zoneBoundary + reactionThreshold && m5.c[i] > m5.l[i] + reactionThreshold) return true;
-    } else {
-      if (m5.h[i] >= zoneBoundary - reactionThreshold && m5.c[i] < m5.h[i] - reactionThreshold) return true;
-    }
-  }
-  return false;
-}
-
-function updatePendingZones(zones, currentTime) {
-  for (const [id, data] of pendingZones.entries()) {
-    if (currentTime - data.createdAt > ZONE_EXPIRY_MS) pendingZones.delete(id);
-  }
-  for (const zone of zones) {
-    if (zone.strength >= 4 && !pendingZones.has(zone.id)) {
-      pendingZones.set(zone.id, {
-        zone: { ...zone },
-        createdAt: currentTime,
-        hitCount: 0
-      });
-    }
-  }
-}
-
-// ─── ZONE SCANNER ENGINE (enhanced) ──────────────────────────────────────────
 function scanPreviousHL(h1, session) {
   const zones = [];
   const swings = findSwingHighsLows(h1.h, h1.l, 4, 4);
@@ -405,7 +304,7 @@ function scanPreviousHL(h1, session) {
     const broken = price > sh.val;
     if (broken) return;
     const dist  = Math.abs(price - sh.val);
-    if (dist > atr * 8) return;
+    if (dist > atr * 8) return; 
     const strength = 5 - i;
     zones.push({
       type: "PHP", typeLabel: "Previous High (Supply)",
@@ -445,7 +344,6 @@ function scanFVG(m5, session) {
 
   for (let i = len - 30; i < len - 2; i++) {
     if (i < 2) continue;
-    // Bullish FVG
     const bullGapLow = m5.l[i];
     const bullGapHigh = m5.h[i + 2];
     if (bullGapLow > bullGapHigh) {
@@ -461,12 +359,12 @@ function scanFVG(m5, session) {
           type: "FVG", typeLabel: "Fair Value Gap (Demand)",
           bias: isBelowPrice ? "BUY" : "TARGET",
           high: bullGapLow, low: bullGapHigh, strength,
-          reason: `Bullish FVG unfilled di $${bullGapHigh.toFixed(2)}-$${bullGapLow.toFixed(2)} — imbalance magnet`,
+          reason: `Bullish FVG unfilled di $${bullGapHigh.toFixed(2)}-$${bullGapLow.toFixed(2)}`,
           session, id: `FVG_BULL_${i}_${bullGapLow.toFixed(2)}`
         });
       }
     }
-    // Bearish FVG
+
     const bearGapHigh = m5.h[i];
     const bearGapLow = m5.l[i + 2];
     if (bearGapHigh < bearGapLow) {
@@ -482,7 +380,7 @@ function scanFVG(m5, session) {
           type: "FVG", typeLabel: "Fair Value Gap (Supply)",
           bias: isAbovePrice ? "SELL" : "TARGET",
           high: bearGapLow, low: bearGapHigh, strength,
-          reason: `Bearish FVG unfilled di $${bearGapHigh.toFixed(2)}-$${bearGapLow.toFixed(2)} — imbalance magnet`,
+          reason: `Bearish FVG unfilled di $${bearGapHigh.toFixed(2)}-$${bearGapLow.toFixed(2)}`,
           session, id: `FVG_BEAR_${i}_${bearGapHigh.toFixed(2)}`
         });
       }
@@ -492,14 +390,16 @@ function scanFVG(m5, session) {
 }
 
 function scanOrderBlocks(m5, session) {
-  const zones = [];
+  const zones  = [];
   const atr    = calculateATR(m5.h, m5.l, m5.c, 14);
   const price  = m5.current;
   const len    = m5.c.length;
+
   for (let i = len - 40; i < len - 3; i++) {
     if (i < 1) continue;
     const bodySize = Math.abs(m5.c[i] - m5.o[i]);
     if (bodySize < atr * 0.3) continue;
+
     const isBearCandle = m5.c[i] < m5.o[i];
     if (isBearCandle) {
       const nextUp = m5.c[i+1] > m5.o[i+1] && m5.c[i+2] > m5.o[i+2];
@@ -508,15 +408,15 @@ function scanOrderBlocks(m5, session) {
         const dist = Math.abs(price - m5.l[i]);
         if (dist < atr * 12) {
           zones.push({
-            type: "OB", typeLabel: "Order Block (Bullish OB)",
-            bias: "BUY", high: m5.o[i], low: m5.l[i],
-            strength: impulse ? 5 : 3,
-            reason: `Bull OB di $${m5.l[i].toFixed(2)}–$${m5.o[i].toFixed(2)} — last red candle sebelum impulse up`,
+            type: "OB", typeLabel: "Order Block (Bullish OB)", bias: "BUY",
+            high: m5.o[i], low: m5.l[i], strength: impulse ? 5 : 3,
+            reason: `Bull OB di $${m5.l[i].toFixed(2)}–$${m5.o[i].toFixed(2)}`,
             session, id: `OB_BULL_${i}_${m5.l[i].toFixed(2)}`
           });
         }
       }
     }
+
     const isBullCandle = m5.c[i] > m5.o[i];
     if (isBullCandle) {
       const nextDn = m5.c[i+1] < m5.o[i+1] && m5.c[i+2] < m5.o[i+2];
@@ -525,10 +425,9 @@ function scanOrderBlocks(m5, session) {
         const dist = Math.abs(price - m5.h[i]);
         if (dist < atr * 12) {
           zones.push({
-            type: "OB", typeLabel: "Order Block (Bearish OB)",
-            bias: "SELL", high: m5.h[i], low: m5.o[i],
-            strength: impulse ? 5 : 3,
-            reason: `Bear OB di $${m5.o[i].toFixed(2)}–$${m5.h[i].toFixed(2)} — last green candle sebelum impulse down`,
+            type: "OB", typeLabel: "Order Block (Bearish OB)", bias: "SELL",
+            high: m5.h[i], low: m5.o[i], strength: impulse ? 5 : 3,
+            reason: `Bear OB di $${m5.o[i].toFixed(2)}–$${m5.h[i].toFixed(2)}`,
             session, id: `OB_BEAR_${i}_${m5.h[i].toFixed(2)}`
           });
         }
@@ -543,15 +442,14 @@ function scanBreakers(m5, session) {
   const atr = calculateATR(m5.h, m5.l, m5.c, 14);
   const price = m5.current;
   const len = m5.c.length;
+
   for (let i = len - 50; i < len - 5; i++) {
     if (i < 1) continue;
     const isBullCandleHere = m5.c[i] > m5.o[i];
     if (isBullCandleHere) {
-      const obHigh = m5.h[i], obLow = m5.l[i];
+      const obHigh = m5.h[i], obLow  = m5.l[i];
       let wasBroken = false;
-      for (let j = i + 2; j < Math.min(i + 15, len); j++) {
-        if (m5.l[j] > obHigh) { wasBroken = true; break; }
-      }
+      for (let j = i + 2; j < Math.min(i + 15, len); j++) { if (m5.l[j] > obHigh) { wasBroken = true; break; } }
       if (!wasBroken) continue;
       const midpoint = (obHigh + obLow) / 2;
       if (price < midpoint) continue;
@@ -562,17 +460,16 @@ function scanBreakers(m5, session) {
         type: "BRK", typeLabel: "Breaker Block (Flipped Support)",
         bias: midpoint < price ? "BUY" : "TARGET",
         high: obHigh + atr * 0.3, low: obLow - atr * 0.2, strength: 4,
-        reason: `Breaker di $${obHigh.toFixed(2)} — ex-resistance flip ke support setelah structure break`,
+        reason: `Breaker di $${obHigh.toFixed(2)} — ex-resistance flip ke support`,
         session, id: `BRK_BULL_${i}_${obHigh.toFixed(2)}`
       });
     }
+
     const isBearCandleHere = m5.c[i] < m5.o[i];
     if (isBearCandleHere) {
-      const obHigh = m5.h[i], obLow = m5.l[i];
+      const obHigh = m5.h[i], obLow  = m5.l[i];
       let wasBroken = false;
-      for (let j = i + 2; j < Math.min(i + 15, len); j++) {
-        if (m5.h[j] < obLow) { wasBroken = true; break; }
-      }
+      for (let j = i + 2; j < Math.min(i + 15, len); j++) { if (m5.h[j] < obLow) { wasBroken = true; break; } }
       if (!wasBroken) continue;
       const midpoint = (obHigh + obLow) / 2;
       if (Math.abs(price - midpoint) > atr * 5) continue;
@@ -583,7 +480,7 @@ function scanBreakers(m5, session) {
         type: "BRK", typeLabel: "Breaker Block (Flipped Resistance)",
         bias: midpoint > price ? "SELL" : "TARGET",
         high: obHigh + atr * 0.2, low: obLow - atr * 0.3, strength: 4,
-        reason: `Breaker di $${obLow.toFixed(2)} — ex-support flip ke resistance setelah structure break`,
+        reason: `Breaker di $${obLow.toFixed(2)} — ex-support flip ke resistance`,
         session, id: `BRK_BEAR_${i}_${obLow.toFixed(2)}`
       });
     }
@@ -597,10 +494,12 @@ function scanLiquidityLevels(h1, m5, session) {
   const price = h1.current;
   const len   = h1.h.length;
   const tolerance = Math.min(atr * 0.5, 2.0);
+
   for (let i = len - 30; i < len - 2; i++) {
     for (let j = i + 2; j < len - 1; j++) {
       const diffH = Math.abs(h1.h[i] - h1.h[j]);
       const diffL = Math.abs(h1.l[i] - h1.l[j]);
+
       if (diffH < tolerance) {
         const lvl  = (h1.h[i] + h1.h[j]) / 2;
         const abovePrice = lvl > price;
@@ -610,11 +509,12 @@ function scanLiquidityLevels(h1, m5, session) {
             type: "LIQ", typeLabel: "Liquidity Level (Equal Highs)",
             bias: abovePrice ? "SELL" : "TARGET",
             high: lvl + tolerance, low: lvl - tolerance * 0.5, strength: 4,
-            reason: `Equal highs di ~$${lvl.toFixed(2)} — stop hunt zone, potensi reversal setelah sweep`,
+            reason: `Equal highs di ~$${lvl.toFixed(2)} — stop hunt zone`,
             session, id: `LIQ_HIGH_${lvl.toFixed(2)}`
           });
         }
       }
+
       if (diffL < tolerance) {
         const lvl  = (h1.l[i] + h1.l[j]) / 2;
         const belowPrice = lvl < price;
@@ -622,8 +522,9 @@ function scanLiquidityLevels(h1, m5, session) {
         if (dist < atr * 10 && dist > atr * 0.5) {
           zones.push({
             type: "LIQ", typeLabel: "Liquidity Level (Equal Lows)",
-            bias: "BUY", high: lvl + tolerance * 0.5, low: lvl - tolerance, strength: 4,
-            reason: `Equal lows di ~$${lvl.toFixed(2)} — stop hunt zone, potensi reversal setelah sweep`,
+            bias: "BUY",
+            high: lvl + tolerance * 0.5, low: lvl - tolerance, strength: 4,
+            reason: `Equal lows di ~$${lvl.toFixed(2)} — stop hunt zone`,
             session, id: `LIQ_LOW_${lvl.toFixed(2)}`
           });
         }
@@ -639,6 +540,7 @@ function scanSessionLevels(h1, session) {
   const price = h1.current;
   const now   = new Date();
   const utcH  = now.getUTCHours();
+
   if (utcH >= 7 && utcH <= 20) {
     const londonOpen = h1.o[h1.o.length - Math.min(utcH - 7 + 1, h1.o.length - 1)] || price;
     const dist       = Math.abs(price - londonOpen);
@@ -647,7 +549,7 @@ function scanSessionLevels(h1, session) {
         type: "SESSION", typeLabel: "Session Level (London Open)",
         bias: price > londonOpen ? "SELL" : "BUY",
         high: londonOpen + atr * 0.3, low: londonOpen - atr * 0.3, strength: 3,
-        reason: `London open level $${londonOpen.toFixed(2)} — institutional reference price`,
+        reason: `London open level $${londonOpen.toFixed(2)}`,
         session, id: `SESSION_LONDON_${londonOpen.toFixed(2)}`
       });
     }
@@ -655,8 +557,8 @@ function scanSessionLevels(h1, session) {
   return zones;
 }
 
-// Master zone scanner (enhanced)
-async function scanAllZones(h1, m5, session) {
+// ─── SPATIAL CONFLUENCE ENGINE (GOLDEN POI) ──────────────────────────────────
+async function scanAllZones(h1, m5, session, swing) {
   try {
     const raw = [
       ...scanPreviousHL(h1, session),
@@ -667,115 +569,162 @@ async function scanAllZones(h1, m5, session) {
       ...scanSessionLevels(h1, session)
     ];
 
+    // 1. Calculate Premium/Discount Equilibrium (Last 48 H1 candles for daily range)
+    const recentH1High = Math.max(...h1.h.slice(-48));
+    const recentH1Low  = Math.min(...h1.l.slice(-48));
+    const equilibrium  = (recentH1High + recentH1Low) / 2;
+
+    const h4Bias = swing ? (swing.h4Bias || "NEUTRAL") : "NEUTRAL";
+
+    // 2. Overlap & Confluence Scoring Engine
+    let scoredZones = raw.map(z => {
+      let score = z.strength;
+      let notes = [z.reason];
+      const midpoint = (z.high + z.low) / 2;
+
+      // A. HTF Trend Alignment
+      if (h4Bias.includes("BULLISH") && z.bias === "BUY") { score += 2; notes.push("Searah H4 Trend"); }
+      if (h4Bias.includes("BEARISH") && z.bias === "SELL") { score += 2; notes.push("Searah H4 Trend"); }
+
+      // B. Premium / Discount Pricing
+      if (z.bias === "BUY" && midpoint < equilibrium) { score += 1; notes.push("Discount Pricing Valid"); }
+      if (z.bias === "SELL" && midpoint > equilibrium) { score += 1; notes.push("Premium Pricing Valid"); }
+
+      return { ...z, strength: score, advancedReason: notes.join(" + ") };
+    });
+
+    // C. Golden POI Detection (OB + FVG Overlap)
+    const fvgs = scoredZones.filter(z => z.type === "FVG");
+    scoredZones.forEach(z => {
+      if (z.type === "OB") {
+         const overlappingFVG = fvgs.find(f => f.bias === z.bias && z.low <= f.high && z.high >= f.low);
+         if (overlappingFVG) {
+            z.strength += 3; // Massive boost for Golden POI
+            z.advancedReason = "⚡ GOLDEN POI (OB+FVG Overlap) + " + z.advancedReason;
+            z.typeLabel = "Golden POI (OB + FVG)";
+         }
+      }
+    });
+
+    const price = m5.current;
+    
+    // 3. Strict Filtering (Block counter-trend trash zones)
+    let filtered = scoredZones.filter(z => {
+      if (z.bias === "TARGET") return false;
+      // Jangan ambil zona counter-trend yang lemah
+      if (h4Bias.includes("BULLISH") && z.bias === "SELL" && z.strength < 5) return false; 
+      if (h4Bias.includes("BEARISH") && z.bias === "BUY" && z.strength < 5) return false;
+      
+      return z.bias === "BUY" ? ((z.high + z.low)/2) < price : ((z.high + z.low)/2) > price;
+    });
+
+    // 4. Deduplicate & Sort by Narrative Strength
     const seen = new Set();
-    const deduped = raw.filter(z => {
+    const deduped = filtered.filter(z => {
       if (seen.has(z.id)) return false;
       seen.add(z.id); return true;
     });
 
-    const price = m5.current;
-    const atr = calculateATR(m5.h, m5.l, m5.c, 14);
-
-    let filtered = deduped.filter(z => {
-      if (z.bias === "TARGET") return false;
-      const midpoint = (z.high + z.low) / 2;
-      if (isZoneMitigated(z, price, atr)) return false;
-      if (z.bias === "BUY") return midpoint < price;
-      if (z.bias === "SELL") return midpoint > price;
-      return true;
-    });
-
-    filtered = detectZoneClusters(filtered, atr);
-
-    const currentTime = Date.now();
-    for (const zone of filtered) {
-      const isFresh = isFreshZone(zone, h1, m5, atr);
-      zone.isFresh = isFresh;
-      if (isFresh) {
-        zone.strength = Math.min(5, zone.strength + 1);
-        zone.reason = `[FRESH ZONE] ${zone.reason} — Belum pernah tersentuh, probabilitas tinggi.`;
-      }
-      const pending = pendingZones.get(zone.id);
-      if (pending) {
-        zone.isPending = true;
-        zone.pendingSince = pending.createdAt;
-        zone.strength = Math.min(5, zone.strength + 0.5);
-      }
-    }
-
-    filtered.sort((a, b) => {
-      const scoreA = (a.strength * 100) + (a.isFresh ? 20 : 0) + (a.isCluster ? 15 : 0) - Math.abs(price - ((a.high + a.low) / 2));
-      const scoreB = (b.strength * 100) + (b.isFresh ? 20 : 0) + (b.isCluster ? 15 : 0) - Math.abs(price - ((b.high + b.low) / 2));
+    // Sort by algorithmic strength first, proximity second
+    deduped.sort((a,b) => {
+      const scoreA = (a.strength * 100) - Math.abs(price - ((a.high + a.low) / 2));
+      const scoreB = (b.strength * 100) - Math.abs(price - ((b.high + b.low) / 2));
       return scoreB - scoreA;
     });
 
-    updatePendingZones(filtered, currentTime);
-
-    return filtered.slice(0, 12).map(z => ({
+    return deduped.slice(0, 8).map(z => ({
       ...z,
+      reason: z.advancedReason, // Override default reason with advanced narrative
       midpoint: ((z.high + z.low) / 2).toFixed(2),
       highStr: z.high.toFixed(2),
       lowStr: z.low.toFixed(2),
-      priceInZone: price >= z.low && price <= z.high,
-      isCluster: z.isCluster || false,
-      isFresh: z.isFresh || false,
-      isPending: z.isPending || false
+      priceInZone: price >= z.low && price <= z.high
     }));
   } catch (e) {
     return [];
   }
 }
 
-// ─── ENTRY TRIGGER ENGINE (M1) unchanged ─────────────────────────────────────
+// ─── ENTRY TRIGGER ENGINE (M1) — LIQUIDITY SWEEP VALIDATOR ────────────────────
 async function checkEntryTriggers(m1, zones, session) {
   const triggers = [];
   if (!zones || zones.length === 0) return triggers;
+
   const m1Atr    = calculateATR(m1.h, m1.l, m1.c, 14);
   const m1RsiArr = calculateRSI(m1.c, 14, true);
   const price    = m1.current;
 
   for (const zone of zones) {
-    const nearZone = price >= zone.low - m1Atr * 0.5 && price <= zone.high + m1Atr * 0.5;
+    // Price must be physically touching the zone or extremely close (sniper logic)
+    const nearZone = price >= zone.low - m1Atr * 0.2 && price <= zone.high + m1Atr * 0.2;
     if (!nearZone) continue;
-    const dir  = zone.bias === "BUY" ? "buy" : "sell";
+
+    const dir = zone.bias === "BUY" ? "buy" : "sell";
+
+    // 1. Liquidity Sweep Detection (Did M1 wick into the deep end of the zone?)
+    let sweepConfirmed = false;
+    if (dir === "buy") {
+       // Check if recent lows wicked into the bottom 30% of the zone
+       sweepConfirmed = m1.l.slice(-6, -1).some(l => l <= zone.low + (zone.high - zone.low)*0.3);
+    } else {
+       sweepConfirmed = m1.h.slice(-6, -1).some(h => h >= zone.high - (zone.high - zone.low)*0.3);
+    }
+
+    // 2. Displacement ChoCH Validation
     const choch = isDisplacementChoCH(m1.o, m1.h, m1.l, m1.c, dir);
-    if (!choch) continue;
+    if (!choch || !sweepConfirmed) continue; // Wajib sweep + ChoCH
+
+    // 3. RSI Validator (Menghindari entry di pucuk)
     const m1Rsi = m1RsiArr[m1RsiArr.length - 1];
-    const rsiOk = dir === "buy" ? (m1Rsi >= 30 && m1Rsi <= 60) : (m1Rsi >= 40 && m1Rsi <= 70);
+    const rsiOk = dir === "buy" ? (m1Rsi >= 30 && m1Rsi <= 55) : (m1Rsi >= 45 && m1Rsi <= 70);
     if (!rsiOk) continue;
 
+    // 4. Dynamic Risk-to-Reward (RR) Targeting
     const entryPrice = price;
     let sl, tp1, tp2;
+    
     if (dir === "buy") {
-      sl  = zone.low - m1Atr * 0.8;
-      tp1 = entryPrice + m1Atr * 2;
-      tp2 = entryPrice + m1Atr * 4;
+      const recentLow = Math.min(...m1.l.slice(-6)); // Stop loss di bawah wick terdalam
+      sl  = recentLow - m1Atr * 0.5;
+      const risk = entryPrice - sl;
+      tp1 = entryPrice + (risk * 2); // Strict 1:2 RR Target
+      tp2 = entryPrice + (risk * 4); // 1:4 Runner Target
     } else {
-      sl  = zone.high + m1Atr * 0.8;
-      tp1 = entryPrice - m1Atr * 2;
-      tp2 = entryPrice - m1Atr * 4;
+      const recentHigh = Math.max(...m1.h.slice(-6));
+      sl  = recentHigh + m1Atr * 0.5;
+      const risk = sl - entryPrice;
+      tp1 = entryPrice - (risk * 2);
+      tp2 = entryPrice - (risk * 4);
     }
-    const typeBonus = ["FVG","OB","LIQ"].includes(zone.type) ? 1 : 0;
-    const confluence = Math.min(5, Math.round(zone.strength * 0.6 + 1.5 + typeBonus));
+
+    // RR Blockade: Jika volatilitas gila dan Stop Loss terlalu lebar, batalkan sinyal
+    const riskPips = Math.abs(entryPrice - sl);
+    if (riskPips > m1Atr * 8) continue; 
+
+    // Score confluence ditingkatkan jika sweep terkonfirmasi dengan jelas
+    const confluence = Math.min(5, Math.round((zone.strength * 0.4) + 2.5));
 
     triggers.push({
       bias: zone.bias,
       zoneType: zone.typeLabel,
       zoneBias: zone.bias,
-      entry: entryPrice,
-      sl, tp1, tp2,
-      tp1Pips: Math.abs(tp1 - entryPrice).toFixed(0),
-      tp2Pips: Math.abs(tp2 - entryPrice).toFixed(0),
+      entry:     entryPrice,
+      sl,
+      tp1,
+      tp2,
+      tp1Pips:  Math.abs(tp1 - entryPrice).toFixed(0),
+      tp2Pips:  Math.abs(tp2 - entryPrice).toFixed(0),
       confluence,
       session,
-      zoneId: zone.id,
+      zoneId:   zone.id,
       triggerId: `ENTRY_${zone.id}_${entryPrice.toFixed(2)}`
     });
   }
+
   return triggers;
 }
 
-// ─── SWING SIGNAL ENGINE (unchanged) ─────────────────────────────────────────
+// ─── SWING SIGNAL ENGINE (H4/H1) ─────────────────────────────────────────────
 async function calculateSwingSignal(h4, h1, session) {
   try {
     const h4Ema21  = calculateEMA(h4.c, 21);
@@ -855,7 +804,7 @@ async function calculateSwingSignal(h4, h1, session) {
   }
 }
 
-// ─── SCALP SIGNAL ENGINE (unchanged) ─────────────────────────────────────────
+// ─── SCALP SIGNAL ENGINE (M5, gated by Swing) ────────────────────────────────
 async function calculateScalpSignal(m5, swing, session) {
   try {
     const price = m5.current;
@@ -883,7 +832,7 @@ async function calculateScalpSignal(m5, swing, session) {
     const nearDemand = swing.demandZone ? price >= parseFloat(swing.demandZone.btm)-m5Atr && price <= parseFloat(swing.demandZone.top)+m5Atr*2 : true;
     const nearSupply = swing.supplyZone ? price >= parseFloat(swing.supplyZone.btm)-m5Atr*2 && price <= parseFloat(swing.supplyZone.top)+m5Atr : true;
 
-    let score = 1;
+    let score = 1; 
     const conf = { swingAligned:true, zoneProximity:false, engulfing:false, volume:false, rsiHook:false };
     if (swingBuy && nearDemand)   { score++; conf.zoneProximity = true; }
     if (swingSell && nearSupply)  { score++; conf.zoneProximity = true; }
@@ -921,7 +870,7 @@ async function calculateScalpSignal(m5, swing, session) {
   }
 }
 
-// ─── MACRO ENGINES (unchanged) ────────────────────────────────────────────────
+// ─── MACRO ENGINES ────────────────────────────────────────────────────────────
 async function fetchDXY() {
   try {
     const r = await axios.get("https://query2.finance.yahoo.com/v8/finance/chart/DX-Y.NYB?interval=1d&range=2d",{ timeout:8000, headers:{"User-Agent":"Mozilla/5.0"} });
@@ -1011,6 +960,7 @@ module.exports = async (req, res) => {
   try {
     const session = getSession();
 
+    // Fetch all timeframes + macro in parallel
     const [events, crude, dxy, h4Raw, h1, m5, m1] = await Promise.all([
       fetchTradingViewData(),
       fetchCrudeOil(),
@@ -1021,6 +971,7 @@ module.exports = async (req, res) => {
       fetchChartData("1m","1d")
     ]);
 
+    // Macro scoring
     const nfp    = scoreNFP(events);
     const cpi    = scoreCPI(events, crude);
     const growth = scoreGrowth(events);
@@ -1028,14 +979,20 @@ module.exports = async (req, res) => {
     const total  = nfp.score + cpi.score + growth.score + fed.score;
     const master = total >= 40 ? "STRONG SELL XAU" : total <= -40 ? "STRONG BUY XAU" : "NEUTRAL";
 
+    // Swing + Scalp signals
     const swing  = await calculateSwingSignal(h4Raw, h1, session);
     const scalp  = await calculateScalpSignal(m5, swing, session);
-    const zones  = await scanAllZones(h1, m5, session);
+
+    // Zone scanner + Entry triggers (INSTITUTIONAL UPGRADE APPLIED)
+    const zones   = await scanAllZones(h1, m5, session, swing);
     const entries = await checkEntryTriggers(m1, zones, session);
 
+    // ── CRON: Telegram alert logic ───────────────────────────────────────────
     if (isCron) {
+      // Macro alert
       await sendTelegramAlert(master, total, dxy, nfp, cpi, growth, fed);
 
+      // Swing tracking
       const swingID     = swing.position + "_" + swing.entry;
       const swingActive = swing.position.includes("SWING BUY — ACTIVE") || swing.position.includes("SWING SELL — ACTIVE");
       if (swingActive && swingID !== lastSentSwingID) {
@@ -1046,6 +1003,7 @@ module.exports = async (req, res) => {
         lastSentSwingID = ""; isSwingActive = false;
       }
 
+      // Scalp tracking
       const scalpID     = scalp.position + "_" + scalp.entry;
       const scalpActive = scalp.position.includes("SCALP BUY — ACTIVE") || scalp.position.includes("SCALP SELL — ACTIVE");
       if (scalpActive && scalpID !== lastSentScalpID) {
@@ -1056,23 +1014,16 @@ module.exports = async (req, res) => {
         lastSentScalpID = ""; isScalpActive = false;
       }
 
-      // Enhanced zone alerts: only high probability zones
-      const atr = calculateATR(m5.h, m5.l, m5.c, 14);
+      // Zone alerts
       for (const zone of zones) {
         if (!sentZoneIDs.has(zone.id)) {
-          const hasReaction = hasPriceReacted(zone, m5, atr);
-          const isHighProb = (zone.strength >= 4 && zone.isFresh) || zone.isCluster || hasReaction;
-          if (isHighProb) {
-            const extraMsg = hasReaction ? "\n✅ REAKSI TERKONFIRMASI — Price sudah bounce dari zona!" : 
-                            (zone.isCluster ? "\n🔗 CLUSTER ZONE — Multiple confluences!" : 
-                            (zone.isFresh ? "\n🆕 FRESH ZONE — Belum pernah diuji!" : ""));
-            await sendZoneAlertEnhanced(zone, extraMsg);
-            sentZoneIDs.add(zone.id);
-          }
-          if (sentZoneIDs.size > 200) sentZoneIDs.clear();
+          await sendZoneAlert(zone);
+          sentZoneIDs.add(zone.id);
+          if (sentZoneIDs.size > 200) sentZoneIDs.clear(); // memory cleanup
         }
       }
 
+      // Entry trigger alerts
       for (const entry of entries) {
         if (!sentEntryIDs.has(entry.triggerId)) {
           await sendEntryTriggerAlert(entry);
@@ -1081,6 +1032,7 @@ module.exports = async (req, res) => {
         }
       }
 
+      // Pre-news warnings
       const nowMs = Date.now();
       const upcoming = events.filter(e => {
         if (e.country !== "US" && e.currency !== "USD") return false;
