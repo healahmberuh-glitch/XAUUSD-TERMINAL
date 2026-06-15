@@ -557,9 +557,10 @@ function scanSessionLevels(h1, session) {
   return zones;
 }
 
-// ─── SPATIAL CONFLUENCE ENGINE (GOLDEN POI) ──────────────────────────────────
+// ─── SPATIAL CONFLUENCE & LIMIT ORDER ENGINE (NEW) ───────────────────────────
 async function scanAllZones(h1, m5, session, swing) {
   try {
+    if (!h1.c || h1.c.length === 0 || !m5.c || m5.c.length === 0) return []; 
     const raw = [
       ...scanPreviousHL(h1, session),
       ...scanFVG(m5, session),
@@ -569,37 +570,30 @@ async function scanAllZones(h1, m5, session, swing) {
       ...scanSessionLevels(h1, session)
     ];
 
-    // 1. Calculate Premium/Discount Equilibrium (Last 48 H1 candles for daily range)
     const recentH1High = Math.max(...h1.h.slice(-48));
     const recentH1Low  = Math.min(...h1.l.slice(-48));
     const equilibrium  = (recentH1High + recentH1Low) / 2;
-
     const h4Bias = swing ? (swing.h4Bias || "NEUTRAL") : "NEUTRAL";
 
-    // 2. Overlap & Confluence Scoring Engine
     let scoredZones = raw.map(z => {
       let score = z.strength;
       let notes = [z.reason];
       const midpoint = (z.high + z.low) / 2;
 
-      // A. HTF Trend Alignment
       if (h4Bias.includes("BULLISH") && z.bias === "BUY") { score += 2; notes.push("Searah H4 Trend"); }
       if (h4Bias.includes("BEARISH") && z.bias === "SELL") { score += 2; notes.push("Searah H4 Trend"); }
-
-      // B. Premium / Discount Pricing
-      if (z.bias === "BUY" && midpoint < equilibrium) { score += 1; notes.push("Discount Pricing Valid"); }
-      if (z.bias === "SELL" && midpoint > equilibrium) { score += 1; notes.push("Premium Pricing Valid"); }
+      if (z.bias === "BUY" && midpoint < equilibrium) { score += 1; notes.push("Discount Pricing"); }
+      if (z.bias === "SELL" && midpoint > equilibrium) { score += 1; notes.push("Premium Pricing"); }
 
       return { ...z, strength: score, advancedReason: notes.join(" + ") };
     });
 
-    // C. Golden POI Detection (OB + FVG Overlap)
     const fvgs = scoredZones.filter(z => z.type === "FVG");
     scoredZones.forEach(z => {
       if (z.type === "OB") {
          const overlappingFVG = fvgs.find(f => f.bias === z.bias && z.low <= f.high && z.high >= f.low);
          if (overlappingFVG) {
-            z.strength += 3; // Massive boost for Golden POI
+            z.strength += 3;
             z.advancedReason = "⚡ GOLDEN POI (OB+FVG Overlap) + " + z.advancedReason;
             z.typeLabel = "Golden POI (OB + FVG)";
          }
@@ -608,120 +602,60 @@ async function scanAllZones(h1, m5, session, swing) {
 
     const price = m5.current;
     
-    // 3. Strict Filtering (Block counter-trend trash zones)
     let filtered = scoredZones.filter(z => {
       if (z.bias === "TARGET") return false;
-      // Jangan ambil zona counter-trend yang lemah
       if (h4Bias.includes("BULLISH") && z.bias === "SELL" && z.strength < 5) return false; 
       if (h4Bias.includes("BEARISH") && z.bias === "BUY" && z.strength < 5) return false;
-      
       return z.bias === "BUY" ? ((z.high + z.low)/2) < price : ((z.high + z.low)/2) > price;
     });
 
-    // 4. Deduplicate & Sort by Narrative Strength
     const seen = new Set();
     const deduped = filtered.filter(z => {
       if (seen.has(z.id)) return false;
       seen.add(z.id); return true;
     });
 
-    // Sort by algorithmic strength first, proximity second
     deduped.sort((a,b) => {
       const scoreA = (a.strength * 100) - Math.abs(price - ((a.high + a.low) / 2));
       const scoreB = (b.strength * 100) - Math.abs(price - ((b.high + b.low) / 2));
       return scoreB - scoreA;
     });
 
-    return deduped.slice(0, 8).map(z => ({
-      ...z,
-      reason: z.advancedReason, // Override default reason with advanced narrative
-      midpoint: ((z.high + z.low) / 2).toFixed(2),
-      highStr: z.high.toFixed(2),
-      lowStr: z.low.toFixed(2),
-      priceInZone: price >= z.low && price <= z.high
-    }));
-  } catch (e) {
-    return [];
-  }
+    const m5Atr = calculateATR(m5.h, m5.l, m5.c, 14);
+
+    // Inject SMC Limit Order Logic (SL & TP)
+    return deduped.slice(0, 8).map(z => {
+      const isBuy = z.bias === "BUY";
+      const entryPrice = isBuy ? z.high : z.low; 
+      const slPrice = isBuy ? (z.low - m5Atr * 0.2) : (z.high + m5Atr * 0.2);
+      const risk = Math.abs(entryPrice - slPrice);
+      const tp1 = isBuy ? (entryPrice + risk * 2) : (entryPrice - risk * 2); 
+      const tp2 = isBuy ? (entryPrice + risk * 3) : (entryPrice - risk * 3); 
+
+      return {
+        ...z,
+        reason: z.advancedReason || z.reason,
+        midpoint: ((z.high + z.low) / 2).toFixed(2),
+        highStr: z.high.toFixed(2),
+        lowStr: z.low.toFixed(2),
+        priceInZone: price >= z.low && price <= z.high,
+        signal: {
+          entry: entryPrice.toFixed(2),
+          sl: slPrice.toFixed(2),
+          tp1: tp1.toFixed(2),
+          tp2: tp2.toFixed(2),
+          riskPips: risk.toFixed(1),
+          tp1Pips: (risk * 2).toFixed(1)
+        }
+      };
+    });
+  } catch (e) { return []; }
 }
 
-// ─── ENTRY TRIGGER ENGINE (M1) — LIQUIDITY SWEEP VALIDATOR ────────────────────
+// ─── ENTRY TRIGGER ENGINE (M1) ────────────────────────────────────────────────
+// Dimatikan karena tracking Limit Order dipindah ke Live Trade Manager (index.html)
 async function checkEntryTriggers(m1, zones, session) {
-  const triggers = [];
-  if (!zones || zones.length === 0) return triggers;
-
-  const m1Atr    = calculateATR(m1.h, m1.l, m1.c, 14);
-  const m1RsiArr = calculateRSI(m1.c, 14, true);
-  const price    = m1.current;
-
-  for (const zone of zones) {
-    // Price must be physically touching the zone or extremely close (sniper logic)
-    const nearZone = price >= zone.low - m1Atr * 0.2 && price <= zone.high + m1Atr * 0.2;
-    if (!nearZone) continue;
-
-    const dir = zone.bias === "BUY" ? "buy" : "sell";
-
-    // 1. Liquidity Sweep Detection (Did M1 wick into the deep end of the zone?)
-    let sweepConfirmed = false;
-    if (dir === "buy") {
-       // Check if recent lows wicked into the bottom 30% of the zone
-       sweepConfirmed = m1.l.slice(-6, -1).some(l => l <= zone.low + (zone.high - zone.low)*0.3);
-    } else {
-       sweepConfirmed = m1.h.slice(-6, -1).some(h => h >= zone.high - (zone.high - zone.low)*0.3);
-    }
-
-    // 2. Displacement ChoCH Validation
-    const choch = isDisplacementChoCH(m1.o, m1.h, m1.l, m1.c, dir);
-    if (!choch || !sweepConfirmed) continue; // Wajib sweep + ChoCH
-
-    // 3. RSI Validator (Menghindari entry di pucuk)
-    const m1Rsi = m1RsiArr[m1RsiArr.length - 1];
-    const rsiOk = dir === "buy" ? (m1Rsi >= 30 && m1Rsi <= 55) : (m1Rsi >= 45 && m1Rsi <= 70);
-    if (!rsiOk) continue;
-
-    // 4. Dynamic Risk-to-Reward (RR) Targeting
-    const entryPrice = price;
-    let sl, tp1, tp2;
-    
-    if (dir === "buy") {
-      const recentLow = Math.min(...m1.l.slice(-6)); // Stop loss di bawah wick terdalam
-      sl  = recentLow - m1Atr * 0.5;
-      const risk = entryPrice - sl;
-      tp1 = entryPrice + (risk * 2); // Strict 1:2 RR Target
-      tp2 = entryPrice + (risk * 4); // 1:4 Runner Target
-    } else {
-      const recentHigh = Math.max(...m1.h.slice(-6));
-      sl  = recentHigh + m1Atr * 0.5;
-      const risk = sl - entryPrice;
-      tp1 = entryPrice - (risk * 2);
-      tp2 = entryPrice - (risk * 4);
-    }
-
-    // RR Blockade: Jika volatilitas gila dan Stop Loss terlalu lebar, batalkan sinyal
-    const riskPips = Math.abs(entryPrice - sl);
-    if (riskPips > m1Atr * 8) continue; 
-
-    // Score confluence ditingkatkan jika sweep terkonfirmasi dengan jelas
-    const confluence = Math.min(5, Math.round((zone.strength * 0.4) + 2.5));
-
-    triggers.push({
-      bias: zone.bias,
-      zoneType: zone.typeLabel,
-      zoneBias: zone.bias,
-      entry:     entryPrice,
-      sl,
-      tp1,
-      tp2,
-      tp1Pips:  Math.abs(tp1 - entryPrice).toFixed(0),
-      tp2Pips:  Math.abs(tp2 - entryPrice).toFixed(0),
-      confluence,
-      session,
-      zoneId:   zone.id,
-      triggerId: `ENTRY_${zone.id}_${entryPrice.toFixed(2)}`
-    });
-  }
-
-  return triggers;
+  return []; 
 }
 
 // ─── SWING SIGNAL ENGINE (H4/H1) ─────────────────────────────────────────────
