@@ -1341,52 +1341,59 @@ ${z.session || ""}
 
 
 // ─── LIVE TRADE MANAGER (SMC SIGNAL TRACKER) ───
-        const currentPrice = parseFloat(data.technical_signal?.currentPrice || 0);
+        // 🛡️ Ambil harga dari Swing Signal (karena technical_signal bisa kosong saat diblokir)
+        const rawPrice = data.swing_signal?.currentPrice || data.technical_signal?.currentPrice || 0;
+        const currentPrice = parseFloat(rawPrice);
         const nowMs = Date.now();
+        
+        // 🛡️ VALIDASI HARGA: Pastikan harga bukan 0 akibat delay/blokir API
+        const isPriceValid = currentPrice > 0 && !isNaN(currentPrice);
 
-        // 1. Cek apakah ada Zone Pantau yang tersentuh harga saat ini
-        zones.forEach(z => {
-          if (!z.signal) return;
-          const entry = parseFloat(z.signal.entry);
-          const isBuy = z.bias === "BUY";
-          
-          // Deteksi sentuhan entry (toleransi 0.5 poin/pips agar lebih responsif)
-          const isTriggered = isBuy ? currentPrice <= entry + 0.5 : currentPrice >= entry - 0.5;
-          
-          if (isTriggered) {
-            const exists = activeEntryMemory.find(e => e.id === z.id);
-            if (!exists) {
-              activeEntryMemory.push({
-                ...z,
-                triggeredAt: nowMs,
-                status: 'RUNNING', // Status awal: Sedang berjalan
-                statusColor: '#38BDF8' // Cyan color untuk indikator berjalan
-              });
+        if (isPriceValid) {
+          // 1. Cek apakah ada Zone Pantau yang tersentuh harga saat ini
+          zones.forEach(z => {
+            if (!z.signal) return;
+            const entry = parseFloat(z.signal.entry);
+            const isBuy = z.bias === "BUY";
+            
+            // Deteksi sentuhan entry (toleransi 0.5 poin/pips agar lebih responsif)
+            const isTriggered = isBuy ? currentPrice <= entry + 0.5 : currentPrice >= entry - 0.5;
+            
+            if (isTriggered) {
+              const exists = activeEntryMemory.find(e => e.id === z.id);
+              if (!exists) {
+                activeEntryMemory.push({
+                  ...z,
+                  triggeredAt: nowMs,
+                  status: 'RUNNING', // Status awal: Sedang berjalan
+                  statusColor: '#38BDF8' // Cyan color
+                });
+              }
             }
-          }
-        });
+          });
 
-        // 2. Evaluasi Status Sinyal yang sedang Running (Apakah kena TP atau SL?)
-        activeEntryMemory.forEach(trade => {
-          if (trade.status !== 'RUNNING') return; // Lewati yang sudah close
+          // 2. Evaluasi Status Sinyal yang sedang Running
+          activeEntryMemory.forEach(trade => {
+            if (trade.status !== 'RUNNING') return;
 
-          const isBuy = trade.bias === "BUY";
-          const sl = parseFloat(trade.signal.sl);
-          const tp1 = parseFloat(trade.signal.tp1);
+            const isBuy = trade.bias === "BUY";
+            const sl = parseFloat(trade.signal.sl);
+            const tp1 = parseFloat(trade.signal.tp1);
 
-          if (isBuy) {
-            if (currentPrice <= sl) { trade.status = 'LOSS (SL HIT)'; trade.statusColor = '#FF3B3B'; trade.closedAt = nowMs; }
-            else if (currentPrice >= tp1) { trade.status = 'WIN (TP1 HIT)'; trade.statusColor = '#00FF88'; trade.closedAt = nowMs; }
-          } else {
-            if (currentPrice >= sl) { trade.status = 'LOSS (SL HIT)'; trade.statusColor = '#FF3B3B'; trade.closedAt = nowMs; }
-            else if (currentPrice <= tp1) { trade.status = 'WIN (TP1 HIT)'; trade.statusColor = '#00FF88'; trade.closedAt = nowMs; }
-          }
-        });
+            if (isBuy) {
+              if (currentPrice <= sl) { trade.status = 'LOSS (SL HIT)'; trade.statusColor = '#FF3B3B'; trade.closedAt = nowMs; }
+              else if (currentPrice >= tp1) { trade.status = 'WIN (TP1 HIT)'; trade.statusColor = '#00FF88'; trade.closedAt = nowMs; }
+            } else {
+              if (currentPrice >= sl) { trade.status = 'LOSS (SL HIT)'; trade.statusColor = '#FF3B3B'; trade.closedAt = nowMs; }
+              else if (currentPrice <= tp1) { trade.status = 'WIN (TP1 HIT)'; trade.statusColor = '#00FF88'; trade.closedAt = nowMs; }
+            }
+          });
+        }
 
         // 3. Bersihkan memori (Hapus sinyal yang sudah Close lebih dari 30 menit)
         activeEntryMemory = activeEntryMemory.filter(e => {
           if (e.status === 'RUNNING') return true;
-          return nowMs - e.closedAt < 1800000; // Tahan history di layar selama 30 menit (1800000 ms)
+          return nowMs - e.closedAt < 1800000;
         });
 
         // 4. Render ke UI Panel Bawah
@@ -1396,7 +1403,7 @@ ${z.session || ""}
         const trackerGrid = document.getElementById('entryTriggerGrid');
         
         // Ubah Judul Panel Bawah Secara Dinamis
-        const panelTitle = document.querySelector('#entryTriggerGrid').previousElementSibling.querySelector('span');
+        const panelTitle = document.querySelector('#entryTriggerGrid').previousElementSibling?.querySelector('span');
         if(panelTitle) panelTitle.textContent = '⚡ LIVE TRADE MANAGER — SIGNAL TRACKER';
 
         if (!activeEntryMemory.length) {
@@ -1440,7 +1447,7 @@ ${z.session || ""}
                 <div class="flex flex-col ml-auto text-right">
                   <span class="font-mono text-[8px] text-[#484F58] mb-0.5">LIVE PNL</span>
                   <span class="font-mono text-[10px] font-bold ${e.bias === 'BUY' ? (currentPrice > e.signal.entry ? 'text-[#00FF88]' : 'text-[#FF3B3B]') : (currentPrice < e.signal.entry ? 'text-[#00FF88]' : 'text-[#FF3B3B]')}">
-                    $${currentPrice.toFixed(2)}
+                    ${isPriceValid ? '$' + currentPrice.toFixed(2) : 'AWAITING'}
                   </span>
                 </div>
               </div>
