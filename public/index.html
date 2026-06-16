@@ -132,6 +132,7 @@
 
 <body class="min-h-screen text-[#E6EDF3] grid-bg">
 
+  <!-- Scrolling Ticker -->
   <div class="overflow-hidden bg-[#0D1117] border-b border-[#21262D] h-8 flex items-center">
     <div class="ticker-inner font-mono text-xs text-[#484F58]">
       <span class="px-8">DEPRESSEDESIGN TRADING STATION &nbsp;·&nbsp; XAU/USD · ZONE PANTAU ENGINE v6.1 &nbsp;·&nbsp; SMC SL/TP &nbsp;·&nbsp; SWING H4/H1 &nbsp;·&nbsp; SCALP M5 &nbsp;·&nbsp; M1 ENTRY TRIGGER &nbsp;·&nbsp; FVG &nbsp;·&nbsp; ORDER BLOCK &nbsp;·&nbsp; LIQUIDITY &nbsp;·&nbsp; BREAKER &nbsp;·&nbsp; NFP &nbsp;·&nbsp; CPI &nbsp;·&nbsp; GDP &nbsp;·&nbsp; FED RATE &nbsp;·&nbsp; NOT FINANCIAL ADVICE &nbsp;·&nbsp;</span>
@@ -139,6 +140,7 @@
     </div>
   </div>
 
+  <!-- DXY Live Meter -->
   <div class="dxy-bar px-6 py-2">
     <div class="max-w-[1400px] mx-auto flex items-center justify-between gap-4 flex-wrap">
       <div class="flex items-center gap-3">
@@ -180,6 +182,7 @@
     </div>
   </div>
 
+  <!-- Header -->
   <header class="border-b border-[#21262D] px-6 py-4">
     <div class="max-w-[1400px] mx-auto flex items-center justify-between gap-4 flex-wrap">
       <div class="flex items-center gap-4">
@@ -208,6 +211,7 @@
     </div>
   </header>
 
+  <!-- Tab Bar -->
   <div class="tab-bar">
     <button class="tab-btn active" id="tabBtnMacro" onclick="switchTab('macro')">
       <span class="tab-icon text-base leading-none">🦅</span>
@@ -227,12 +231,14 @@
     </div>
   </div>
 
+  <!-- ══ TAB 1 — MACRO ══════════════════════════════════════════════ -->
   <div id="panelMacro" class="tab-panel active">
     <div class="max-w-[1400px] mx-auto px-6 pt-8 pb-4">
       <h1 class="font-mono text-2xl md:text-3xl font-bold tracking-tight text-[#E6EDF3] mb-1">MACRO SENTIMENT<span class="cursor text-[#00FF88]">_</span></h1>
       <p class="font-sans text-sm text-[#8B949E] max-w-2xl">4-predictor composite engine. Threshold ±20 per card. Master signal fires at ±40 composite. Directional bias for XAU/USD.</p>
     </div>
 
+    <!-- Master Signal Banner -->
     <div class="max-w-[1400px] mx-auto px-6 pb-6">
       <div id="masterBanner" class="border border-[#21262D] bg-[#0D1117] p-5 relative overflow-hidden">
         <div class="absolute inset-0 flex items-center justify-end pr-6 pointer-events-none select-none">
@@ -270,7 +276,9 @@
       </div>
     </div>
 
+    <!-- 4-Card Grid (sama seperti sebelumnya) -->
     <main class="max-w-[1400px] mx-auto px-6 pb-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+      <!-- ① NFP -->
       <div id="nfpCard" class="macro-card bg-[#0D1117] border border-[#21262D] flex flex-col">
         <div class="flex items-center justify-between px-4 py-3 border-b border-[#21262D]">
           <div class="flex items-center gap-2"><span class="font-mono text-[9px] tracking-[0.2em] text-[#484F58]">01</span><div><div class="font-mono text-xs font-bold text-[#E6EDF3] tracking-wide">NFP PREDICTOR</div><div class="font-mono text-[9px] text-[#484F58]">Nonfarm Payrolls</div></div></div>
@@ -304,6 +312,7 @@
         <div class="px-4 py-2 bg-[#080B0F] border-t border-[#21262D] flex items-center justify-between"><span class="font-mono text-[8px] text-[#484F58]">≥+20 SELL XAU &nbsp;|&nbsp; ≤−20 BUY XAU</span><span class="font-mono text-[8px] text-[#484F58]">MAX ±100</span></div>
       </div>
 
+      <!-- ② CPI -->
       <div id="cpiCard" class="macro-card bg-[#0D1117] border border-[#21262D] flex flex-col">
         <div class="flex items-center justify-between px-4 py-3 border-b border-[#21262D]">
           <div class="flex items-center gap-2"><span class="font-mono text-[9px] tracking-[0.2em] text-[#484F58]">02</span><div><div class="font-mono text-xs font-bold text-[#E6EDF3] tracking-wide">CPI PREDICTOR</div><div class="font-mono text-[9px] text-[#484F58]">Inflation Pressure</div></div></div>
@@ -331,6 +340,7 @@
         <div class="px-4 py-2 bg-[#080B0F] border-t border-[#21262D] flex items-center justify-between"><span class="font-mono text-[8px] text-[#484F58]">≥+20 SELL XAU &nbsp;|&nbsp; ≤−20 BUY XAU</span><span class="font-mono text-[8px] text-[#484F58]">MAX ±100</span></div>
       </div>
 
+      <!-- ③ GROWTH -->
       <div id="growthCard" class="macro-card bg-[#0D1117] border border-[#21262D] flex flex-col">
         <div class="flex items-center justify-between px-4 py-3 border-b border-[#21262D]">
           <div class="flex items-center gap-2"><span class="font-mono text-[9px] tracking-[0.2em] text-[#484F58]">03</span><div><div class="font-mono text-xs font-bold text-[#E6EDF3] tracking-wide">GROWTH PREDICTOR</div><div class="font-mono text-[9px] text-[#484F58]">GDP &amp; Retail Sales</div></div></div>
@@ -359,6 +369,7 @@
         <div class="px-4 py-2 bg-[#080B0F] border-t border-[#21262D] flex items-center justify-between"><span class="font-mono text-[8px] text-[#484F58]">≥+20 SELL XAU &nbsp;|&nbsp; ≤−20 BUY XAU</span><span class="font-mono text-[8px] text-[#484F58]">MAX ±100</span></div>
       </div>
 
+      <!-- ④ FED -->
       <div id="fedCard" class="macro-card bg-[#0D1117] border border-[#21262D] flex flex-col">
         <div class="flex items-center justify-between px-4 py-3 border-b border-[#21262D]">
           <div class="flex items-center gap-2"><span class="font-mono text-[9px] tracking-[0.2em] text-[#484F58]">04</span><div><div class="font-mono text-xs font-bold text-[#E6EDF3] tracking-wide">FED PREDICTOR</div><div class="font-mono text-[9px] text-[#484F58]">Interest Rate Bias</div></div></div>
@@ -392,6 +403,7 @@
       </div>
     </main>
 
+    <!-- USD News Radar -->
     <div class="max-w-[1400px] mx-auto px-6 pb-8">
       <div class="border border-[#21262D] bg-[#0D1117]">
         <div class="flex items-center justify-between px-5 py-3 border-b border-[#21262D] bg-[#080B0F]">
@@ -418,8 +430,13 @@
         </div>
       </div>
     </div>
-  </div><div id="panelTech" class="tab-panel">
+  </div><!-- /panelMacro -->
 
+
+  <!-- ══ TAB 2 — LIVE TECHNICAL TERMINAL ══════════════════════════ -->
+  <div id="panelTech" class="tab-panel">
+
+    <!-- TradingView Chart -->
     <div class="max-w-[1400px] mx-auto px-6 pt-6 pb-4">
       <div class="flex items-center justify-between mb-3 flex-wrap gap-3">
         <div>
@@ -460,6 +477,7 @@
       </div>
     </div>
 
+    <!-- ══ DUAL SIGNAL PANELS ══ -->
     <div class="max-w-[1400px] mx-auto px-6 pb-4">
       <div class="flex items-center gap-4 mb-4">
         <div class="font-mono text-[9px] text-[#484F58] tracking-[0.3em] uppercase">◈ Dual Signal Engine</div>
@@ -468,13 +486,15 @@
           <span class="font-mono text-[8px] px-2 py-0.5 border border-[#F0B429] text-[#F0B429] bg-[#F0B42908]">⚓ SWING</span>
           <span class="font-mono text-[8px] text-[#484F58]">→</span>
           <span class="font-mono text-[8px] px-2 py-0.5 border border-[#38BDF8] text-[#38BDF8] bg-[#38BDF808]">⚡ SCALP</span>
-          <span class="font-mono text-[8px] text-[#484F58]">Independent Scalp Engine Active</span>
+          <span class="font-mono text-[8px] text-[#484F58]">Hierarchical · Scalp gated by Swing</span>
         </div>
       </div>
 
       <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
 
+        <!-- ── SWING SIGNAL PANEL ── -->
         <div class="signal-panel swing-panel" id="swingPanel">
+          <!-- Header -->
           <div class="flex items-center justify-between px-5 py-3 border-b border-[#21262D] bg-[#080B0F]">
             <div class="flex items-center gap-3">
               <div class="relative w-7 h-7 flex items-center justify-center shrink-0">
@@ -493,6 +513,7 @@
             </div>
           </div>
 
+          <!-- H4 Bias Bar -->
           <div class="px-5 py-2 border-b border-[#21262D] flex items-center justify-between bg-[#0D1117]">
             <div class="flex items-center gap-3">
               <span class="font-mono text-[8px] text-[#484F58] tracking-widest uppercase">H4 Bias</span>
@@ -507,12 +528,15 @@
             </div>
           </div>
 
+          <!-- Awaiting -->
           <div id="swingAwaiting" class="px-5 py-10 flex flex-col items-center gap-3 text-center">
             <div class="flex items-center gap-2"><div class="skeleton w-2 h-2 rounded-full"></div><div class="skeleton w-2 h-2 rounded-full"></div><div class="skeleton w-2 h-2 rounded-full"></div></div>
             <div class="font-mono text-[10px] text-[#484F58] tracking-widest uppercase">Awaiting swing data<span class="cursor">_</span></div>
           </div>
 
+          <!-- Content -->
           <div id="swingContent" class="hidden">
+            <!-- Position + Price Grid -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-px border-b border-[#21262D]" style="background:#21262D;">
               <div class="bg-[#080B0F] px-5 py-5 flex flex-col gap-2">
                 <div class="font-mono text-[8px] text-[#484F58] tracking-[0.25em] uppercase">Position Signal</div>
@@ -521,6 +545,7 @@
                   <div class="w-2 h-2 rounded-full bg-[#484F58]" id="swingPosDot"></div>
                   <span class="font-mono text-[8px] text-[#484F58]" id="swingPosSub">No active signal</span>
                 </div>
+                <!-- Confluence progress bar -->
                 <div class="mt-2">
                   <div class="flex justify-between font-mono text-[8px] text-[#484F58] mb-1"><span>Confluence</span><span id="swingConfLabel">0/5</span></div>
                   <div class="conf-track"><div id="swingConfBar" class="conf-fill bg-[#484F58]" style="width:0%"></div></div>
@@ -547,11 +572,13 @@
                 </div>
               </div>
             </div>
+            <!-- Zones Info -->
             <div class="px-5 py-2 border-b border-[#21262D] bg-[#0D1117] flex flex-wrap gap-4">
               <div class="flex items-center gap-2"><span class="font-mono text-[8px] text-[#484F58]">H1 Demand:</span><span class="font-mono text-[8px] font-bold text-[#00FF88]" id="swingDemandZone">—</span></div>
               <div class="flex items-center gap-2"><span class="font-mono text-[8px] text-[#484F58]">H1 Supply:</span><span class="font-mono text-[8px] font-bold text-[#FF3B3B]" id="swingSupplyZone">—</span></div>
               <div class="flex items-center gap-2"><span class="font-mono text-[8px] text-[#484F58]">H1 RSI:</span><span class="font-mono text-[8px] font-bold text-[#F0B429]" id="swingRsi">—</span></div>
             </div>
+            <!-- Reasoning -->
             <div class="px-5 py-4">
               <div class="flex items-center gap-3 mb-3">
                 <div class="font-mono text-[8px] text-[#484F58] tracking-[0.3em] uppercase">Analysis</div>
@@ -565,7 +592,11 @@
               <span class="font-mono text-[8px] text-[#FF3B3B] opacity-60">NOT FINANCIAL ADVICE</span>
             </div>
           </div>
-        </div><div class="signal-panel scalp-panel" id="scalpPanel">
+        </div><!-- /swingPanel -->
+
+        <!-- ── SCALP SIGNAL PANEL ── -->
+        <div class="signal-panel scalp-panel" id="scalpPanel">
+          <!-- Header -->
           <div class="flex items-center justify-between px-5 py-3 border-b border-[#21262D] bg-[#080B0F]">
             <div class="flex items-center gap-3">
               <div class="relative w-7 h-7 flex items-center justify-center shrink-0">
@@ -584,10 +615,11 @@
             </div>
           </div>
 
+          <!-- Gate Status Bar -->
           <div class="px-5 py-2 border-b border-[#21262D] flex items-center justify-between bg-[#0D1117]">
             <div class="flex items-center gap-3">
               <span class="font-mono text-[8px] text-[#484F58] tracking-widest uppercase">Swing Gate</span>
-              <span class="gate-badge gate-active" id="scalpGateBadge">✓ INDEPENDENT</span>
+              <span class="gate-badge gate-blocked" id="scalpGateBadge">⊘ BLOCKED</span>
             </div>
             <div class="flex items-center gap-3">
               <span class="font-mono text-[8px] text-[#484F58]">Confluence</span>
@@ -598,12 +630,15 @@
             </div>
           </div>
 
+          <!-- Awaiting -->
           <div id="scalpAwaiting" class="px-5 py-10 flex flex-col items-center gap-3 text-center">
             <div class="flex items-center gap-2"><div class="skeleton w-2 h-2 rounded-full"></div><div class="skeleton w-2 h-2 rounded-full"></div><div class="skeleton w-2 h-2 rounded-full"></div></div>
             <div class="font-mono text-[10px] text-[#484F58] tracking-widest uppercase">Awaiting scalp data<span class="cursor">_</span></div>
           </div>
 
+          <!-- Content -->
           <div id="scalpContent" class="hidden">
+            <!-- Position + Price Grid -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-px border-b border-[#21262D]" style="background:#21262D;">
               <div class="bg-[#080B0F] px-5 py-5 flex flex-col gap-2">
                 <div class="font-mono text-[8px] text-[#484F58] tracking-[0.25em] uppercase">Position Signal</div>
@@ -612,6 +647,7 @@
                   <div class="w-2 h-2 rounded-full bg-[#484F58]" id="scalpPosDot"></div>
                   <span class="font-mono text-[8px] text-[#484F58]" id="scalpPosSub">No active signal</span>
                 </div>
+                <!-- Confluence progress bar -->
                 <div class="mt-2">
                   <div class="flex justify-between font-mono text-[8px] text-[#484F58] mb-1"><span>Confluence</span><span id="scalpConfLabel">0/5</span></div>
                   <div class="conf-track"><div id="scalpConfBar" class="conf-fill bg-[#484F58]" style="width:0%"></div></div>
@@ -638,11 +674,13 @@
                 </div>
               </div>
             </div>
+            <!-- M5 Stats -->
             <div class="px-5 py-2 border-b border-[#21262D] bg-[#0D1117] flex flex-wrap gap-4">
               <div class="flex items-center gap-2"><span class="font-mono text-[8px] text-[#484F58]">M5 RSI:</span><span class="font-mono text-[8px] font-bold text-[#38BDF8]" id="scalpRsi">—</span></div>
               <div class="flex items-center gap-2"><span class="font-mono text-[8px] text-[#484F58]">M5 ATR:</span><span class="font-mono text-[8px] font-bold text-[#38BDF8]" id="scalpAtr">—</span></div>
               <div class="flex items-center gap-2"><span class="font-mono text-[8px] text-[#484F58]">Vol Threshold:</span><span class="font-mono text-[8px] font-bold text-[#F0B429]" id="scalpVolMult">—×</span></div>
             </div>
+            <!-- Reasoning -->
             <div class="px-5 py-4">
               <div class="flex items-center gap-3 mb-3">
                 <div class="font-mono text-[8px] text-[#484F58] tracking-[0.3em] uppercase">Analysis</div>
@@ -652,13 +690,20 @@
               <div id="scalpReasonList"></div>
             </div>
             <div class="px-5 py-2 border-t border-[#21262D] bg-[#080B0F] flex items-center justify-between">
-              <span class="font-mono text-[8px] text-[#484F58]">M5 Engulfing + Volume + RSI Hook</span>
+              <span class="font-mono text-[8px] text-[#484F58]">M5 Engulfing + Volume + RSI Hook · Gated by Swing</span>
               <span class="font-mono text-[8px] text-[#FF3B3B] opacity-60">NOT FINANCIAL ADVICE</span>
             </div>
           </div>
-        </div></div></div><div class="max-w-[1400px] mx-auto px-6 pb-8">
+        </div><!-- /scalpPanel -->
+
+      </div><!-- /dual grid -->
+    </div><!-- /max-w -->
+
+    <!-- ══ ZONE PANTAU PANEL ══ -->
+    <div class="max-w-[1400px] mx-auto px-6 pb-8">
       <div class="border border-[#21262D] bg-[#0D1117]">
 
+        <!-- Header -->
         <div class="flex items-center justify-between px-5 py-3 border-b border-[#21262D] bg-[#080B0F]">
           <div class="flex items-center gap-3">
             <div class="relative w-4 h-4 flex items-center justify-center">
@@ -678,6 +723,7 @@
           </div>
         </div>
 
+        <!-- Zone Type Legend -->
         <div class="px-5 py-2 border-b border-[#21262D] bg-[#0D1117] flex flex-wrap gap-x-5 gap-y-1">
           <span class="font-mono text-[8px] text-[#484F58]">🔷 FVG — Fair Value Gap</span>
           <span class="font-mono text-[8px] text-[#484F58]">🔶 OB — Order Block</span>
@@ -687,12 +733,14 @@
           <span class="font-mono text-[8px] text-[#484F58]">🕐 SESSION — Session Level</span>
         </div>
 
+        <!-- Zone Grid -->
         <div id="zoneGrid" class="p-3 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2 min-h-[120px]">
           <div class="col-span-full flex items-center justify-center py-10">
             <span class="font-mono text-xs text-[#484F58]">Scanning zones<span class="cursor">_</span></span>
           </div>
         </div>
 
+        <!-- Entry Triggers Section (LIVE TRADE MANAGER) -->
         <div class="border-t border-[#21262D]">
           <div class="flex items-center justify-between px-5 py-3 border-b border-[#21262D] bg-[#080B0F]">
             <div class="flex items-center gap-3">
@@ -715,13 +763,17 @@
       </div>
     </div>
 
-  </div><footer class="border-t border-[#21262D] px-6 py-4">
+  </div><!-- /panelTech -->
+
+  <!-- Footer -->
+  <footer class="border-t border-[#21262D] px-6 py-4">
     <div class="max-w-[1400px] mx-auto flex flex-col md:flex-row items-center justify-between gap-2">
       <span class="font-mono text-[10px] text-[#484F58] tracking-widest uppercase">Dual Signal Engine v6.1 by Han — For research only. Not financial advice.</span>
       <span class="font-mono text-[10px] text-[#484F58]">Data: Yahoo Finance + TradingView &nbsp;·&nbsp; Swing H4/H1 · Scalp M5 &nbsp;·&nbsp; Macro ±20/±40 thresholds</span>
     </div>
   </footer>
 
+  <!-- Error Toast -->
   <div id="errorToast" class="fixed bottom-6 right-6 hidden border border-[#FF3B3B] bg-[#0D1117] px-4 py-3 max-w-sm z-50 shadow-lg">
     <div class="flex items-start gap-2">
       <span class="text-[#FF3B3B] font-mono text-xs mt-0.5">✕</span>
@@ -729,6 +781,7 @@
     </div>
   </div>
 
+  <!-- ══ JAVASCRIPT ══════════════════════════════════════════════════ -->
   <script>
     const CARD_THRESHOLD   = 20;
     const MASTER_THRESHOLD = 40;
@@ -761,7 +814,7 @@
     function fmtScore(s)     { return (s>0?'+':'')+s; }
     function fmtPrice(v)     { return (v!=null&&!isNaN(parseFloat(v)))?parseFloat(v).toFixed(2):'—'; }
     function setEl(id,text,color) { const e=document.getElementById(id); if(!e)return; if(text!==undefined)e.textContent=text; if(color)e.style.color=color; }
-    function setAccentBar(id,pts) { const e=document.getElementById(id); if(!e)return; const c=pts>0:'#00FF88':pts<0?'#FF3B3B':'#484F58'; e.style.background=c; e.style.boxShadow=pts!==0?`0 0 6px ${c}99`:'none'; }
+    function setAccentBar(id,pts) { const e=document.getElementById(id); if(!e)return; const c=pts>0?'#00FF88':pts<0?'#FF3B3B':'#484F58'; e.style.background=c; e.style.boxShadow=pts!==0?`0 0 6px ${c}99`:'none'; }
     function updateScoreBar(id,score,type,maxAbs=100) { const b=document.getElementById(id); if(!b)return; const pct=((score+maxAbs)/(2*maxAbs))*100; const c=signalColor(type); b.style.width=Math.max(0,Math.min(100,pct))+'%'; b.style.background=c; b.style.boxShadow=`0 0 8px ${c}66`; }
     function renderRow3(id,c1,c2,c3,labels) { const e=document.getElementById(id); if(!e)return; e.innerHTML=[{l:labels[0],v:c1},{l:labels[1],v:c2},{l:labels[2],v:c3}].map(({l,v})=>`<div class="bg-[#161B22] px-2 py-1.5"><div class="font-mono text-[8px] text-[#484F58] mb-0.5">${l}</div><div class="font-mono text-[10px] font-semibold text-[#E6EDF3] leading-tight">${v}</div></div>`).join(''); }
     function renderRow2(id,c1,c2,labels) { const e=document.getElementById(id); if(!e)return; e.innerHTML=[{l:labels[0],v:c1},{l:labels[1],v:c2}].map(({l,v})=>`<div class="bg-[#161B22] px-2 py-1.5"><div class="font-mono text-[8px] text-[#484F58] mb-0.5">${l}</div><div class="font-mono text-[10px] font-semibold text-[#E6EDF3] leading-tight">${v}</div></div>`).join(''); }
@@ -812,7 +865,7 @@
       if (spark) { spark.querySelectorAll('div').forEach((b,i,arr)=>{ const last=i===arr.length-1; b.style.background=last?cc:'#21262D'; b.style.boxShadow=last?`0 0 4px ${cc}99`:'none'; b.style.transition='background 0.5s ease'; }); }
     }
 
-    // ─── RENDER SWING SIGNAL ─────────────────────────
+    // ─── RENDER SWING SIGNAL (sama seperti sebelumnya) ─────────────────────────
     function renderSwing(swing) {
       const awaiting = document.getElementById('swingAwaiting');
       const content  = document.getElementById('swingContent');
@@ -874,7 +927,7 @@
       }
     }
 
-    // ─── RENDER SCALP SIGNAL ─────────────────────────
+    // ─── RENDER SCALP SIGNAL (sama seperti sebelumnya) ─────────────────────────
     function renderScalp(scalp) {
       const awaiting = document.getElementById('scalpAwaiting');
       const content  = document.getElementById('scalpContent');
@@ -887,13 +940,13 @@
       const isSell   = posRaw.includes('SELL');
       const isActive = posRaw.includes('ACTIVE');
       const isBlocked= posRaw.includes('BLOCKED');
-      let posClass = 'neutral', posColor = '#484F58', posSubText = 'Independent M5 Scan';
-      if (isBlocked) { posClass = 'blocked'; posColor = '#21262D'; posSubText = 'Scalp blocked'; }
+      let posClass = 'neutral', posColor = '#484F58', posSubText = 'Waiting for swing confirmation';
+      if (isBlocked) { posClass = 'blocked'; posColor = '#21262D'; posSubText = 'Scalp blocked — no swing signal'; }
       else if (isBuy)  { posClass = 'buy';  posColor = '#00FF88'; posSubText = 'Scalp long — M5 bullish entry'; }
       else if (isSell) { posClass = 'sell'; posColor = '#FF3B3B'; posSubText = 'Scalp short — M5 bearish entry'; }
 
       const badge = document.getElementById('scalpPositionBadge');
-      if (badge) { badge.className = `position-badge ${posClass}`; badge.textContent = posRaw || '— SCANNING —'; }
+      if (badge) { badge.className = `position-badge ${posClass}`; badge.textContent = posRaw || '— BLOCKED —'; }
       const dot = document.getElementById('scalpPosDot');
       if (dot) { dot.style.background = posColor; dot.style.boxShadow = `0 0 6px ${posColor}88`; }
       setEl('scalpPosSub', posSubText, posColor);
@@ -901,8 +954,8 @@
       const gated = scalp.gatedBySwing;
       const gateBadge = document.getElementById('scalpGateBadge');
       if (gateBadge) {
-        gateBadge.className = `gate-badge ${!gated ? 'gate-active' : 'gate-blocked'}`;
-        gateBadge.textContent = !gated ? '✓ INDEPENDENT' : '⊘ BLOCKED';
+        gateBadge.className = `gate-badge ${gated ? 'gate-active' : 'gate-blocked'}`;
+        gateBadge.textContent = gated ? '✓ ACTIVE — Swing Confirmed' : '⊘ BLOCKED — Await Swing';
       }
 
       const score = scalp.confluenceScore || 0;
@@ -940,7 +993,7 @@
       }
     }
 
-    // ─── RENDER NFP, CPI, GROWTH, FED ────────────────
+    // ─── RENDER NFP, CPI, GROWTH, FED (sama seperti sebelumnya) ────────────────
     function renderNFP(nfp) {
       const type=classifyByScore(nfp.score), color=signalColor(type);
       setEl('nfpSignal',nfp.signal,color); setEl('nfpScore',fmtScore(nfp.score),color);
@@ -1101,25 +1154,24 @@
           return `<div class="border border-[#21262D] bg-[#0D1117] p-3"><div class="flex justify-between mb-2"><span class="font-mono text-[10px] text-[#E6EDF3]">${z.typeLabel || z.type}</span><span class="font-mono text-[9px]" style="color:${color}">${z.bias}</span></div><div class="font-mono text-[12px] text-[#E6EDF3]">${z.lowStr || z.low}</div><div class="font-mono text-[8px] text-[#484F58]">to</div><div class="font-mono text-[12px] text-[#E6EDF3]">${z.highStr || z.high}</div><div class="mt-2 font-mono text-[8px] text-[#8B949E]">${z.session || ""}</div></div>`;
         }).join('');
 
-        // ─── LIVE TRADE MANAGER: hanya trigger ketika harga menyentuh entry ───
+               // ─── LIVE TRADE MANAGER: hanya trigger ketika harga menyentuh entry ───
         const rawPrice = data.swing_signal?.currentPrice || data.technical_signal?.currentPrice || 0;
         const currentPrice = parseFloat(rawPrice);
         const nowMs = Date.now();
         const isPriceValid = currentPrice > 0 && !isNaN(currentPrice);
 
         if (isPriceValid) {
+          // PERBAIKAN: entry untuk BUY = batas bawah zona (low), untuk SELL = batas atas zona (high)
           zones.forEach(z => {
             if (!z.signal) return;
             const entry = parseFloat(z.signal.entry);
             const isBuy = z.bias === "BUY";
-            const tolerance = 0.3; // toleransi spread
-            
-            // ✅ PERBAIKAN: Limit order menjemput harga.
-            // BUY LIMIT: Harga saat ini harus TURUN menyentuh entry
-            // SELL LIMIT: Harga saat ini harus NAIK menyentuh entry
+            const tolerance = 0.15; // toleransi 15 pips (0.15 USD)
+            // BUY limit: harga >= entry - tolerance (harga menyentuh area demand)
+            // SELL limit: harga <= entry + tolerance (harga menyentuh area supply)
             const isTriggered = isBuy
-              ? currentPrice <= entry + tolerance
-              : currentPrice >= entry - tolerance;
+              ? currentPrice >= entry - tolerance
+              : currentPrice <= entry + tolerance;
 
             if (isTriggered) {
               const exists = activeEntryMemory.find(e => e.id === z.id);
