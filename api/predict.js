@@ -1,5 +1,5 @@
 // api/predict.js — DEPRESSEDESIGN Trading Station
-// v6.5 — SMC Limit Order + Sovereign M5 Scalper + Frozen Swing Anchor
+// v6.6 — SMC Limit Order + Sovereign Scalper + Frozen Anchor + Macro Fixed
 
 const axios = require("axios");
 
@@ -125,7 +125,7 @@ async function fetchDXY() {
   } catch(e) { return { current: "N/A", changePercent: "0", status: "OFFLINE" }; }
 }
 
-// ⭐ FIX DATA FETCHING: SPOT XAUUSD (OANDA SINKRONISASI)
+// ⭐ FETCH DATA SPOT XAUUSD (SINKRON OANDA)
 async function fetchChartData(interval, range) {
   try {
     const res = await axios.get(
@@ -248,13 +248,13 @@ function findLatestReleasedEvent(events, keywords) {
 function scoreNFP(events) {
   let score=0; const comp={};
   const adp = findLatestReleasedEvent(events,["adp employment","adp nonfarm"]);
-  comp.adp = adp ? { event:adp.title, actual:adp.actual, estimate:adp.forecast, points:adp.actual>adp.forecast?40:-40, status:adp.actual>adp.forecast?"BEAT":"MISSED" } : { event:"ADP",actual:"N/A",estimate:"N/A",points:0,status:"NO DATA" };
+  comp.adp = adp ? { event:adp.title, actual:adp.actual, estimate:adp.forecast, points:adp.actual>adp.forecast?40:-40, status:adp.actual>adp.forecast?"BEAT":"MISSED", date:adp.date } : { event:"ADP",actual:"N/A",estimate:"N/A",points:0,status:"NO DATA" };
   score += comp.adp.points||0;
   const ism = findLatestReleasedEvent(events,["ism manufacturing","ism services"]);
-  comp.ism = ism ? { event:ism.title, actual:ism.actual, estimate:50, points:ism.actual>50?30:-30, status:ism.actual>50?"EXPANSIONARY":"CONTRACTIONARY" } : { event:"ISM PMI",actual:"N/A",estimate:"N/A",points:0,status:"NO DATA" };
+  comp.ism = ism ? { event:ism.title, actual:ism.actual, estimate:50, points:ism.actual>50?30:-30, status:ism.actual>50?"EXPANSIONARY":"CONTRACTIONARY", date:ism.date } : { event:"ISM PMI",actual:"N/A",estimate:"N/A",points:0,status:"NO DATA" };
   score += comp.ism.points||0;
   const jolts = findLatestReleasedEvent(events,["jolts"]);
-  comp.jolts = jolts ? { event:jolts.title, actual:jolts.actual, estimate:jolts.forecast, points:jolts.actual>jolts.forecast?30:-30, status:jolts.actual>jolts.forecast?"BEAT":"MISSED" } : { event:"JOLTs",actual:"N/A",estimate:"N/A",points:0,status:"NO DATA" };
+  comp.jolts = jolts ? { event:jolts.title, actual:jolts.actual, estimate:jolts.forecast, points:jolts.actual>jolts.forecast?30:-30, status:jolts.actual>jolts.forecast?"BEAT":"MISSED", date:jolts.date } : { event:"JOLTs",actual:"N/A",estimate:"N/A",points:0,status:"NO DATA" };
   score += comp.jolts.points||0;
   return { score, signal:score>=20?"GOOD USD":score<=-20?"BAD USD":"MIXED", components:comp };
 }
@@ -262,7 +262,7 @@ function scoreNFP(events) {
 function scoreCPI(events, crude) {
   let score=0; const comp={};
   const ppi = findLatestReleasedEvent(events,["producer price index","ppi m/m","core ppi"]);
-  comp.ppi = ppi ? { event:ppi.title, actual:ppi.actual, estimate:ppi.forecast, points:ppi.actual>ppi.forecast?60:-60, status:ppi.actual>ppi.forecast?"BEAT":"MISSED" } : { event:"PPI",actual:"N/A",estimate:"N/A",points:0,status:"NO DATA" };
+  comp.ppi = ppi ? { event:ppi.title, actual:ppi.actual, estimate:ppi.forecast, points:ppi.actual>ppi.forecast?60:-60, status:ppi.actual>ppi.forecast?"BEAT":"MISSED", date:ppi.date } : { event:"PPI",actual:"N/A",estimate:"N/A",points:0,status:"NO DATA" };
   score += comp.ppi.points||0;
   comp.crude = crude?.current!=null ? { event:"Crude Oil WTI", current:crude.current, avg30:crude.avg30, points:crude.current>crude.avg30?40:-40, status:crude.current>crude.avg30?"ABOVE":"BELOW" } : { event:"Crude",points:0,status:"FAILED" };
   score += comp.crude.points||0;
@@ -272,10 +272,10 @@ function scoreCPI(events, crude) {
 function scoreGrowth(events) {
   let score=0; const comp={};
   const gdp = findLatestReleasedEvent(events,["gdp growth rate","gross domestic product"]);
-  comp.gdp = gdp ? { event:gdp.title, actual:gdp.actual, estimate:gdp.forecast, points:gdp.actual>gdp.forecast?50:-50, status:gdp.actual>gdp.forecast?"BEAT":"MISSED" } : { event:"GDP",actual:"N/A",estimate:"N/A",points:0,status:"NO DATA" };
+  comp.gdp = gdp ? { event:gdp.title, actual:gdp.actual, estimate:gdp.forecast, points:gdp.actual>gdp.forecast?50:-50, status:gdp.actual>gdp.forecast?"BEAT":"MISSED", date:gdp.date } : { event:"GDP",actual:"N/A",estimate:"N/A",points:0,status:"NO DATA" };
   score += comp.gdp.points||0;
   const retail = findLatestReleasedEvent(events,["retail sales m/m","core retail sales"]);
-  comp.retail = retail ? { event:retail.title, actual:retail.actual, estimate:retail.forecast, points:retail.actual>retail.forecast?50:-50, status:retail.actual>retail.forecast?"BEAT":"MISSED" } : { event:"Retail Sales",actual:"N/A",estimate:"N/A",points:0,status:"NO DATA" };
+  comp.retail = retail ? { event:retail.title, actual:retail.actual, estimate:retail.forecast, points:retail.actual>retail.forecast?50:-50, status:retail.actual>retail.forecast?"BEAT":"MISSED", date:retail.date } : { event:"Retail Sales",actual:"N/A",estimate:"N/A",points:0,status:"NO DATA" };
   score += comp.retail.points||0;
   return { score, signal:score>=20?"STRONG":score<=-20?"WEAK":"MIXED", components:comp };
 }
@@ -283,7 +283,7 @@ function scoreGrowth(events) {
 function scoreFed(events) {
   let score=0; const comp={};
   const fed = findLatestReleasedEvent(events,["fed interest rate","interest rate decision"]);
-  comp.fed = fed ? { event:fed.title, actual:fed.actual, estimate:fed.forecast, points:fed.actual>=fed.forecast?100:-100, status:fed.actual>=fed.forecast?"HAWKISH":"DOVISH" } : { event:"Fed Rate",actual:"N/A",estimate:"N/A",points:0,status:"NO DATA" };
+  comp.fed = fed ? { event:fed.title, actual:fed.actual, estimate:fed.forecast, points:fed.actual>=fed.forecast?100:-100, status:fed.actual>=fed.forecast?"HAWKISH":"DOVISH", date:fed.date } : { event:"Fed Rate",actual:"N/A",estimate:"N/A",points:0,status:"NO DATA" };
   score += comp.fed.points||0;
   return { score, signal:score>0?"HAWKISH":score<0?"DOVISH":"MIXED", components:comp };
 }
@@ -650,7 +650,7 @@ async function scanAllZones(h1, m5, session, swing) {
   } catch (e) { return []; }
 }
 
-// ─── MAIN WEB ROUTER / HANDLER (ERROR-PROOF) ──────────────────────────────────
+// ─── MAIN WEB ROUTER / HANDLER (ERROR-PROOF + MACRO FIXED) ────────────────────
 module.exports = async (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS");
@@ -675,14 +675,13 @@ module.exports = async (req, res) => {
       fetchChartData("1m", "1d")
     ]);
 
-    // 1. Calculate Core Macro
-    // Note: Calling the scorer functions using the standard parameters we previously created
-    const nfp = { score: 0, val: "N/A", components: {} }; // Placeholders if missing
-    const cpi = { score: 0, val: "N/A", components: {} };
-    const growth = { score: 0, val: "N/A", components: {} };
-    const fed = { score: 0, val: "N/A", components: {} };
+    // 1. Calculate Core Macro (FIXED: Fungsi Macro Aktif Kembali!)
+    const nfp    = scoreNFP(events || []);
+    const cpi    = scoreCPI(events || [], crude);
+    const growth = scoreGrowth(events || []);
+    const fed    = scoreFed(events || []);
     
-    let total = nfp.score + cpi.score + growth.score + fed.score;
+    let total = (nfp.score || 0) + (cpi.score || 0) + (growth.score || 0) + (fed.score || 0);
     const master = total >= 40 ? "STRONG SELL XAU" : total <= -40 ? "STRONG BUY XAU" : "NEUTRAL";
 
     // 2. Technical Signals & SMC Confluence
@@ -733,7 +732,7 @@ module.exports = async (req, res) => {
       technical_signal: scalp,
       zone_pantau: zones,
       entry_triggers: [], // Di-handle secara live oleh index.html
-      upcoming_news: []
+      upcoming_news: events.filter(e => (e.country==="US"||e.currency==="USD") && new Date(e.date).getTime() > Date.now()-3600000).sort((a,b) => new Date(a.date)-new Date(b.date)).slice(0, 15)
     });
 
   } catch (err) {
