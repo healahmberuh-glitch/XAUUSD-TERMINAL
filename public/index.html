@@ -1033,4 +1033,308 @@
       if(banner){banner.className=`border bg-[#0D1117] p-5 relative overflow-hidden ${signalGlow(type)}`;banner.style.borderColor={buy:'rgba(0,255,136,0.4)',sell:'rgba(255,59,59,0.4)',wait:'rgba(240,180,41,0.4)'}[type];}
       setEl('masterSignalText',label,color);
       setEl('masterScore',(total>0?'+':'')+total,color);
-      setEl('masterSubtext',{buy:`Composite score ${total}. Macro data favors USD weakness →
+      setEl('masterSubtext',{buy:`Composite score ${total}. Macro data favors USD weakness → Gold bullish.`,sell:`Composite score ${total}. Macro data favors USD strength → Gold bearish.`,wait:`Composite score ${total}. Mixed signals — no dominant directional edge.`}[type]);
+      setEl('masterBgLabel',label.replace(/[⬆⬇—\s]+/,'').trim());
+      updateScoreBar('masterFill',total,type,400);
+    }
+
+    function renderMiniScores(nfp,cpi,growth,fed) {
+      [{scoreId:'miniNfpScore',barId:'miniNfpBar',score:nfp},{scoreId:'miniCpiScore',barId:'miniCpiBar',score:cpi},{scoreId:'miniGrowthScore',barId:'miniGrowthBar',score:growth},{scoreId:'miniFedScore',barId:'miniFedBar',score:fed}]
+      .forEach(({scoreId,barId,score})=>{ if(score==null)return; const type=classifyByScore(score),color=signalColor(type); setEl(scoreId,fmtScore(score),color); const bar=document.getElementById(barId); if(bar){bar.style.background=color;bar.style.boxShadow=`0 0 4px ${color}99`;} });
+    }
+
+    function renderNews(newsArr) {
+      const grid = document.getElementById('newsGrid');
+      if (!grid) return;
+
+      if (!newsArr || !newsArr.length) {
+        grid.innerHTML = `
+          <div class="col-span-full flex items-center justify-center py-8">
+            <span class="font-mono text-xs text-[#484F58]">
+              No upcoming USD events found.
+            </span>
+          </div>
+        `;
+        setEl('newsCount', '0 events');
+        return;
+      }
+
+      setEl('newsCount', newsArr.length + ' events');
+
+      grid.innerHTML = newsArr.map((item, idx) => {
+        const impactRaw = item.impact ?? item.importance ?? "";
+        let impact = "low";
+        if (typeof impactRaw === "string") {
+          impact = impactRaw.toLowerCase();
+          if (impact.includes("high")) impact = "high";
+          else if (impact.includes("med") || impact.includes("medium")) impact = "medium";
+          else impact = "low";
+        } else if (Number(impactRaw) === 3) impact = "high";
+        else if (Number(impactRaw) === 2) impact = "medium";
+        else impact = "low";
+
+        const impactClass = impact === "high" ? "impact-high" : impact === "medium" ? "impact-medium" : "impact-low";
+        const impactColor = impact === "high" ? "#FF3B3B" : impact === "medium" ? "#F0B429" : "#484F58";
+        const impactLabel = impact === "high" ? "HIGH" : impact === "medium" ? "MEDIUM" : "LOW";
+
+        let localTime = item.date || item.datetime || item.time || "";
+        try {
+          const d = new Date(localTime);
+          if (!isNaN(d.getTime())) {
+            localTime = d.toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: true });
+          }
+        } catch (e) {}
+
+        const forecast = item.forecast != null ? String(item.forecast) : item.estimate != null ? String(item.estimate) : "—";
+        const previous = item.previous != null ? String(item.previous) : "—";
+        const eventName = item.event || item.name || item.title || "Unknown Event";
+
+        return `
+          <div class="news-item news-pill ${impactClass} bg-[#0D1117] px-3 py-3 m-1" style="animation-delay:${idx * 40}ms">
+            <div class="flex items-start justify-between gap-2 mb-2">
+              <div class="font-mono text-[10px] font-bold text-[#E6EDF3] leading-snug line-clamp-2">${eventName}</div>
+              <span class="shrink-0 font-mono text-[8px] px-1.5 py-0.5 border" style="color:${impactColor}; border-color:${impactColor}33; background:${impactColor}11;">${impactLabel}</span>
+            </div>
+            <div class="flex items-end justify-between gap-2">
+              <div>
+                <div class="font-mono text-[8px] text-[#484F58] mb-0.5">DATE / TIME</div>
+                <div class="font-mono text-[9px] text-[#8B949E]">${localTime}</div>
+              </div>
+              <div class="text-right">
+                <div class="font-mono text-[8px] text-[#484F58] mb-0.5">FORECAST</div>
+                <div class="font-mono text-[9px] font-bold text-[#E6EDF3]">${forecast}</div>
+              </div>
+              <div class="text-right">
+                <div class="font-mono text-[8px] text-[#484F58] mb-0.5">PREV</div>
+                <div class="font-mono text-[9px] text-[#8B949E]">${previous}</div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ─── MAIN LOAD ───────────────────────────────────────────────────
+    async function loadData() {
+      const btn=document.getElementById('refreshBtn');
+      const icon=document.getElementById('refreshIcon');
+      const status=document.getElementById('lastUpdate');
+      btn.disabled=true; icon.classList.add('spinning');
+      status.textContent='FETCHING...';
+      document.getElementById('errorToast').classList.add('hidden');
+      try {
+        const res=await fetch('/api/predict');
+        if(!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data=await res.json();
+        if(!data.success) throw new Error(data.error||'Unknown error');
+
+        renderDXY(data.dxy_live||data.dxyLive||null);
+        const nfpScore    = renderNFP(data.nfp);
+        const cpiScore    = renderCPI(data.cpi);
+        const growthScore = renderGrowth(data.growth||data.gdp||null);
+        const fedScore    = renderFed(data.fed||data.fed_rate||null);
+        renderMiniScores(nfpScore,cpiScore,growthScore,fedScore);
+        renderMaster([nfpScore,cpiScore,growthScore,fedScore]);
+        renderNews(data.upcoming_news||data.upcomingNews||[]);
+
+        // Dual signal rendering
+        renderSwing(data.swing_signal || null);
+        renderScalp(data.scalp_signal || null);
+
+        const zones = data.zone_pantau || [];
+
+        document.getElementById('zoneTotalCount').textContent = `${zones.length} zones`;
+
+        document.getElementById('zoneGrid').innerHTML = zones.map(z => {
+          const color = z.bias === "BUY" ? "#00FF88" : z.bias === "SELL" ? "#FF3B3B" : "#A78BFA";
+          return `
+            <div class="border border-[#21262D] bg-[#0D1117] p-3">
+              <div class="flex justify-between mb-2">
+                <span class="font-mono text-[10px] text-[#E6EDF3]">${z.typeLabel || z.type}</span>
+                <span class="font-mono text-[9px]" style="color:${color}">${z.bias}</span>
+              </div>
+              <div class="font-mono text-[12px] text-[#E6EDF3]">${z.lowStr || z.low}</div>
+              <div class="font-mono text-[8px] text-[#484F58]">to</div>
+              <div class="font-mono text-[12px] text-[#E6EDF3]">${z.highStr || z.high}</div>
+              <div class="mt-2 font-mono text-[8px] text-[#8B949E]">${z.session || ""}</div>
+            </div>
+          `;
+        }).join('');
+
+        // ─── LIVE TRADE MANAGER (SMC SIGNAL TRACKER) ───
+        const rawPrice = data.technical_signal?.currentPrice || data.swing_signal?.currentPrice || 0;
+        const currentPrice = parseFloat(rawPrice);
+        const nowMs = Date.now();
+        
+        // 🛡️ ANTI-FALSE TRIGGER: Pastikan data harga valid sebelum mengevaluasi market
+        const isPriceValid = currentPrice > 0 && !isNaN(currentPrice);
+
+        if (isPriceValid) {
+          // 1. Cek apakah ada Zone Pantau Limit Order yang disentuh oleh harga
+          zones.forEach(z => {
+            if (!z.signal) return;
+            const entryVal = parseFloat(z.signal.entry);
+            const isBuy = z.bias === "BUY";
+            
+            // Logika ketat (Strict Math): Harus benar-benar cross batas limit
+            const isTriggered = isBuy ? (currentPrice <= entryVal + 0.3) : (currentPrice >= entryVal - 0.3);
+            
+            if (isTriggered) {
+              const exists = activeEntryMemory.find(e => e.id === z.id);
+              if (!exists) {
+                // 🛡️ COORDINATE SNAPSHOT ISOLATION: Kita Deep Copy data agar tidak bergeser!
+                activeEntryMemory.push({
+                  id: z.id,
+                  bias: z.bias,
+                  typeLabel: z.typeLabel,
+                  signal: {
+                    entry: entryVal.toFixed(2),
+                    sl: parseFloat(z.signal.sl).toFixed(2),
+                    tp1: parseFloat(z.signal.tp1).toFixed(2)
+                  },
+                  triggeredAt: nowMs,
+                  status: 'RUNNING', 
+                  statusColor: '#38BDF8' 
+                });
+              }
+            }
+          });
+
+          // 2. Evaluasi Status Snapshot Limit Order (Apakah PnL menyentuh TP/SL?)
+          activeEntryMemory.forEach(trade => {
+            if (trade.status !== 'RUNNING') return; // Skip yang sudah kelar
+
+            const isBuy = trade.bias === "BUY";
+            const sl = parseFloat(trade.signal.sl);
+            const tp1 = parseFloat(trade.signal.tp1);
+
+            if (isBuy) {
+              if (currentPrice <= sl) { trade.status = 'LOSS (SL HIT)'; trade.statusColor = '#FF3B3B'; trade.closedAt = nowMs; }
+              else if (currentPrice >= tp1) { trade.status = 'WIN (TP1 HIT)'; trade.statusColor = '#00FF88'; trade.closedAt = nowMs; }
+            } else {
+              if (currentPrice >= sl) { trade.status = 'LOSS (SL HIT)'; trade.statusColor = '#FF3B3B'; trade.closedAt = nowMs; }
+              else if (currentPrice <= tp1) { trade.status = 'WIN (TP1 HIT)'; trade.statusColor = '#00FF88'; trade.closedAt = nowMs; }
+            }
+          });
+        }
+
+        // 3. Bersihkan memori (Hapus sinyal yang usianya sudah lebih dari 30 menit)
+        activeEntryMemory = activeEntryMemory.filter(e => {
+          if (e.status === 'RUNNING') return true;
+          return nowMs - e.closedAt < 1800000;
+        });
+
+        // 4. Render ke UI Panel Bawah
+        const activeCount = activeEntryMemory.filter(e => e.status === 'RUNNING').length;
+        document.getElementById('entryTriggerCount').textContent = `${activeCount} running, ${activeEntryMemory.length - activeCount} closed`;
+
+        const trackerGrid = document.getElementById('entryTriggerGrid');
+        
+        // Ubah Judul Panel Bawah Secara Dinamis
+        const panelTitle = document.querySelector('#entryTriggerGrid').previousElementSibling?.querySelector('span');
+        if(panelTitle) panelTitle.textContent = '⚡ LIVE TRADE MANAGER — SIGNAL TRACKER';
+
+        if (!activeEntryMemory.length) {
+          trackerGrid.innerHTML = `
+            <div class="col-span-full flex items-center justify-center py-10">
+              <span class="font-mono text-xs text-[#484F58]">
+                Belum ada Limit Order SMC yang tersentuh harga<span class="cursor">_</span>
+              </span>
+            </div>
+          `;
+        } else {
+          activeEntryMemory.sort((a,b) => (a.status === 'RUNNING' ? -1 : 1));
+
+          trackerGrid.innerHTML = activeEntryMemory.map(e => `
+            <div class="border border-[#21262D] bg-[#0D1117] p-4 relative" style="border-left: 3px solid ${e.statusColor}; animation: techReveal 0.3s ease forwards;">
+              <div class="absolute top-3 right-3 flex items-center gap-1.5">
+                 ${e.status === 'RUNNING' ? '<div class="w-1.5 h-1.5 rounded-full bg-[#38BDF8] animate-ping"></div>' : ''}
+                 <span class="font-mono text-[9px] font-bold" style="color:${e.statusColor}">${e.status}</span>
+              </div>
+              <div class="font-mono text-[10px] text-[#F0B429] tracking-widest uppercase mb-1">
+                ${e.bias} LIMIT TRIGGERED
+              </div>
+              <div class="flex items-end gap-2 mb-2">
+                <div class="font-mono text-[18px] text-[#E6EDF3] font-bold">
+                  $${e.signal.entry}
+                </div>
+                <div class="font-mono text-[9px] text-[#8B949E] mb-1">
+                  via ${e.typeLabel}
+                </div>
+              </div>
+              <div class="flex items-center gap-4 pt-3 border-t border-[#21262D]">
+                <div class="flex flex-col">
+                  <span class="font-mono text-[8px] text-[#FF3B3B] mb-0.5">STOP LOSS</span>
+                  <span class="font-mono text-[10px] text-[#E6EDF3]">$${e.signal.sl}</span>
+                </div>
+                <div class="flex flex-col">
+                  <span class="font-mono text-[8px] text-[#00FF88] mb-0.5">TAKE PROFIT (1:2)</span>
+                  <span class="font-mono text-[10px] text-[#E6EDF3]">$${e.signal.tp1}</span>
+                </div>
+                <div class="flex flex-col ml-auto text-right">
+                  <span class="font-mono text-[8px] text-[#484F58] mb-0.5">LIVE PNL</span>
+                  <span class="font-mono text-[10px] font-bold ${e.bias === 'BUY' ? (currentPrice > e.signal.entry ? 'text-[#00FF88]' : 'text-[#FF3B3B]') : (currentPrice < e.signal.entry ? 'text-[#00FF88]' : 'text-[#FF3B3B]')}">
+                    ${isPriceValid ? '$' + currentPrice.toFixed(2) : 'AWAITING'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          `).join('');
+        }
+
+        const ts=new Date(data.timestamp);
+        status.textContent='UPDATED '+ts.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+      } catch(err) {
+        console.error(err);
+        document.getElementById('errorMsg').textContent='Error: '+err.message;
+        document.getElementById('errorToast').classList.remove('hidden');
+        status.textContent='FETCH FAILED';
+        setTimeout(()=>document.getElementById('errorToast').classList.add('hidden'),6000);
+      } finally {
+        btn.disabled=false; icon.classList.remove('spinning');
+      }
+    }
+
+    // ─── AUTO POLLING SYSTEM (REALTIME DISPLAY) ──────────────────────
+    let pollTimer = null;
+    const POLL_INTERVAL = 3000; // Refresh otomatis setiap 3 detik (super cepat)
+    
+    // Memori untuk menahan sinyal Limit Order
+    let activeEntryMemory = [];
+    
+    function startAutoRefresh() {
+      if (pollTimer) clearInterval(pollTimer);
+      pollTimer = setInterval(() => {
+        // Hanya refresh jika tab sedang aktif dilihat (menghemat resource & API Vercel)
+        if (!document.hidden) {
+          loadData();
+        }
+      }, POLL_INTERVAL);
+    }
+
+    // Hentikan polling jika user berpindah tab, jalankan lagi seketika saat kembali
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) {
+        clearInterval(pollTimer);
+      } else {
+        loadData(); // Langsung fetch saat tab dibuka kembali
+        startAutoRefresh();
+      }
+    });
+
+    // ─── INITIALIZATION ───────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', () => {
+      const ind=document.getElementById('tabLiveIndicator');
+      const lbl=document.getElementById('tabModeLabel');
+      ind.style.background='#00FF88'; ind.style.boxShadow='0 0 6px rgba(0,255,136,0.7)';
+      lbl.style.color='#00FF88';
+      
+      // Load pertama kali saat web dibuka
+      loadData();
+      
+      // Jalankan mesin Auto-Refresh di belakang layar
+      startAutoRefresh();
+    });
+  </script>
+</body>
+</html>
