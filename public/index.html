@@ -73,6 +73,7 @@
     .dxy-price-pill.bullish { color:#FF3B3B; border-color:rgba(255,59,59,0.35); background:rgba(255,59,59,0.07); box-shadow:0 0 12px rgba(255,59,59,0.1); }
     .dxy-price-pill.bearish { color:#00FF88; border-color:rgba(0,255,136,0.35); background:rgba(0,255,136,0.07); box-shadow:0 0 12px rgba(0,255,136,0.1); }
     .dxy-price-pill.neutral { color:#F0B429; border-color:rgba(240,180,41,0.35); background:rgba(240,180,41,0.07); }
+    /* ── Signal Panels ── */
     .signal-panel { background:#0D1117; border:1px solid #21262D; position:relative; overflow:hidden; }
     .signal-panel::before,.signal-panel::after { content:''; position:absolute; width:14px; height:14px; border-style:solid; pointer-events:none; }
     .swing-panel::before { top:-1px; left:-1px; border-width:2px 0 0 2px; border-color:#F0B429; }
@@ -132,15 +133,13 @@
 
 <body class="min-h-screen text-[#E6EDF3] grid-bg">
 
-  <!-- Scrolling Ticker -->
   <div class="overflow-hidden bg-[#0D1117] border-b border-[#21262D] h-8 flex items-center">
     <div class="ticker-inner font-mono text-xs text-[#484F58]">
-      <span class="px-8">DEPRESSEDESIGN TRADING STATION &nbsp;·&nbsp; XAU/USD · ZONE PANTAU ENGINE v6.1 &nbsp;·&nbsp; SMC SL/TP &nbsp;·&nbsp; SWING H4/H1 &nbsp;·&nbsp; SCALP M5 &nbsp;·&nbsp; M1 ENTRY TRIGGER &nbsp;·&nbsp; FVG &nbsp;·&nbsp; ORDER BLOCK &nbsp;·&nbsp; LIQUIDITY &nbsp;·&nbsp; BREAKER &nbsp;·&nbsp; NFP &nbsp;·&nbsp; CPI &nbsp;·&nbsp; GDP &nbsp;·&nbsp; FED RATE &nbsp;·&nbsp; NOT FINANCIAL ADVICE &nbsp;·&nbsp;</span>
-      <span class="px-8">DEPRESSEDESIGN TRADING STATION &nbsp;·&nbsp; XAU/USD · ZONE PANTAU ENGINE v6.1 &nbsp;·&nbsp; SMC SL/TP &nbsp;·&nbsp; SWING H4/H1 &nbsp;·&nbsp; SCALP M5 &nbsp;·&nbsp; M1 ENTRY TRIGGER &nbsp;·&nbsp; FVG &nbsp;·&nbsp; ORDER BLOCK &nbsp;·&nbsp; LIQUIDITY &nbsp;·&nbsp; BREAKER &nbsp;·&nbsp; NFP &nbsp;·&nbsp; CPI &nbsp;·&nbsp; GDP &nbsp;·&nbsp; FED RATE &nbsp;·&nbsp; NOT FINANCIAL ADVICE &nbsp;·&nbsp;</span>
+      <span class="px-8">DEPRESSEDESIGN TRADING STATION &nbsp;·&nbsp; XAU/USD · ZONE PANTAU ENGINE v6.0 &nbsp;·&nbsp; SWING H4/H1 &nbsp;·&nbsp; SCALP M5 &nbsp;·&nbsp; M1 ENTRY TRIGGER &nbsp;·&nbsp; FVG &nbsp;·&nbsp; ORDER BLOCK &nbsp;·&nbsp; LIQUIDITY &nbsp;·&nbsp; BREAKER &nbsp;·&nbsp; NFP &nbsp;·&nbsp; CPI &nbsp;·&nbsp; GDP &nbsp;·&nbsp; FED RATE &nbsp;·&nbsp; NOT FINANCIAL ADVICE &nbsp;·&nbsp;</span>
+      <span class="px-8">DEPRESSEDESIGN TRADING STATION &nbsp;·&nbsp; XAU/USD · ZONE PANTAU ENGINE v6.0 &nbsp;·&nbsp; SWING H4/H1 &nbsp;·&nbsp; SCALP M5 &nbsp;·&nbsp; M1 ENTRY TRIGGER &nbsp;·&nbsp; FVG &nbsp;·&nbsp; ORDER BLOCK &nbsp;·&nbsp; LIQUIDITY &nbsp;·&nbsp; BREAKER &nbsp;·&nbsp; NFP &nbsp;·&nbsp; CPI &nbsp;·&nbsp; GDP &nbsp;·&nbsp; FED RATE &nbsp;·&nbsp; NOT FINANCIAL ADVICE &nbsp;·&nbsp;</span>
     </div>
   </div>
 
-  <!-- DXY Live Meter -->
   <div class="dxy-bar px-6 py-2">
     <div class="max-w-[1400px] mx-auto flex items-center justify-between gap-4 flex-wrap">
       <div class="flex items-center gap-3">
@@ -182,7 +181,6 @@
     </div>
   </div>
 
-  <!-- Header -->
   <header class="border-b border-[#21262D] px-6 py-4">
     <div class="max-w-[1400px] mx-auto flex items-center justify-between gap-4 flex-wrap">
       <div class="flex items-center gap-4">
@@ -192,7 +190,7 @@
         </div>
         <div>
           <div class="font-mono text-sm font-bold tracking-[0.15em] text-[#E6EDF3] uppercase">XAU/USD TERMINAL</div>
-          <div class="font-mono text-[10px] text-[#484F58] tracking-[0.2em] uppercase">Zone Pantau Engine v6.1 &nbsp;·&nbsp; SMC SL/TP &nbsp;·&nbsp; Swing + Scalp + M1 Trigger &nbsp;·&nbsp; Macro + Technical</div>
+          <div class="font-mono text-[10px] text-[#484F58] tracking-[0.2em] uppercase">Zone Pantau Engine v6.0 &nbsp;·&nbsp; Swing + Scalp + M1 Trigger &nbsp;·&nbsp; Macro + Technical</div>
         </div>
       </div>
       <div class="flex items-center gap-6">
@@ -211,7 +209,6 @@
     </div>
   </header>
 
-  <!-- Tab Bar -->
   <div class="tab-bar">
     <button class="tab-btn active" id="tabBtnMacro" onclick="switchTab('macro')">
       <span class="tab-icon text-base leading-none">🦅</span>
@@ -231,14 +228,12 @@
     </div>
   </div>
 
-  <!-- ══ TAB 1 — MACRO ══════════════════════════════════════════════ -->
   <div id="panelMacro" class="tab-panel active">
     <div class="max-w-[1400px] mx-auto px-6 pt-8 pb-4">
       <h1 class="font-mono text-2xl md:text-3xl font-bold tracking-tight text-[#E6EDF3] mb-1">MACRO SENTIMENT<span class="cursor text-[#00FF88]">_</span></h1>
       <p class="font-sans text-sm text-[#8B949E] max-w-2xl">4-predictor composite engine. Threshold ±20 per card. Master signal fires at ±40 composite. Directional bias for XAU/USD.</p>
     </div>
 
-    <!-- Master Signal Banner -->
     <div class="max-w-[1400px] mx-auto px-6 pb-6">
       <div id="masterBanner" class="border border-[#21262D] bg-[#0D1117] p-5 relative overflow-hidden">
         <div class="absolute inset-0 flex items-center justify-end pr-6 pointer-events-none select-none">
@@ -276,9 +271,7 @@
       </div>
     </div>
 
-    <!-- 4-Card Grid (sama seperti sebelumnya) -->
     <main class="max-w-[1400px] mx-auto px-6 pb-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-      <!-- ① NFP -->
       <div id="nfpCard" class="macro-card bg-[#0D1117] border border-[#21262D] flex flex-col">
         <div class="flex items-center justify-between px-4 py-3 border-b border-[#21262D]">
           <div class="flex items-center gap-2"><span class="font-mono text-[9px] tracking-[0.2em] text-[#484F58]">01</span><div><div class="font-mono text-xs font-bold text-[#E6EDF3] tracking-wide">NFP PREDICTOR</div><div class="font-mono text-[9px] text-[#484F58]">Nonfarm Payrolls</div></div></div>
@@ -312,7 +305,6 @@
         <div class="px-4 py-2 bg-[#080B0F] border-t border-[#21262D] flex items-center justify-between"><span class="font-mono text-[8px] text-[#484F58]">≥+20 SELL XAU &nbsp;|&nbsp; ≤−20 BUY XAU</span><span class="font-mono text-[8px] text-[#484F58]">MAX ±100</span></div>
       </div>
 
-      <!-- ② CPI -->
       <div id="cpiCard" class="macro-card bg-[#0D1117] border border-[#21262D] flex flex-col">
         <div class="flex items-center justify-between px-4 py-3 border-b border-[#21262D]">
           <div class="flex items-center gap-2"><span class="font-mono text-[9px] tracking-[0.2em] text-[#484F58]">02</span><div><div class="font-mono text-xs font-bold text-[#E6EDF3] tracking-wide">CPI PREDICTOR</div><div class="font-mono text-[9px] text-[#484F58]">Inflation Pressure</div></div></div>
@@ -340,7 +332,6 @@
         <div class="px-4 py-2 bg-[#080B0F] border-t border-[#21262D] flex items-center justify-between"><span class="font-mono text-[8px] text-[#484F58]">≥+20 SELL XAU &nbsp;|&nbsp; ≤−20 BUY XAU</span><span class="font-mono text-[8px] text-[#484F58]">MAX ±100</span></div>
       </div>
 
-      <!-- ③ GROWTH -->
       <div id="growthCard" class="macro-card bg-[#0D1117] border border-[#21262D] flex flex-col">
         <div class="flex items-center justify-between px-4 py-3 border-b border-[#21262D]">
           <div class="flex items-center gap-2"><span class="font-mono text-[9px] tracking-[0.2em] text-[#484F58]">03</span><div><div class="font-mono text-xs font-bold text-[#E6EDF3] tracking-wide">GROWTH PREDICTOR</div><div class="font-mono text-[9px] text-[#484F58]">GDP &amp; Retail Sales</div></div></div>
@@ -369,7 +360,6 @@
         <div class="px-4 py-2 bg-[#080B0F] border-t border-[#21262D] flex items-center justify-between"><span class="font-mono text-[8px] text-[#484F58]">≥+20 SELL XAU &nbsp;|&nbsp; ≤−20 BUY XAU</span><span class="font-mono text-[8px] text-[#484F58]">MAX ±100</span></div>
       </div>
 
-      <!-- ④ FED -->
       <div id="fedCard" class="macro-card bg-[#0D1117] border border-[#21262D] flex flex-col">
         <div class="flex items-center justify-between px-4 py-3 border-b border-[#21262D]">
           <div class="flex items-center gap-2"><span class="font-mono text-[9px] tracking-[0.2em] text-[#484F58]">04</span><div><div class="font-mono text-xs font-bold text-[#E6EDF3] tracking-wide">FED PREDICTOR</div><div class="font-mono text-[9px] text-[#484F58]">Interest Rate Bias</div></div></div>
@@ -403,7 +393,6 @@
       </div>
     </main>
 
-    <!-- USD News Radar -->
     <div class="max-w-[1400px] mx-auto px-6 pb-8">
       <div class="border border-[#21262D] bg-[#0D1117]">
         <div class="flex items-center justify-between px-5 py-3 border-b border-[#21262D] bg-[#080B0F]">
@@ -430,13 +419,8 @@
         </div>
       </div>
     </div>
-  </div><!-- /panelMacro -->
+  </div><div id="panelTech" class="tab-panel">
 
-
-  <!-- ══ TAB 2 — LIVE TECHNICAL TERMINAL ══════════════════════════ -->
-  <div id="panelTech" class="tab-panel">
-
-    <!-- TradingView Chart -->
     <div class="max-w-[1400px] mx-auto px-6 pt-6 pb-4">
       <div class="flex items-center justify-between mb-3 flex-wrap gap-3">
         <div>
@@ -477,7 +461,6 @@
       </div>
     </div>
 
-    <!-- ══ DUAL SIGNAL PANELS ══ -->
     <div class="max-w-[1400px] mx-auto px-6 pb-4">
       <div class="flex items-center gap-4 mb-4">
         <div class="font-mono text-[9px] text-[#484F58] tracking-[0.3em] uppercase">◈ Dual Signal Engine</div>
@@ -492,9 +475,7 @@
 
       <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
 
-        <!-- ── SWING SIGNAL PANEL ── -->
         <div class="signal-panel swing-panel" id="swingPanel">
-          <!-- Header -->
           <div class="flex items-center justify-between px-5 py-3 border-b border-[#21262D] bg-[#080B0F]">
             <div class="flex items-center gap-3">
               <div class="relative w-7 h-7 flex items-center justify-center shrink-0">
@@ -513,7 +494,6 @@
             </div>
           </div>
 
-          <!-- H4 Bias Bar -->
           <div class="px-5 py-2 border-b border-[#21262D] flex items-center justify-between bg-[#0D1117]">
             <div class="flex items-center gap-3">
               <span class="font-mono text-[8px] text-[#484F58] tracking-widest uppercase">H4 Bias</span>
@@ -528,15 +508,12 @@
             </div>
           </div>
 
-          <!-- Awaiting -->
           <div id="swingAwaiting" class="px-5 py-10 flex flex-col items-center gap-3 text-center">
             <div class="flex items-center gap-2"><div class="skeleton w-2 h-2 rounded-full"></div><div class="skeleton w-2 h-2 rounded-full"></div><div class="skeleton w-2 h-2 rounded-full"></div></div>
             <div class="font-mono text-[10px] text-[#484F58] tracking-widest uppercase">Awaiting swing data<span class="cursor">_</span></div>
           </div>
 
-          <!-- Content -->
           <div id="swingContent" class="hidden">
-            <!-- Position + Price Grid -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-px border-b border-[#21262D]" style="background:#21262D;">
               <div class="bg-[#080B0F] px-5 py-5 flex flex-col gap-2">
                 <div class="font-mono text-[8px] text-[#484F58] tracking-[0.25em] uppercase">Position Signal</div>
@@ -545,7 +522,6 @@
                   <div class="w-2 h-2 rounded-full bg-[#484F58]" id="swingPosDot"></div>
                   <span class="font-mono text-[8px] text-[#484F58]" id="swingPosSub">No active signal</span>
                 </div>
-                <!-- Confluence progress bar -->
                 <div class="mt-2">
                   <div class="flex justify-between font-mono text-[8px] text-[#484F58] mb-1"><span>Confluence</span><span id="swingConfLabel">0/5</span></div>
                   <div class="conf-track"><div id="swingConfBar" class="conf-fill bg-[#484F58]" style="width:0%"></div></div>
@@ -572,13 +548,11 @@
                 </div>
               </div>
             </div>
-            <!-- Zones Info -->
             <div class="px-5 py-2 border-b border-[#21262D] bg-[#0D1117] flex flex-wrap gap-4">
               <div class="flex items-center gap-2"><span class="font-mono text-[8px] text-[#484F58]">H1 Demand:</span><span class="font-mono text-[8px] font-bold text-[#00FF88]" id="swingDemandZone">—</span></div>
               <div class="flex items-center gap-2"><span class="font-mono text-[8px] text-[#484F58]">H1 Supply:</span><span class="font-mono text-[8px] font-bold text-[#FF3B3B]" id="swingSupplyZone">—</span></div>
               <div class="flex items-center gap-2"><span class="font-mono text-[8px] text-[#484F58]">H1 RSI:</span><span class="font-mono text-[8px] font-bold text-[#F0B429]" id="swingRsi">—</span></div>
             </div>
-            <!-- Reasoning -->
             <div class="px-5 py-4">
               <div class="flex items-center gap-3 mb-3">
                 <div class="font-mono text-[8px] text-[#484F58] tracking-[0.3em] uppercase">Analysis</div>
@@ -592,11 +566,7 @@
               <span class="font-mono text-[8px] text-[#FF3B3B] opacity-60">NOT FINANCIAL ADVICE</span>
             </div>
           </div>
-        </div><!-- /swingPanel -->
-
-        <!-- ── SCALP SIGNAL PANEL ── -->
-        <div class="signal-panel scalp-panel" id="scalpPanel">
-          <!-- Header -->
+        </div><div class="signal-panel scalp-panel" id="scalpPanel">
           <div class="flex items-center justify-between px-5 py-3 border-b border-[#21262D] bg-[#080B0F]">
             <div class="flex items-center gap-3">
               <div class="relative w-7 h-7 flex items-center justify-center shrink-0">
@@ -615,7 +585,6 @@
             </div>
           </div>
 
-          <!-- Gate Status Bar -->
           <div class="px-5 py-2 border-b border-[#21262D] flex items-center justify-between bg-[#0D1117]">
             <div class="flex items-center gap-3">
               <span class="font-mono text-[8px] text-[#484F58] tracking-widest uppercase">Swing Gate</span>
@@ -630,15 +599,12 @@
             </div>
           </div>
 
-          <!-- Awaiting -->
           <div id="scalpAwaiting" class="px-5 py-10 flex flex-col items-center gap-3 text-center">
             <div class="flex items-center gap-2"><div class="skeleton w-2 h-2 rounded-full"></div><div class="skeleton w-2 h-2 rounded-full"></div><div class="skeleton w-2 h-2 rounded-full"></div></div>
             <div class="font-mono text-[10px] text-[#484F58] tracking-widest uppercase">Awaiting scalp data<span class="cursor">_</span></div>
           </div>
 
-          <!-- Content -->
           <div id="scalpContent" class="hidden">
-            <!-- Position + Price Grid -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-px border-b border-[#21262D]" style="background:#21262D;">
               <div class="bg-[#080B0F] px-5 py-5 flex flex-col gap-2">
                 <div class="font-mono text-[8px] text-[#484F58] tracking-[0.25em] uppercase">Position Signal</div>
@@ -647,7 +613,6 @@
                   <div class="w-2 h-2 rounded-full bg-[#484F58]" id="scalpPosDot"></div>
                   <span class="font-mono text-[8px] text-[#484F58]" id="scalpPosSub">No active signal</span>
                 </div>
-                <!-- Confluence progress bar -->
                 <div class="mt-2">
                   <div class="flex justify-between font-mono text-[8px] text-[#484F58] mb-1"><span>Confluence</span><span id="scalpConfLabel">0/5</span></div>
                   <div class="conf-track"><div id="scalpConfBar" class="conf-fill bg-[#484F58]" style="width:0%"></div></div>
@@ -674,13 +639,11 @@
                 </div>
               </div>
             </div>
-            <!-- M5 Stats -->
             <div class="px-5 py-2 border-b border-[#21262D] bg-[#0D1117] flex flex-wrap gap-4">
               <div class="flex items-center gap-2"><span class="font-mono text-[8px] text-[#484F58]">M5 RSI:</span><span class="font-mono text-[8px] font-bold text-[#38BDF8]" id="scalpRsi">—</span></div>
               <div class="flex items-center gap-2"><span class="font-mono text-[8px] text-[#484F58]">M5 ATR:</span><span class="font-mono text-[8px] font-bold text-[#38BDF8]" id="scalpAtr">—</span></div>
               <div class="flex items-center gap-2"><span class="font-mono text-[8px] text-[#484F58]">Vol Threshold:</span><span class="font-mono text-[8px] font-bold text-[#F0B429]" id="scalpVolMult">—×</span></div>
             </div>
-            <!-- Reasoning -->
             <div class="px-5 py-4">
               <div class="flex items-center gap-3 mb-3">
                 <div class="font-mono text-[8px] text-[#484F58] tracking-[0.3em] uppercase">Analysis</div>
@@ -694,16 +657,9 @@
               <span class="font-mono text-[8px] text-[#FF3B3B] opacity-60">NOT FINANCIAL ADVICE</span>
             </div>
           </div>
-        </div><!-- /scalpPanel -->
-
-      </div><!-- /dual grid -->
-    </div><!-- /max-w -->
-
-    <!-- ══ ZONE PANTAU PANEL ══ -->
-    <div class="max-w-[1400px] mx-auto px-6 pb-8">
+        </div></div></div><div class="max-w-[1400px] mx-auto px-6 pb-8">
       <div class="border border-[#21262D] bg-[#0D1117]">
 
-        <!-- Header -->
         <div class="flex items-center justify-between px-5 py-3 border-b border-[#21262D] bg-[#080B0F]">
           <div class="flex items-center gap-3">
             <div class="relative w-4 h-4 flex items-center justify-center">
@@ -723,7 +679,6 @@
           </div>
         </div>
 
-        <!-- Zone Type Legend -->
         <div class="px-5 py-2 border-b border-[#21262D] bg-[#0D1117] flex flex-wrap gap-x-5 gap-y-1">
           <span class="font-mono text-[8px] text-[#484F58]">🔷 FVG — Fair Value Gap</span>
           <span class="font-mono text-[8px] text-[#484F58]">🔶 OB — Order Block</span>
@@ -733,14 +688,12 @@
           <span class="font-mono text-[8px] text-[#484F58]">🕐 SESSION — Session Level</span>
         </div>
 
-        <!-- Zone Grid -->
         <div id="zoneGrid" class="p-3 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2 min-h-[120px]">
           <div class="col-span-full flex items-center justify-center py-10">
             <span class="font-mono text-xs text-[#484F58]">Scanning zones<span class="cursor">_</span></span>
           </div>
         </div>
 
-        <!-- Entry Triggers Section (LIVE TRADE MANAGER) -->
         <div class="border-t border-[#21262D]">
           <div class="flex items-center justify-between px-5 py-3 border-b border-[#21262D] bg-[#080B0F]">
             <div class="flex items-center gap-3">
@@ -748,14 +701,14 @@
                 <div class="absolute w-3 h-3 rounded-full bg-[#F0B429] opacity-20 animate-ping"></div>
                 <div class="w-1.5 h-1.5 rounded-full bg-[#F0B429]" style="box-shadow:0 0 6px rgba(240,180,41,0.8);"></div>
               </div>
-              <span class="font-mono text-[10px] font-bold text-[#E6EDF3] tracking-widest uppercase">⚡ LIVE TRADE MANAGER — SIGNAL TRACKER</span>
-              <span class="font-mono text-[8px] text-[#484F58] border border-[#21262D] px-2 py-0.5">Limit order triggered · Running only</span>
+              <span class="font-mono text-[10px] font-bold text-[#E6EDF3] tracking-widest uppercase">⚡ Live Trade Manager — Signal Tracker</span>
+              <span class="font-mono text-[8px] text-[#484F58] border border-[#21262D] px-2 py-0.5">SMC Limit Order Tracker</span>
             </div>
-            <span class="font-mono text-[8px] text-[#484F58]" id="entryTriggerCount">— running, — closed</span>
+            <span class="font-mono text-[8px] text-[#484F58]" id="entryTriggerCount">— active</span>
           </div>
           <div id="entryTriggerGrid" class="p-3 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2 min-h-[80px]">
             <div class="col-span-full flex items-center justify-center py-6">
-              <span class="font-mono text-xs text-[#484F58]">Menunggu harga menyentuh entry zone<span class="cursor">_</span></span>
+              <span class="font-mono text-xs text-[#484F58]">Menunggu price masuk zona<span class="cursor">_</span></span>
             </div>
           </div>
         </div>
@@ -763,17 +716,13 @@
       </div>
     </div>
 
-  </div><!-- /panelTech -->
-
-  <!-- Footer -->
-  <footer class="border-t border-[#21262D] px-6 py-4">
+  </div><footer class="border-t border-[#21262D] px-6 py-4">
     <div class="max-w-[1400px] mx-auto flex flex-col md:flex-row items-center justify-between gap-2">
-      <span class="font-mono text-[10px] text-[#484F58] tracking-widest uppercase">Dual Signal Engine v6.1 by Han — For research only. Not financial advice.</span>
+      <span class="font-mono text-[10px] text-[#484F58] tracking-widest uppercase">Dual Signal Engine v6.5 by Han — For research only. Not financial advice.</span>
       <span class="font-mono text-[10px] text-[#484F58]">Data: Yahoo Finance + TradingView &nbsp;·&nbsp; Swing H4/H1 · Scalp M5 &nbsp;·&nbsp; Macro ±20/±40 thresholds</span>
     </div>
   </footer>
 
-  <!-- Error Toast -->
   <div id="errorToast" class="fixed bottom-6 right-6 hidden border border-[#FF3B3B] bg-[#0D1117] px-4 py-3 max-w-sm z-50 shadow-lg">
     <div class="flex items-start gap-2">
       <span class="text-[#FF3B3B] font-mono text-xs mt-0.5">✕</span>
@@ -781,7 +730,6 @@
     </div>
   </div>
 
-  <!-- ══ JAVASCRIPT ══════════════════════════════════════════════════ -->
   <script>
     const CARD_THRESHOLD   = 20;
     const MASTER_THRESHOLD = 40;
@@ -865,7 +813,7 @@
       if (spark) { spark.querySelectorAll('div').forEach((b,i,arr)=>{ const last=i===arr.length-1; b.style.background=last?cc:'#21262D'; b.style.boxShadow=last?`0 0 4px ${cc}99`:'none'; b.style.transition='background 0.5s ease'; }); }
     }
 
-    // ─── RENDER SWING SIGNAL (sama seperti sebelumnya) ─────────────────────────
+    // ─── RENDER SWING SIGNAL ─────────────────────────────────────────
     function renderSwing(swing) {
       const awaiting = document.getElementById('swingAwaiting');
       const content  = document.getElementById('swingContent');
@@ -887,9 +835,11 @@
       if (dot) { dot.style.background = posColor; dot.style.boxShadow = `0 0 6px ${posColor}88`; }
       setEl('swingPosSub', posSubText, posColor);
 
+      // H4 Bias
       const h4Color = swing.h4Bias && swing.h4Bias.includes('BULLISH') ? '#00FF88' : swing.h4Bias && swing.h4Bias.includes('BEARISH') ? '#FF3B3B' : '#F0B429';
       setEl('swingH4Bias', swing.h4Bias || '—', h4Color);
 
+      // Confluence
       const score = swing.confluenceScore || 0;
       renderConfDots('swingConfDots', score, 5, 'on-gold');
       setEl('swingConfScore', score + '/5');
@@ -902,6 +852,7 @@
         confBar.style.boxShadow = `0 0 6px ${confColor}66`;
       }
 
+      // Prices
       setEl('swingEntry', fmtPrice(swing.entry));
       setEl('swingSL',    fmtPrice(swing.sl));
       setEl('swingTP1',   fmtPrice(swing.tp1));
@@ -909,25 +860,29 @@
       setEl('swingTP1Pips', swing.tp1Pips || '—');
       setEl('swingTP2Pips', swing.tp2Pips || '—');
 
+      // Zones
       const dz = swing.demandZone;
       const sz = swing.supplyZone;
       setEl('swingDemandZone', dz ? `$${dz.btm} – $${dz.top}` : '—');
       setEl('swingSupplyZone', sz ? `$${sz.btm} – $${sz.top}` : '—');
       setEl('swingRsi', swing.h1Rsi || '—');
 
+      // Timestamp
       setEl('swingSignalTime', new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'}));
 
+      // Reasoning
       const reasons = swing.reason || [];
       setEl('swingReasonCount', reasons.length + ' condition' + (reasons.length !== 1 ? 's' : ''));
       renderReasonList('swingReasonList', reasons, '#F0B429');
 
+      // Panel glow
       const panel = document.getElementById('swingPanel');
       if (panel) {
         panel.className = 'signal-panel swing-panel' + (isActive && isBuy ? ' glow-buy' : isActive && isSell ? ' glow-sell' : '');
       }
     }
 
-    // ─── RENDER SCALP SIGNAL (sama seperti sebelumnya) ─────────────────────────
+    // ─── RENDER SCALP SIGNAL ─────────────────────────────────────────
     function renderScalp(scalp) {
       const awaiting = document.getElementById('scalpAwaiting');
       const content  = document.getElementById('scalpContent');
@@ -951,13 +906,15 @@
       if (dot) { dot.style.background = posColor; dot.style.boxShadow = `0 0 6px ${posColor}88`; }
       setEl('scalpPosSub', posSubText, posColor);
 
+      // Gate badge
       const gated = scalp.gatedBySwing;
       const gateBadge = document.getElementById('scalpGateBadge');
       if (gateBadge) {
         gateBadge.className = `gate-badge ${gated ? 'gate-active' : 'gate-blocked'}`;
-        gateBadge.textContent = gated ? '✓ ACTIVE — Swing Confirmed' : '⊘ BLOCKED — Await Swing';
+        gateBadge.textContent = gated ? '✓ PRO-TREND (H4 ALIGNED)' : '⊘ COUNTER-TREND (INDEPENDENT)';
       }
 
+      // Confluence
       const score = scalp.confluenceScore || 0;
       renderConfDots('scalpConfDots', score, 5, 'on-cyan');
       setEl('scalpConfScore', score + '/5');
@@ -970,6 +927,7 @@
         confBar.style.boxShadow = `0 0 6px ${confColor}66`;
       }
 
+      // Prices
       setEl('scalpEntry', fmtPrice(scalp.entry));
       setEl('scalpSL',    fmtPrice(scalp.sl));
       setEl('scalpTP1',   fmtPrice(scalp.tp1));
@@ -977,57 +935,61 @@
       setEl('scalpTP1Pips', scalp.tp1Pips || '—');
       setEl('scalpTP2Pips', scalp.tp2Pips || '—');
 
+      // Stats
       setEl('scalpRsi', scalp.m5Rsi || '—');
       setEl('scalpAtr', scalp.m5Atr ? '$' + scalp.m5Atr : '—');
       setEl('scalpVolMult', scalp.volMultiplier ? scalp.volMultiplier + '×' : '—');
 
+      // Timestamp
       setEl('scalpSignalTime', new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'}));
 
+      // Reasoning
       const reasons = scalp.reason || [];
       setEl('scalpReasonCount', reasons.length + ' condition' + (reasons.length !== 1 ? 's' : ''));
       renderReasonList('scalpReasonList', reasons, '#38BDF8');
 
+      // Panel glow
       const panel = document.getElementById('scalpPanel');
       if (panel) {
         panel.className = 'signal-panel scalp-panel' + (isActive && isBuy ? ' glow-buy' : isActive && isSell ? ' glow-sell' : '');
       }
     }
 
-    // ─── RENDER NFP, CPI, GROWTH, FED (sama seperti sebelumnya) ────────────────
+    // ─── RENDER NFP ──────────────────────────────────────────────────
     function renderNFP(nfp) {
       const type=classifyByScore(nfp.score), color=signalColor(type);
-      setEl('nfpSignal',nfp.signal,color); setEl('nfpScore',fmtScore(nfp.score),color);
+      setEl('nfpSignal',nfp.val||nfp.signal,color); setEl('nfpScore',fmtScore(nfp.score),color);
       applyCardStyle('nfpCard','nfpSignalBanner',type); updateScoreBar('nfpBar',nfp.score,type);
-      const {adp,ism,jolts}=nfp.components;
-      setAccentBar('adpBar',adp.points); setEl('adpPoints',fmtPoints(adp.points),adp.points>0?'#00FF88':adp.points<0?'#FF3B3B':'#484F58');
-      renderRow3('adpRow',fmt(adp.actual,'K'),fmt(adp.estimate,'K'),adp.status,['ACTUAL','FCST','STATUS']);
+      const {adp,ism,jolts}=nfp.components||{adp:{},ism:{},jolts:{}};
+      setAccentBar('adpBar',adp.points||0); setEl('adpPoints',fmtPoints(adp.points||0),(adp.points||0)>0?'#00FF88':(adp.points||0)<0?'#FF3B3B':'#484F58');
+      renderRow3('adpRow',fmt(adp.actual,'K'),fmt(adp.estimate,'K'),adp.status||'N/A',['ACTUAL','FCST','STATUS']);
       setEl('adpDate',adp.date?'Date: '+adp.date:'');
-      setAccentBar('ismBar',ism.points); setEl('ismPoints',fmtPoints(ism.points),ism.points>0?'#00FF88':ism.points<0?'#FF3B3B':'#484F58');
-      renderRow3('ismRow',fmt(ism.actual),'50.0',ism.status,['ACTUAL','THRESH','STATUS']);
+      setAccentBar('ismBar',ism.points||0); setEl('ismPoints',fmtPoints(ism.points||0),(ism.points||0)>0?'#00FF88':(ism.points||0)<0?'#FF3B3B':'#484F58');
+      renderRow3('ismRow',fmt(ism.actual),'50.0',ism.status||'N/A',['ACTUAL','THRESH','STATUS']);
       setEl('ismDate',ism.date?'Date: '+ism.date:'');
-      setAccentBar('joltsBar',jolts.points); setEl('joltsPoints',fmtPoints(jolts.points),jolts.points>0?'#00FF88':jolts.points<0?'#FF3B3B':'#484F58');
-      renderRow3('joltsRow',fmt(jolts.actual,'M'),fmt(jolts.estimate,'M'),jolts.status,['ACTUAL','FCST','STATUS']);
+      setAccentBar('joltsBar',jolts.points||0); setEl('joltsPoints',fmtPoints(jolts.points||0),(jolts.points||0)>0?'#00FF88':(jolts.points||0)<0?'#FF3B3B':'#484F58');
+      renderRow3('joltsRow',fmt(jolts.actual,'M'),fmt(jolts.estimate,'M'),jolts.status||'N/A',['ACTUAL','FCST','STATUS']);
       setEl('joltsDate',jolts.date?'Date: '+jolts.date:'');
       return nfp.score;
     }
 
     function renderCPI(cpi) {
       const type=classifyByScore(cpi.score), color=signalColor(type);
-      setEl('cpiSignal',cpi.signal,color); setEl('cpiScore',fmtScore(cpi.score),color);
+      setEl('cpiSignal',cpi.val||cpi.signal,color); setEl('cpiScore',fmtScore(cpi.score),color);
       applyCardStyle('cpiCard','cpiSignalBanner',type); updateScoreBar('cpiBar',cpi.score,type);
-      const {ppi,crude}=cpi.components;
-      setAccentBar('ppiBar',ppi.points); setEl('ppiPoints',fmtPoints(ppi.points),ppi.points>0?'#00FF88':ppi.points<0?'#FF3B3B':'#484F58');
-      renderRow3('ppiRow',fmt(ppi.actual,'%'),fmt(ppi.estimate,'%'),ppi.status,['ACTUAL','FCST','STATUS']);
+      const {ppi,crude}=cpi.components||{ppi:{},crude:{}};
+      setAccentBar('ppiBar',ppi.points||0); setEl('ppiPoints',fmtPoints(ppi.points||0),(ppi.points||0)>0?'#00FF88':(ppi.points||0)<0?'#FF3B3B':'#484F58');
+      renderRow3('ppiRow',fmt(ppi.actual,'%'),fmt(ppi.estimate,'%'),ppi.status||'N/A',['ACTUAL','FCST','STATUS']);
       setEl('ppiDate',ppi.date?'Date: '+ppi.date:'');
-      setAccentBar('crudeBar',crude.points); setEl('crudePoints',fmtPoints(crude.points),crude.points>0?'#00FF88':crude.points<0?'#FF3B3B':'#484F58');
-      renderRow3('crudeRow',crude.current!=null?'$'+parseFloat(crude.current).toFixed(2):'N/A',crude.avg30!=null?'$'+parseFloat(crude.avg30).toFixed(2):'N/A',crude.status,['CURRENT','30D AVG','STATUS']);
+      setAccentBar('crudeBar',crude.points||0); setEl('crudePoints',fmtPoints(crude.points||0),(crude.points||0)>0?'#00FF88':(crude.points||0)<0?'#FF3B3B':'#484F58');
+      renderRow3('crudeRow',crude.current!=null?'$'+parseFloat(crude.current).toFixed(2):'N/A',crude.avg30!=null?'$'+parseFloat(crude.avg30).toFixed(2):'N/A',crude.status||'N/A',['CURRENT','30D AVG','STATUS']);
       return cpi.score;
     }
 
     function renderGrowth(growth) {
       if (!growth) return 0;
       const type=classifyByScore(growth.score), color=signalColor(type);
-      setEl('growthSignal',growth.signal,color); setEl('growthScore',fmtScore(growth.score),color);
+      setEl('growthSignal',growth.val||growth.signal,color); setEl('growthScore',fmtScore(growth.score),color);
       applyCardStyle('growthCard','growthSignalBanner',type); updateScoreBar('growthBar',growth.score,type);
       const comp=growth.components||{};
       const gdp=comp.gdp||comp.gdpGrowth||{};
@@ -1044,7 +1006,7 @@
     function renderFed(fed) {
       if (!fed) return 0;
       const type=classifyByScore(fed.score), color=signalColor(type);
-      setEl('fedSignal',fed.signal,color); setEl('fedScore',fmtScore(fed.score),color);
+      setEl('fedSignal',fed.val||fed.signal,color); setEl('fedScore',fmtScore(fed.score),color);
       applyCardStyle('fedCard','fedSignalBanner',type); updateScoreBar('fedBar',fed.score,type);
       const comp=fed.components||{};
       const rate=comp.fed_rate||comp.fedRate||comp.interest_rate||comp.fed||{};
@@ -1071,212 +1033,4 @@
       if(banner){banner.className=`border bg-[#0D1117] p-5 relative overflow-hidden ${signalGlow(type)}`;banner.style.borderColor={buy:'rgba(0,255,136,0.4)',sell:'rgba(255,59,59,0.4)',wait:'rgba(240,180,41,0.4)'}[type];}
       setEl('masterSignalText',label,color);
       setEl('masterScore',(total>0?'+':'')+total,color);
-      setEl('masterSubtext',{buy:`Composite score ${total}. Macro data favors USD weakness → Gold bullish.`,sell:`Composite score ${total}. Macro data favors USD strength → Gold bearish.`,wait:`Composite score ${total}. Mixed signals — no dominant directional edge.`}[type]);
-      setEl('masterBgLabel',label.replace(/[⬆⬇—\s]+/,'').trim());
-      updateScoreBar('masterFill',total,type,400);
-    }
-
-    function renderMiniScores(nfp,cpi,growth,fed) {
-      [{scoreId:'miniNfpScore',barId:'miniNfpBar',score:nfp},{scoreId:'miniCpiScore',barId:'miniCpiBar',score:cpi},{scoreId:'miniGrowthScore',barId:'miniGrowthBar',score:growth},{scoreId:'miniFedScore',barId:'miniFedBar',score:fed}]
-      .forEach(({scoreId,barId,score})=>{ if(score==null)return; const type=classifyByScore(score),color=signalColor(type); setEl(scoreId,fmtScore(score),color); const bar=document.getElementById(barId); if(bar){bar.style.background=color;bar.style.boxShadow=`0 0 4px ${color}99`;} });
-    }
-
-    function renderNews(newsArr) {
-      const grid = document.getElementById('newsGrid');
-      if (!grid) return;
-      if (!newsArr || !newsArr.length) {
-        grid.innerHTML = `<div class="col-span-full flex items-center justify-center py-8"><span class="font-mono text-xs text-[#484F58]">No upcoming USD events found.</span></div>`;
-        setEl('newsCount', '0 events');
-        return;
-      }
-      setEl('newsCount', newsArr.length + ' events');
-      grid.innerHTML = newsArr.map((item, idx) => {
-        const impactRaw = item.impact ?? item.importance ?? "";
-        let impact = "low";
-        if (typeof impactRaw === "string") {
-          impact = impactRaw.toLowerCase();
-          if (impact.includes("high")) impact = "high";
-          else if (impact.includes("med") || impact.includes("medium")) impact = "medium";
-          else impact = "low";
-        } else if (Number(impactRaw) === 3) impact = "high";
-        else if (Number(impactRaw) === 2) impact = "medium";
-        else impact = "low";
-        const impactClass = impact === "high" ? "impact-high" : impact === "medium" ? "impact-medium" : "impact-low";
-        const impactColor = impact === "high" ? "#FF3B3B" : impact === "medium" ? "#F0B429" : "#484F58";
-        const impactLabel = impact === "high" ? "HIGH" : impact === "medium" ? "MEDIUM" : "LOW";
-        let localTime = item.date || item.datetime || item.time || "";
-        try {
-          const d = new Date(localTime);
-          if (!isNaN(d.getTime())) {
-            localTime = d.toLocaleString("en-US", { month:"short", day:"numeric", hour:"2-digit", minute:"2-digit", hour12:true });
-          }
-        } catch(e) {}
-        const forecast = item.forecast != null ? String(item.forecast) : item.estimate != null ? String(item.estimate) : "—";
-        const previous = item.previous != null ? String(item.previous) : "—";
-        const eventName = item.event || item.name || item.title || "Unknown Event";
-        return `<div class="news-item news-pill ${impactClass} bg-[#0D1117] px-3 py-3 m-1" style="animation-delay:${idx*40}ms"><div class="flex items-start justify-between gap-2 mb-2"><div class="font-mono text-[10px] font-bold text-[#E6EDF3] leading-snug line-clamp-2">${eventName}</div><span class="shrink-0 font-mono text-[8px] px-1.5 py-0.5 border" style="color:${impactColor};border-color:${impactColor}33;background:${impactColor}11;">${impactLabel}</span></div><div class="flex items-end justify-between gap-2"><div><div class="font-mono text-[8px] text-[#484F58] mb-0.5">DATE / TIME</div><div class="font-mono text-[9px] text-[#8B949E]">${localTime}</div></div><div class="text-right"><div class="font-mono text-[8px] text-[#484F58] mb-0.5">FORECAST</div><div class="font-mono text-[9px] font-bold text-[#E6EDF3]">${forecast}</div></div><div class="text-right"><div class="font-mono text-[8px] text-[#484F58] mb-0.5">PREV</div><div class="font-mono text-[9px] text-[#8B949E]">${previous}</div></div></div></div>`;
-      }).join('');
-    }
-
-    // ─── MAIN LOAD ───────────────────────────────────────────────────
-    // Memori untuk sinyal yang sudah ter-trigger (hanya RUNNING)
-    let activeEntryMemory = [];
-
-    async function loadData() {
-      const btn=document.getElementById('refreshBtn');
-      const icon=document.getElementById('refreshIcon');
-      const status=document.getElementById('lastUpdate');
-      btn.disabled=true; icon.classList.add('spinning');
-      status.textContent='FETCHING...';
-      document.getElementById('errorToast').classList.add('hidden');
-      try {
-        const res=await fetch('/api/predict');
-        if(!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data=await res.json();
-        if(!data.success) throw new Error(data.error||'Unknown error');
-
-        renderDXY(data.dxy_live||data.dxyLive||null);
-        const nfpScore    = renderNFP(data.nfp);
-        const cpiScore    = renderCPI(data.cpi);
-        const growthScore = renderGrowth(data.growth||data.gdp||null);
-        const fedScore    = renderFed(data.fed||data.fed_rate||null);
-        renderMiniScores(nfpScore,cpiScore,growthScore,fedScore);
-        renderMaster([nfpScore,cpiScore,growthScore,fedScore]);
-        renderNews(data.upcoming_news||data.upcomingNews||[]);
-
-        renderSwing(data.swing_signal || null);
-        renderScalp(data.scalp_signal || null);
-
-        const zones = data.zone_pantau || [];
-        document.getElementById('zoneTotalCount').textContent = `${zones.length} zones`;
-        document.getElementById('zoneGrid').innerHTML = zones.map(z => {
-          const color = z.bias === "BUY" ? "#00FF88" : z.bias === "SELL" ? "#FF3B3B" : "#A78BFA";
-          return `<div class="border border-[#21262D] bg-[#0D1117] p-3"><div class="flex justify-between mb-2"><span class="font-mono text-[10px] text-[#E6EDF3]">${z.typeLabel || z.type}</span><span class="font-mono text-[9px]" style="color:${color}">${z.bias}</span></div><div class="font-mono text-[12px] text-[#E6EDF3]">${z.lowStr || z.low}</div><div class="font-mono text-[8px] text-[#484F58]">to</div><div class="font-mono text-[12px] text-[#E6EDF3]">${z.highStr || z.high}</div><div class="mt-2 font-mono text-[8px] text-[#8B949E]">${z.session || ""}</div></div>`;
-        }).join('');
-
-        // ─── LIVE TRADE MANAGER: hanya trigger ketika harga menyentuh entry ───
-        const rawPrice = data.swing_signal?.currentPrice || data.technical_signal?.currentPrice || 0;
-        const currentPrice = parseFloat(rawPrice);
-        const nowMs = Date.now();
-        const isPriceValid = currentPrice > 0 && !isNaN(currentPrice);
-
-        if (isPriceValid) {
-          // Trigger kondisi yang sudah diperbaiki
-          zones.forEach(z => {
-            if (!z.signal) return;
-            const entry = parseFloat(z.signal.entry);
-            const isBuy = z.bias === "BUY";
-            const tolerance = 0.3; // toleransi spread
-            // ✅ PERBAIKAN: BUY limit -> harga >= entry - tolerance, SELL limit -> harga <= entry + tolerance
-            const isTriggered = isBuy
-              ? currentPrice >= entry - tolerance
-              : currentPrice <= entry + tolerance;
-
-            if (isTriggered) {
-              const exists = activeEntryMemory.find(e => e.id === z.id);
-              if (!exists) {
-                activeEntryMemory.push({
-                  ...z,
-                  triggeredAt: nowMs,
-                  status: 'RUNNING',
-                  statusColor: '#38BDF8'
-                });
-              }
-            }
-          });
-
-          // Evaluasi status RUNNING (SL/TP hit)
-          activeEntryMemory.forEach(trade => {
-            if (trade.status !== 'RUNNING') return;
-            const isBuy = trade.bias === "BUY";
-            const entry = parseFloat(trade.signal.entry);
-            const sl = parseFloat(trade.signal.sl);
-            const tp1 = parseFloat(trade.signal.tp1);
-            if (isBuy) {
-              if (currentPrice <= sl) { trade.status = 'LOSS (SL HIT)'; trade.statusColor = '#FF3B3B'; trade.closedAt = nowMs; }
-              else if (currentPrice >= tp1) { trade.status = 'WIN (TP1 HIT)'; trade.statusColor = '#00FF88'; trade.closedAt = nowMs; }
-            } else {
-              if (currentPrice >= sl) { trade.status = 'LOSS (SL HIT)'; trade.statusColor = '#FF3B3B'; trade.closedAt = nowMs; }
-              else if (currentPrice <= tp1) { trade.status = 'WIN (TP1 HIT)'; trade.statusColor = '#00FF88'; trade.closedAt = nowMs; }
-            }
-          });
-        }
-
-        // Hapus sinyal yang sudah closed lebih dari 30 menit
-        activeEntryMemory = activeEntryMemory.filter(e => {
-          if (e.status === 'RUNNING') return true;
-          return nowMs - e.closedAt < 1800000;
-        });
-
-        // ─── RENDER LIVE TRADE MANAGER (HANYA RUNNING + UPDATE PnL) ───
-        const runningTrades = activeEntryMemory.filter(t => t.status === 'RUNNING');
-        const closedTrades = activeEntryMemory.filter(t => t.status !== 'RUNNING');
-        document.getElementById('entryTriggerCount').textContent = `${runningTrades.length} running, ${closedTrades.length} closed`;
-        const trackerGrid = document.getElementById('entryTriggerGrid');
-
-        if (runningTrades.length === 0) {
-          trackerGrid.innerHTML = `<div class="col-span-full flex items-center justify-center py-10"><span class="font-mono text-xs text-[#484F58]">Tidak ada limit order yang sedang running<span class="cursor">_</span></span></div>`;
-        } else {
-          trackerGrid.innerHTML = runningTrades.map(trade => {
-            const isBuy = trade.bias === "BUY";
-            const entry = parseFloat(trade.signal.entry);
-            const sl = parseFloat(trade.signal.sl);
-            const tp1 = parseFloat(trade.signal.tp1);
-            const current = currentPrice;
-            const pnl = isBuy ? current - entry : entry - current;
-            const risk = Math.abs(entry - sl);
-            const pnlPercent = (pnl / risk) * 100;
-            const distanceToSL = Math.abs(current - sl);
-            const distanceToTP1 = Math.abs(tp1 - current);
-            const pnlColor = pnl > 0 ? '#00FF88' : pnl < 0 ? '#FF3B3B' : '#F0B429';
-            return `<div class="border border-[#21262D] bg-[#0D1117] p-4 relative" style="border-left: 3px solid ${trade.statusColor}; animation: techReveal 0.3s ease forwards;"><div class="absolute top-3 right-3 flex items-center gap-1.5"><div class="w-1.5 h-1.5 rounded-full bg-[#38BDF8] animate-ping"></div><span class="font-mono text-[9px] font-bold" style="color:${trade.statusColor}">${trade.status}</span></div><div class="font-mono text-[10px] text-[#F0B429] tracking-widest uppercase mb-1">${trade.bias} LIMIT TRIGGERED @ $${entry.toFixed(2)}</div><div class="text-[11px] text-[#8B949E] mb-2">via ${trade.typeLabel} (${trade.session})</div><div class="grid grid-cols-3 gap-2 text-center mb-3"><div class="bg-[#161B22] py-1"><div class="font-mono text-[7px] text-[#FF3B3B]">SL</div><div class="font-mono text-[10px] text-white">$${sl.toFixed(2)}</div></div><div class="bg-[#161B22] py-1"><div class="font-mono text-[7px] text-[#00FF88]">TP1</div><div class="font-mono text-[10px] text-white">$${tp1.toFixed(2)}</div></div><div class="bg-[#161B22] py-1"><div class="font-mono text-[7px] text-[#38BDF8]">Risk</div><div class="font-mono text-[10px] text-white">${risk.toFixed(1)} pips</div></div></div><div class="flex items-center justify-between border-t border-[#21262D] pt-2 mt-1"><div><div class="font-mono text-[7px] text-[#484F58]">Unrealized PnL</div><div class="font-mono text-[12px] font-bold" style="color:${pnlColor}">${pnl > 0 ? '+' : ''}$${pnl.toFixed(2)} (${pnlPercent.toFixed(0)}%)</div></div><div class="text-right"><div class="font-mono text-[7px] text-[#484F58]">Distance to SL / TP1</div><div class="font-mono text-[9px] text-[#8B949E]">${distanceToSL.toFixed(2)} / ${distanceToTP1.toFixed(2)}</div></div></div><div class="mt-2 font-mono text-[8px] text-[#484F58] text-right">Triggered: ${new Date(trade.triggeredAt).toLocaleTimeString()}</div></div>`;
-          }).join('');
-        }
-
-        const ts=new Date(data.timestamp);
-        status.textContent='UPDATED '+ts.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
-      } catch(err) {
-        console.error(err);
-        document.getElementById('errorMsg').textContent='Error: '+err.message;
-        document.getElementById('errorToast').classList.remove('hidden');
-        status.textContent='FETCH FAILED';
-        setTimeout(()=>document.getElementById('errorToast').classList.add('hidden'),6000);
-      } finally {
-        btn.disabled=false; icon.classList.remove('spinning');
-      }
-    }
-
-    // ─── AUTO POLLING SYSTEM (REALTIME DISPLAY) ──────────────────────
-    let pollTimer = null;
-    const POLL_INTERVAL = 3000;
-
-    function startAutoRefresh() {
-      if (pollTimer) clearInterval(pollTimer);
-      pollTimer = setInterval(() => {
-        if (!document.hidden) {
-          loadData();
-        }
-      }, POLL_INTERVAL);
-    }
-
-    document.addEventListener("visibilitychange", () => {
-      if (document.hidden) {
-        clearInterval(pollTimer);
-      } else {
-        loadData();
-        startAutoRefresh();
-      }
-    });
-
-    // ─── INITIALIZATION ───────────────────────────────────────────────
-    document.addEventListener('DOMContentLoaded', () => {
-      const ind=document.getElementById('tabLiveIndicator');
-      const lbl=document.getElementById('tabModeLabel');
-      ind.style.background='#00FF88'; ind.style.boxShadow='0 0 6px rgba(0,255,136,0.7)';
-      lbl.style.color='#00FF88';
-      loadData();
-      startAutoRefresh();
-    });
-  </script>
-</body>
-</html>
+      setEl('masterSubtext',{buy:`Composite score ${total}. Macro data favors USD weakness →
