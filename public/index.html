@@ -960,7 +960,7 @@
       const type=classifyByScore(nfp.score), color=signalColor(type);
       setEl('nfpSignal',nfp.val||nfp.signal,color); setEl('nfpScore',fmtScore(nfp.score),color);
       applyCardStyle('nfpCard','nfpSignalBanner',type); updateScoreBar('nfpBar',nfp.score,type);
-      const {adp,ism,jolts}=nfp.components||{adp:{},ism:{},jolts:{}};
+      const {adp={},ism={},jolts={}}=nfp.components||{};
       setAccentBar('adpBar',adp.points||0); setEl('adpPoints',fmtPoints(adp.points||0),(adp.points||0)>0?'#00FF88':(adp.points||0)<0?'#FF3B3B':'#484F58');
       renderRow3('adpRow',fmt(adp.actual,'K'),fmt(adp.estimate,'K'),adp.status||'N/A',['ACTUAL','FCST','STATUS']);
       setEl('adpDate',adp.date?'Date: '+adp.date:'');
@@ -977,7 +977,7 @@
       const type=classifyByScore(cpi.score), color=signalColor(type);
       setEl('cpiSignal',cpi.val||cpi.signal,color); setEl('cpiScore',fmtScore(cpi.score),color);
       applyCardStyle('cpiCard','cpiSignalBanner',type); updateScoreBar('cpiBar',cpi.score,type);
-      const {ppi,crude}=cpi.components||{ppi:{},crude:{}};
+      const {ppi={},crude={}}=cpi.components||{};
       setAccentBar('ppiBar',ppi.points||0); setEl('ppiPoints',fmtPoints(ppi.points||0),(ppi.points||0)>0?'#00FF88':(ppi.points||0)<0?'#FF3B3B':'#484F58');
       renderRow3('ppiRow',fmt(ppi.actual,'%'),fmt(ppi.estimate,'%'),ppi.status||'N/A',['ACTUAL','FCST','STATUS']);
       setEl('ppiDate',ppi.date?'Date: '+ppi.date:'');
