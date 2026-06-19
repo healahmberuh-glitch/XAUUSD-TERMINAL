@@ -621,14 +621,11 @@ async function scanAllZones(h1, m5, session, swing) {
 
     return deduped.slice(0, 8).map(z => {
       const isBuy = z.bias === "BUY";
-      // PERBAIKAN: entry untuk BUY = batas bawah zona (low), untuk SELL = batas atas zona (high)
       const entryPrice = isBuy ? z.low : z.high;
 
-      // Cari swing high terdekat di ATAS entry (untuk SELL)
       const nearestSwingHigh = m5Swings.swingHighs
         .filter(sh => sh.val > entryPrice)
         .sort((a,b) => a.val - b.val)[0]?.val;
-      // Cari swing low terdekat di BAWAH entry (untuk BUY)
       const nearestSwingLow = m5Swings.swingLows
         .filter(sl => sl.val < entryPrice)
         .sort((a,b) => b.val - a.val)[0]?.val;
@@ -675,20 +672,13 @@ async function checkEntryTriggers(m1, zones, session) {
 // ─── SWING SIGNAL ENGINE (H4/H1) — DISTABILKAN dengan candle closed ─────────
 async function calculateSwingSignal(h4, h1, session) {
   try {
-    // --- Cek apakah candle H1 baru (berdasarkan timestamp atau panjang array) ---
     const now = new Date();
     const currentHour = now.getUTCHours();
     const currentMinute = now.getUTCMinutes();
-    // Anggap candle H1 baru jika minute < 5 (setelah jam berganti) atau panjang array berubah
-    // Sederhana: gunakan last element timestamp (tidak tersedia di data yahoo). Alternatif: simpan jumlah candle.
-    // Lebih robust: hitung ulang hanya jika lastH1CloseTime berbeda dari waktu close candle terakhir.
-    // Karena data yahoo tidak memberi timestamp, kita gunakan panjang array sebagai proxy:
     const h1Length = h1.c.length;
     if (cachedSwing && lastH1CloseTime === h1Length) {
-      // Gunakan cached swing, hanya update currentPrice
       return { ...cachedSwing, currentPrice: h1.current.toFixed(2) };
     }
-    // Update cache
     lastH1CloseTime = h1Length;
 
     const h4Ema21  = calculateEMA(h4.c, 21);
@@ -718,7 +708,6 @@ async function calculateSwingSignal(h4, h1, session) {
       return swingResult;
     }
 
-    // Gunakan 6 candle H1 terakhir untuk menentukan apakah zona tersentuh
     const h1Swings = findSwingHighsLows(h1.h, h1.l, 5, 5);
     const h1Atr    = calculateATR(h1.h, h1.l, h1.c, 14);
     const price    = h1.current;
@@ -731,7 +720,6 @@ async function calculateSwingSignal(h4, h1, session) {
     const h1RsiArr = calculateRSI(h1.c, 14, true);
     const h1Rsi   = h1RsiArr[h1RsiArr.length-1];
 
-    // Cek apakah dalam 6 candle terakhir harga menyentuh demand atau supply zone
     const last6 = { high: h1.h.slice(-6), low: h1.l.slice(-6), close: h1.c.slice(-6) };
     let zoneTouched = false;
     if (h4Bias.includes("BULLISH")) {
@@ -789,7 +777,6 @@ async function calculateScalpSignal(m5, swing, session) {
     const price = m5.current;
     const swingBuy  = swing.position.includes("BUY");
     const swingSell = swing.position.includes("SELL");
-    // Tidak ada blokade lagi. Scalp tetap jalan sendiri.
 
     const m5Atr    = calculateATR(m5.h, m5.l, m5.c, 14);
     const m5RsiArr = calculateRSI(m5.c, 14, true);
@@ -806,7 +793,7 @@ async function calculateScalpSignal(m5, swing, session) {
     const nearDemand = swing.demandZone ? price >= parseFloat(swing.demandZone.btm)-m5Atr && price <= parseFloat(swing.demandZone.top)+m5Atr*2 : false;
     const nearSupply = swing.supplyZone ? price >= parseFloat(swing.supplyZone.btm)-m5Atr*2 && price <= parseFloat(swing.supplyZone.top)+m5Atr : false;
 
-    let score = 1; // base score
+    let score = 1;
     const conf = { swingAligned: false, zoneProximity: false, engulfing: false, volume: false, rsiHook: false };
     
     if ((swingBuy && nearDemand) || (swingSell && nearSupply)) { 
@@ -829,9 +816,8 @@ async function calculateScalpSignal(m5, swing, session) {
 
     let position="WAIT & SEE", entry="0.00", sl="0.00", tp1="0.00", tp2="0.00", tp1Pips="0", tp2Pips="0", reason=[];
 
-    // Kebutuhan score tetap 4 untuk ACTIVE, tapi bisa lebih rendah jika swing aligned
     let neededScore = 4;
-    if (conf.swingAligned) neededScore = 3; // bonus jika searah swing
+    if (conf.swingAligned) neededScore = 3;
 
     if (score >= neededScore) {
       const isBuySignal = (swingBuy && score >= neededScore) || (!swingBuy && !swingSell && score >= 4 && (chochBuy || hookBuy));
@@ -1036,6 +1022,7 @@ module.exports = async (req, res) => {
     return res.status(200).json({
       success: true,
       timestamp: new Date().toISOString(),
+      gold_price: h1 ? h1.current : null,
       dxy_live: dxy,
       master_signal: { signal:master, total_score:total },
       nfp, cpi, growth, fed,
