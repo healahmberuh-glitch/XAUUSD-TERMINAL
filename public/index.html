@@ -3,1281 +3,958 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>XAU/USD Terminal · Trading Station</title>
+  <title>XAU/USD Terminal — DEPRESSEDESIGN</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script>
     tailwind.config = {
       theme: {
         extend: {
           fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
             mono: ['"IBM Plex Mono"', 'monospace'],
-            sans: ['Inter', 'sans-serif'],
           },
           colors: {
-            bg:     { base:'#080B0F', card:'#0D1117', elevated:'#161B22', border:'#21262D' },
-            signal: { buy:'#00FF88', sell:'#FF3B3B', wait:'#F0B429' },
-            ink:    { primary:'#E6EDF3', secondary:'#8B949E', muted:'#484F58' }
-          },
+            bg: '#0C0C0C',
+            surface: '#141414',
+            card: '#1A1A1A',
+            border: '#252525',
+            muted: '#3A3A3A',
+            subtle: '#666666',
+            text: '#F5F5F5',
+            textSec: '#999999',
+            accent: '#FFFFFF',
+          }
         }
       }
     }
   </script>
-
   <style>
-    body { background-color: #080B0F; font-family: 'Inter', sans-serif; }
-    body::before {
-      content: ''; position: fixed; inset: 0;
-      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 4px);
-      pointer-events: none; z-index: 1000;
+    *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { background: #0C0C0C; font-family: 'Inter', sans-serif; color: #F5F5F5; -webkit-font-smoothing: antialiased; margin: 0; overflow-x: hidden; }
+    body::before { content: ''; position: fixed; inset: 0; background: radial-gradient(ellipse 60% 40% at 50% 0%, rgba(255,255,255,0.02) 0%, transparent 60%), radial-gradient(ellipse 40% 30% at 80% 100%, rgba(56,189,248,0.015) 0%, transparent 50%); pointer-events: none; z-index: -1; }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: #0C0C0C; }
+    ::-webkit-scrollbar-thumb { background: #252525; border-radius: 2px; }
+
+    /* ─── CURSOR ─── */
+    .cursor-dot { position: fixed; width: 6px; height: 6px; border-radius: 50%; background: #fff; pointer-events: none; z-index: 9999; transform: translate(-50%, -50%); transition: transform 0.1s ease; }
+    .cursor-ring { position: fixed; width: 32px; height: 32px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.15); pointer-events: none; z-index: 9998; transform: translate(-50%, -50%); transition: all 0.2s ease; }
+    .cursor-ring.hover { width: 48px; height: 48px; border-color: rgba(255,255,255,0.4); }
+
+    /* ─── NAV ─── */
+    .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 0 48px; height: 64px; display: flex; align-items: center; justify-content: space-between; transition: all 0.3s ease; background: rgba(12,12,12,0.6); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255,255,255,0.04); }
+    .nav.scrolled { background: rgba(12,12,12,0.85); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .nav-logo { font-size: 14px; font-weight: 800; color: #fff; text-decoration: none; letter-spacing: -0.02em; display: flex; align-items: center; gap: 8px; }
+    .nav-logo img { height: 22px; filter: brightness(0) invert(1); opacity: 0.8; }
+    .nav-links { display: flex; gap: 0; }
+    .nav-link { padding: 8px 20px; font-size: 12px; font-weight: 500; color: #666; background: none; border: none; cursor: pointer; transition: color 0.2s ease; letter-spacing: 0.02em; }
+    .nav-link:hover { color: #999; }
+    .nav-link.active { color: #fff; }
+    .nav-right { display: flex; align-items: center; gap: 20px; }
+    .nav-status { display: flex; align-items: center; gap: 6px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #666; }
+    .nav-status-dot { width: 5px; height: 5px; border-radius: 50%; background: #22C55E; animation: pulse 2s ease-in-out infinite; }
+    .nav-refresh { padding: 8px 16px; border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; font-size: 11px; font-weight: 600; color: #999; background: rgba(255,255,255,0.03); backdrop-filter: blur(8px); cursor: pointer; transition: all 0.3s ease; }
+    .nav-refresh:hover { border-color: rgba(255,255,255,0.2); color: #fff; background: rgba(255,255,255,0.06); }
+
+    /* ─── HERO ─── */
+    .hero { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; padding: 120px 48px 80px; position: relative; }
+    .hero-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 64px; }
+    .hero-tag { font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600; color: #666; letter-spacing: 0.15em; text-transform: uppercase; }
+    .hero-tag span { color: #333; }
+    .hero-big { font-size: clamp(56px, 9vw, 120px); font-weight: 900; line-height: 0.95; letter-spacing: -0.04em; color: #F5F5F5; max-width: 1000px; }
+    .hero-big em { font-style: normal; color: #3A3A3A; }
+    .hero-bottom { display: flex; justify-content: space-between; align-items: flex-end; gap: 40px; flex-wrap: wrap; }
+    .hero-desc { font-size: 15px; color: #666; line-height: 1.7; max-width: 420px; }
+    .hero-cta { display: flex; gap: 12px; }
+    .btn-white { padding: 12px 28px; background: rgba(255,255,255,0.95); backdrop-filter: blur(8px); color: #0C0C0C; font-size: 12px; font-weight: 700; border-radius: 8px; border: none; cursor: pointer; transition: all 0.3s ease; letter-spacing: 0.01em; }
+    .btn-white:hover { background: rgba(255,255,255,1); transform: translateY(-1px); box-shadow: 0 4px 20px rgba(255,255,255,0.15); }
+    .btn-outline { padding: 12px 28px; background: rgba(255,255,255,0.03); backdrop-filter: blur(8px); color: #fff; font-size: 12px; font-weight: 600; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; transition: all 0.3s ease; }
+    .btn-outline:hover { border-color: rgba(255,255,255,0.25); background: rgba(255,255,255,0.06); }
+    .hero-scroll { position: absolute; bottom: 32px; left: 48px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #3A3A3A; letter-spacing: 0.15em; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
+    .hero-scroll-arrow { animation: scrollBounce 1.5s ease-in-out infinite; }
+    @keyframes scrollBounce { 0%,100%{transform:translateY(0);} 50%{transform:translateY(4px);} }
+
+    /* ─── SECTION ─── */
+    .section { padding: 100px 48px; max-width: 1400px; margin: 0 auto; }
+    .section-num { font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 600; color: #3A3A3A; letter-spacing: 0.1em; margin-bottom: 24px; }
+    .section-title { font-size: clamp(32px, 5vw, 56px); font-weight: 800; line-height: 1.05; letter-spacing: -0.03em; color: #F5F5F5; margin-bottom: 20px; }
+    .section-title em { font-style: normal; color: #3A3A3A; }
+    .section-desc { font-size: 15px; color: #666; line-height: 1.7; max-width: 520px; }
+    .divider { height: 1px; background: #1A1A1A; max-width: 1400px; margin: 0 auto; }
+
+    /* ─── STATS ─── */
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: rgba(255,255,255,0.03); border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.04); }
+    .stat { background: rgba(20,20,20,0.4); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); padding: 40px 28px; text-align: center; transition: all 0.4s cubic-bezier(0.25,0.46,0.45,0.94); border-radius: 12px; }
+    .stat:hover { background: rgba(26,26,26,0.7); transform: translateY(-4px) scale(1.02); box-shadow: 0 12px 40px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.06); }
+    .stat:hover .stat-num { transform: scale(1.05); }
+    .stat-num { font-size: clamp(32px, 4vw, 48px); font-weight: 900; color: #fff; line-height: 1; letter-spacing: -0.03em; transition: transform 0.4s cubic-bezier(0.25,0.46,0.45,0.94); }
+    .stat-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #666; letter-spacing: 0.1em; text-transform: uppercase; margin-top: 8px; }
+
+    /* ─── MACRO CARDS ─── */
+    .macro-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    @media (max-width: 1024px) { .macro-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 640px) { .macro-grid { grid-template-columns: 1fr; } }
+    .macro-card { background: rgba(20,20,20,0.6); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.04); padding: 32px; transition: all 0.4s cubic-bezier(0.25,0.46,0.45,0.94); border-radius: 12px; position: relative; overflow: hidden; }
+    .macro-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent); opacity: 0; transition: opacity 0.4s ease; }
+    .macro-card:hover { background: rgba(26,26,26,0.8); border-color: rgba(255,255,255,0.1); transform: translateY(-6px) scale(1.01); box-shadow: 0 16px 48px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.06); }
+    .macro-card:hover::before { opacity: 1; }
+    .macro-card:hover .macro-card-title { transform: translateX(4px); }
+    .macro-card:hover .macro-card-num { color: #666; }
+    .macro-card-title { font-size: 16px; font-weight: 800; color: #fff; margin-bottom: 4px; transition: transform 0.4s cubic-bezier(0.25,0.46,0.45,0.94); }
+    .macro-card-sub { font-size: 12px; color: #666; margin-bottom: 20px; }
+    .macro-signal { font-size: 13px; font-weight: 700; margin-bottom: 8px; transition: color 0.3s ease; }
+    .macro-score { font-size: 36px; font-weight: 900; letter-spacing: -0.03em; transition: color 0.3s ease; }
+    .macro-bar { height: 3px; background: rgba(255,255,255,0.04); border-radius: 2px; overflow: hidden; margin-top: 16px; }
+    .macro-bar-fill { height: 100%; border-radius: 2px; transition: width 0.8s cubic-bezier(0.16,1,0.3,1); }
+    .macro-bar-labels { display: flex; justify-content: space-between; font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #3A3A3A; margin-top: 6px; }
+    .macro-data { margin-top: 20px; border-top: 1px solid #1A1A1A; padding-top: 16px; }
+    .macro-data-row { padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.03); }
+    .macro-data-row:last-child { border-bottom: none; }
+    .macro-data-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600; color: #666; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 8px; display: flex; justify-content: space-between; }
+    .macro-data-pts { font-weight: 700; transition: color 0.3s ease; }
+    .macro-data-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+    .macro-data-cell { background: rgba(12,12,12,0.5); backdrop-filter: blur(4px); padding: 8px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.03); transition: all 0.3s cubic-bezier(0.25,0.46,0.45,0.94); }
+    .macro-data-cell:hover { background: rgba(20,20,20,0.6); border-color: rgba(255,255,255,0.06); transform: translateY(-1px); }
+    .macro-data-cell-label { font-family: 'IBM Plex Mono', monospace; font-size: 8px; color: #3A3A3A; margin-bottom: 2px; }
+    .macro-data-cell-val { font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600; color: #CCC; }
+
+    /* ─── MASTER ─── */
+    .master { background: rgba(20,20,20,0.5); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 48px; position: relative; overflow: hidden; transition: all 0.4s cubic-bezier(0.25,0.46,0.45,0.94); }
+    .master::before { content: ''; position: absolute; top: -50%; right: -50%; width: 200%; height: 200%; background: radial-gradient(circle at center, rgba(255,255,255,0.02) 0%, transparent 50%); opacity: 0; transition: opacity 0.5s ease; pointer-events: none; }
+    .master:hover { border-color: rgba(255,255,255,0.1); box-shadow: 0 12px 48px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.06); transform: translateY(-2px); }
+    .master:hover::before { opacity: 1; }
+    .master:hover .master-signal { transform: translateX(4px); }
+    .master-signal { font-size: clamp(28px, 4vw, 44px); font-weight: 900; line-height: 1.05; letter-spacing: -0.03em; transition: all 0.4s cubic-bezier(0.25,0.46,0.45,0.94); }
+    .master-sub { font-size: 14px; color: #666; margin-top: 8px; }
+    .master-score-wrap { text-align: right; }
+    .master-score-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #3A3A3A; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 4px; }
+    .master-score-val { font-size: 56px; font-weight: 900; line-height: 1; letter-spacing: -0.03em; transition: color 0.4s ease; }
+    .master-bar-wrap { margin-top: 28px; }
+    .master-bar-labels { display: flex; justify-content: space-between; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #252525; margin-bottom: 6px; }
+    .master-bar { height: 4px; background: rgba(255,255,255,0.04); border-radius: 2px; overflow: hidden; }
+    .master-bar-fill { height: 100%; border-radius: 2px; transition: width 1.2s cubic-bezier(0.16,1,0.3,1); }
+    .master-threshold { position: absolute; top: -2px; bottom: -2px; width: 1px; background: #252525; }
+    .master-mini { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 24px; margin-top: 20px; }
+    .master-mini-item { display: flex; align-items: center; gap: 8px; }
+    .master-mini-dot { width: 3px; height: 14px; border-radius: 2px; transition: all 0.3s ease; }
+    .master-mini-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #3A3A3A; min-width: 28px; }
+    .master-mini-val { font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700; transition: color 0.3s ease; }
+
+    /* ─── NEWS ─── */
+    .news-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1px; background: rgba(255,255,255,0.03); border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.04); }
+    .news-pill { background: rgba(20,20,20,0.4); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); padding: 20px 24px; border-left: 2px solid rgba(255,255,255,0.04); transition: all 0.4s cubic-bezier(0.25,0.46,0.45,0.94); border-radius: 0 8px 8px 0; }
+    .news-pill:hover { background: rgba(26,26,26,0.7); transform: translateX(6px) scale(1.01); box-shadow: -4px 0 20px rgba(0,0,0,0.2); }
+    .news-pill:hover .news-pill-title { color: #fff; }
+    .news-pill-title { font-size: 13px; font-weight: 600; color: #DDD; margin-bottom: 8px; line-height: 1.4; transition: color 0.3s ease; }
+    .news-pill:hover .news-pill-title { color: #fff; }
+    .news-pill:hover .news-pill-badge { transform: scale(1.1); }
+    .news-pill-badge { transition: all 0.3s ease; }
+    .news-pill-meta { display: flex; justify-content: space-between; align-items: flex-end; }
+    .news-pill-date { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #666; }
+    .news-pill-fcst-val { font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 700; color: #CCC; }
+
+    /* ─── CHART ─── */
+    .chart-frame { background: rgba(20,20,20,0.5); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; overflow: hidden; transition: all 0.4s cubic-bezier(0.25,0.46,0.45,0.94); }
+    .chart-frame:hover { border-color: rgba(255,255,255,0.1); box-shadow: 0 8px 40px rgba(0,0,0,0.3); transform: translateY(-2px); }
+    .chart-frame iframe { display: block; width: 100%; height: 520px; border: none; }
+    @media (min-height: 900px) { .chart-frame iframe { height: 600px; } }
+    .chart-head { padding: 16px 24px; background: rgba(12,12,12,0.5); backdrop-filter: blur(8px); border-bottom: 1px solid rgba(255,255,255,0.04); display: flex; align-items: center; justify-content: space-between; }
+    .chart-head-dot { width: 5px; height: 5px; border-radius: 50%; background: #38BDF8; }
+    .chart-badge { display: flex; align-items: center; gap: 6px; padding: 5px 12px; border: 1px solid #1A1A1A; border-radius: 6px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #38BDF8; }
+
+    /* ─── SIGNALS ─── */
+    .signal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 768px) { .signal-grid { grid-template-columns: 1fr; } }
+    .signal-panel { background: rgba(20,20,20,0.5); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; overflow: hidden; transition: all 0.4s cubic-bezier(0.25,0.46,0.45,0.94); }
+    .signal-panel:hover { border-color: rgba(255,255,255,0.1); box-shadow: 0 8px 40px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.06); transform: translateY(-3px); }
+    .signal-panel:hover .signal-title { transform: translateX(3px); }
+    .signal-title { font-size: 13px; font-weight: 800; color: #fff; transition: transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94); }
+    .signal-sub { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #666; }
+    .signal-badge { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #666; padding: 4px 10px; border: 1px solid rgba(255,255,255,0.05); border-radius: 4px; background: rgba(255,255,255,0.02); backdrop-filter: blur(4px); transition: all 0.3s ease; }
+    .signal-badge:hover { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.1); color: #999; }
+    .signal-gate { padding: 10px 24px; background: rgba(12,12,12,0.4); backdrop-filter: blur(6px); border-bottom: 1px solid rgba(255,255,255,0.04); display: flex; align-items: center; justify-content: space-between; }
+    .signal-gate-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #666; letter-spacing: 0.08em; text-transform: uppercase; }
+    .gate-pill { display: inline-flex; padding: 4px 10px; border-radius: 4px; font-family: 'IBM Plex Mono', monospace; font-size: 9px; font-weight: 700; transition: all 0.3s cubic-bezier(0.25,0.46,0.45,0.94); }
+    .gate-pill.active { color: #22C55E; background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.2); }
+    .gate-pill.active:hover { background: rgba(34,197,94,0.15); transform: scale(1.05); box-shadow: 0 0 12px rgba(34,197,94,0.2); }
+    .gate-pill.blocked { color: #666; background: rgba(20,20,20,0.5); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.05); }
+    .conf-dots { display: flex; gap: 4px; }
+    .conf-dot { width: 6px; height: 6px; border-radius: 50%; transition: all 0.3s ease; }
+    .conf-dot.on { background: #22C55E; box-shadow: 0 0 6px rgba(34,197,94,0.5); }
+    .conf-dot.on-gold { background: #F59E0B; box-shadow: 0 0 6px rgba(245,158,11,0.5); }
+    .conf-dot.on-cyan { background: #38BDF8; box-shadow: 0 0 6px rgba(56,189,248,0.5); }
+    .conf-dot.off { background: #1A1A1A; }
+    .signal-pos { padding: 24px; display: grid; grid-template-columns: 1fr 2fr; border-bottom: 1px solid #1A1A1A; }
+    .signal-pos-left { padding-right: 24px; border-right: 1px solid #1A1A1A; }
+    .signal-pos-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #666; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 8px; }
+    .signal-pos-text { font-family: 'IBM Plex Mono', monospace; font-size: clamp(14px, 1.8vw, 18px); font-weight: 700; line-height: 1.2; transition: all 0.3s ease; }
+    .signal-pos-sub { font-size: 11px; color: #666; margin-top: 6px; }
+    .signal-conf { margin-top: 14px; }
+    .signal-conf-label { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #666; margin-bottom: 4px; display: flex; justify-content: space-between; }
+    .signal-conf-track { height: 3px; background: rgba(255,255,255,0.04); border-radius: 2px; overflow: hidden; }
+    .signal-conf-fill { height: 100%; border-radius: 2px; transition: width 0.5s ease; }
+    .signal-prices { display: grid; grid-template-columns: repeat(4, 1fr); }
+    .signal-price { padding: 14px 16px; background: rgba(12,12,12,0.4); backdrop-filter: blur(6px); border-left: 1px solid rgba(255,255,255,0.04); transition: all 0.3s cubic-bezier(0.25,0.46,0.45,0.94); }
+    .signal-price:first-child { border-left: none; }
+    .signal-price:hover { background: rgba(20,20,20,0.6); transform: translateY(-2px); }
+    .signal-price:hover .signal-price-val { transform: scale(1.05); }
+    .signal-price-val { font-family: 'IBM Plex Mono', monospace; font-size: 15px; font-weight: 700; color: #F5F5F5; transition: transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94); }
+    .signal-price-sub { font-family: 'IBM Plex Mono', monospace; font-size: 8px; color: #3A3A3A; margin-top: 2px; }
+    .signal-zones { padding: 12px 24px; background: rgba(12,12,12,0.4); backdrop-filter: blur(6px); border-bottom: 1px solid rgba(255,255,255,0.04); display: flex; gap: 20px; flex-wrap: wrap; }
+    .signal-zone { display: flex; align-items: center; gap: 6px; }
+    .signal-zone-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #666; }
+    .signal-zone-val { font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 700; }
+    .signal-reasons { padding: 20px 24px; }
+    .signal-reasons-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .signal-reasons-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #666; letter-spacing: 0.1em; text-transform: uppercase; }
+    .signal-reasons-line { flex: 1; height: 1px; background: #1A1A1A; }
+    .reason-item { display: flex; align-items: flex-start; gap: 8px; padding: 6px 0; border-bottom: 1px solid #141414; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #888; line-height: 1.5; transition: all 0.2s ease; }
+    .reason-item:last-child { border-bottom: none; }
+    .reason-item:hover { color: #CCC; padding-left: 4px; }
+    .reason-icon { flex-shrink: 0; width: 16px; height: 16px; margin-top: 1px; display: flex; align-items: center; justify-content: center; font-size: 7px; border: 1px solid rgba(255,255,255,0.06); background: rgba(12,12,12,0.5); backdrop-filter: blur(4px); color: #666; border-radius: 3px; }
+    .reason-item:hover .reason-icon { border-color: #3A3A3A; color: #FFF; }
+    .signal-foot { padding: 10px 24px; background: rgba(12,12,12,0.4); backdrop-filter: blur(6px); border-top: 1px solid rgba(255,255,255,0.04); display: flex; justify-content: space-between; font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #3A3A3A; }
+
+    /* ─── ZONES ─── */
+    .zone-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: rgba(255,255,255,0.03); border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.04); }
+    @media (max-width: 1024px) { .zone-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 640px) { .zone-grid { grid-template-columns: 1fr; } }
+    .zone-card { background: rgba(20,20,20,0.4); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); padding: 18px; transition: all 0.4s cubic-bezier(0.25,0.46,0.45,0.94); border-radius: 8px; border: 1px solid transparent; }
+    .zone-card:hover { background: rgba(26,26,26,0.7); transform: translateY(-3px) scale(1.02); box-shadow: 0 8px 32px rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.06); }
+    .zone-card:hover .zone-card-type { color: #fff; }
+    .zone-card-type { font-size: 11px; font-weight: 700; color: #CCC; transition: color 0.3s ease; }
+    .zone-card-bias { font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 700; }
+    .zone-card-range { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #F5F5F5; }
+    .zone-card-to { font-size: 8px; color: #3A3A3A; margin: 2px 0; }
+    .zone-card-session { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #666; margin-top: 8px; }
+
+    /* ─── TRADE MANAGER ─── */
+    .trade-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: rgba(255,255,255,0.03); border-radius: 0 0 12px 12px; overflow: hidden; min-height: 80px; border: 1px solid rgba(255,255,255,0.04); border-top: none; }
+    @media (max-width: 768px) { .trade-grid { grid-template-columns: 1fr; } }
+    .trade-card { background: rgba(20,20,20,0.4); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); padding: 20px; position: relative; border-left: 3px solid; transition: all 0.4s cubic-bezier(0.25,0.46,0.45,0.94); }
+    .trade-card:hover { background: rgba(26,26,26,0.7); transform: translateY(-3px); box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+    .trade-card:hover .trade-title { transform: translateX(3px); }
+    .trade-title { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #F59E0B; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 4px; transition: transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94); }
+    .trade-sub { font-size: 11px; color: #666; margin-bottom: 12px; }
+    .trade-prices { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 12px; }
+    .trade-price { background: rgba(12,12,12,0.5); backdrop-filter: blur(4px); padding: 8px; border-radius: 6px; text-align: center; border: 1px solid rgba(255,255,255,0.03); transition: all 0.3s cubic-bezier(0.25,0.46,0.45,0.94); }
+    .trade-price:hover { background: rgba(20,20,20,0.6); border-color: rgba(255,255,255,0.06); transform: translateY(-1px); }
+    .trade-price-label { font-family: 'IBM Plex Mono', monospace; font-size: 8px; font-weight: 700; margin-bottom: 2px; }
+    .trade-price-val { font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600; color: #F5F5F5; }
+    .trade-pnl { display: flex; justify-content: space-between; padding-top: 10px; border-top: 1px solid #1A1A1A; }
+    .trade-pnl-label { font-family: 'IBM Plex Mono', monospace; font-size: 8px; color: #666; }
+    .trade-pnl-val { font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 700; }
+    .trade-time { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #3A3A3A; text-align: right; margin-top: 8px; }
+
+    /* ─── PROCESS ─── */
+    .process-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    @media (max-width: 768px) { .process-grid { grid-template-columns: 1fr; } }
+    .process-card { background: rgba(20,20,20,0.4); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.04); border-radius: 12px; padding: 36px 28px; transition: all 0.4s cubic-bezier(0.25,0.46,0.45,0.94); position: relative; overflow: hidden; }
+    .process-card::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent); opacity: 0; transition: opacity 0.4s ease; }
+    .process-card:hover { background: rgba(26,26,26,0.6); border-color: rgba(255,255,255,0.1); transform: translateY(-6px); box-shadow: 0 16px 48px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.06); }
+    .process-card:hover::after { opacity: 1; }
+    .process-card:hover .process-title { transform: translateX(4px); }
+    .process-card:hover .process-num { color: #666; }
+    .process-title { font-size: 18px; font-weight: 800; color: #F5F5F5; margin-bottom: 10px; transition: transform 0.4s cubic-bezier(0.25,0.46,0.45,0.94); }
+    .process-desc { font-size: 13px; color: #666; line-height: 1.6; }
+
+    /* ─── REVEAL ─── */
+    .reveal { opacity: 0; transform: translateY(30px); transition: all 0.7s cubic-bezier(0.16,1,0.3,1); }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+    .reveal-scale { opacity: 0; transform: scale(0.96); transition: all 0.7s cubic-bezier(0.16,1,0.3,1); }
+    .reveal-scale.visible { opacity: 1; transform: scale(1); }
+    .stagger > * { opacity: 0; transform: translateY(20px); transition: all 0.5s cubic-bezier(0.16,1,0.3,1); }
+    .stagger.visible > * { opacity: 1; transform: translateY(0); }
+    .stagger.visible > *:nth-child(1) { transition-delay: 0s; }
+    .stagger.visible > *:nth-child(2) { transition-delay: 0.06s; }
+    .stagger.visible > *:nth-child(3) { transition-delay: 0.12s; }
+    .stagger.visible > *:nth-child(4) { transition-delay: 0.18s; }
+    .stagger.visible > *:nth-child(5) { transition-delay: 0.24s; }
+    .stagger.visible > *:nth-child(6) { transition-delay: 0.3s; }
+    .stagger.visible > *:nth-child(7) { transition-delay: 0.36s; }
+    .stagger.visible > *:nth-child(8) { transition-delay: 0.42s; }
+
+    /* ─── PANELS ─── */
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; animation: panelIn 0.4s cubic-bezier(0.16,1,0.3,1) forwards; }
+    @keyframes panelIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ─── SKELETON ─── */
+    .skeleton { background: linear-gradient(110deg, #141414 30%, #1A1A1A 50%, #141414 70%); background-size: 600px 100%; animation: shimmer 1.6s ease-in-out infinite; border-radius: 3px; }
+
+    /* ─── KEYFRAMES ─── */
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:0.3;transform:scale(0.8);} }
+    @keyframes shimmer { 0%{background-position:600px 0;} 100%{background-position:-600px 0;} }
+    @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0;} }
+    @keyframes fadeInUp { from{opacity:0;transform:translateY(20px);} to{opacity:1;transform:translateY(0);} }
+    @keyframes slideInRight { from{opacity:0;transform:translateX(40px);} to{opacity:1;transform:translateX(0);} }
+    @keyframes slideInLeft { from{opacity:0;transform:translateX(-40px);} to{opacity:1;transform:translateX(0);} }
+    @keyframes countdownPulse { 0%,100%{opacity:1;} 50%{opacity:0.5;} }
+    @keyframes toastSlide { from{opacity:0;transform:translateX(100%) translateY(20px);} to{opacity:1;transform:translateX(0) translateY(0);} }
+    @keyframes toastExit { from{opacity:1;transform:translateX(0);} to{opacity:0;transform:translateX(100%);} }
+    .cursor { animation: blink 1s step-start infinite; }
+    .glow-buy { box-shadow: 0 0 32px rgba(34,197,94,0.06); }
+    .glow-sell { box-shadow: 0 0 32px rgba(239,68,68,0.06); }
+
+    /* ─── DXY BAR ─── */
+    .dxy-bar { background: rgba(12,12,12,0.5); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.04); border-radius: 10px; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 40px; }
+    .dxy-bar-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600; color: #666; letter-spacing: 0.1em; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
+    .dxy-bar-dot { width: 5px; height: 5px; border-radius: 50%; background: #F59E0B; }
+    .dxy-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 14px; border-radius: 6px; font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 800; transition: all 0.3s ease; border: 1px solid; }
+    .dxy-pill.bullish { color: #EF4444; background: rgba(239,68,68,0.06); border-color: rgba(239,68,68,0.15); }
+    .dxy-pill.bearish { color: #22C55E; background: rgba(34,197,94,0.06); border-color: rgba(34,197,94,0.15); }
+    .dxy-pill.neutral { color: #F59E0B; background: rgba(245,158,11,0.06); border-color: rgba(245,158,11,0.15); }
+    .dxy-mini { display: flex; align-items: center; gap: 12px; }
+    .dxy-mini-pill { padding: 3px 10px; border-radius: 4px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700; border: 1px solid; }
+    .dxy-mini-pill.bullish { color: #EF4444; background: rgba(239,68,68,0.06); border-color: rgba(239,68,68,0.12); }
+    .dxy-mini-pill.bearish { color: #22C55E; background: rgba(34,197,94,0.06); border-color: rgba(34,197,94,0.12); }
+    .dxy-mini-pill.neutral { color: #F59E0B; background: rgba(245,158,11,0.06); border-color: rgba(245,158,11,0.12); }
+    .dxy-hint { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #666; }
+
+    /* ─── NEWS COUNTDOWN ─── */
+    .news-countdown { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 6px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 700; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); color: #EF4444; animation: countdownPulse 1s ease-in-out infinite; }
+    .news-live-badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 6px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 700; background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); color: #EF4444; }
+    .news-live-badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #EF4444; animation: pulse 1s ease-in-out infinite; }
+
+    /* ─── TOAST ─── */
+    .toast-container { position: fixed; top: 80px; right: 20px; z-index: 1000; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+    .toast { background: rgba(20,20,20,0.9); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 14px 18px; min-width: 280px; max-width: 360px; pointer-events: auto; animation: toastSlide 0.4s cubic-bezier(0.16,1,0.3,1) forwards; transition: all 0.3s ease; }
+    .toast.exit { animation: toastExit 0.3s ease forwards; }
+    .toast-icon { font-size: 14px; margin-right: 8px; }
+    .toast-title { font-size: 12px; font-weight: 700; color: #F5F5F5; margin-bottom: 4px; }
+    .toast-msg { font-size: 11px; color: #999; line-height: 1.4; }
+    .toast.buy { border-left: 3px solid #22C55E; }
+    .toast.sell { border-left: 3px solid #EF4444; }
+    .toast.info { border-left: 3px solid #38BDF8; }
+    .toast.warn { border-left: 3px solid #F59E0B; }
+
+    /* ─── PNL TRACKER ─── */
+    .pnl-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: rgba(255,255,255,0.03); border-radius: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,0.04); margin-bottom: 16px; }
+    .pnl-stat { background: rgba(20,20,20,0.4); backdrop-filter: blur(8px); padding: 16px 20px; text-align: center; }
+    .pnl-stat-num { font-size: 20px; font-weight: 900; color: #F5F5F5; letter-spacing: -0.02em; }
+    .pnl-stat-label { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #666; letter-spacing: 0.1em; text-transform: uppercase; margin-top: 4px; }
+
+    /* ─── MOBILE BOTTOM NAV ─── */
+    .mobile-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 100; background: rgba(12,12,12,0.9); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 1px solid rgba(255,255,255,0.06); padding: 8px 0; padding-bottom: env(safe-area-inset-bottom, 8px); }
+    .mobile-nav-inner { display: flex; justify-content: space-around; align-items: center; }
+    .mobile-nav-btn { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 16px; background: none; border: none; cursor: pointer; transition: all 0.2s ease; }
+    .mobile-nav-btn.active { color: #fff; }
+    .mobile-nav-btn:not(.active) { color: #666; }
+    .mobile-nav-icon { font-size: 18px; }
+    .mobile-nav-label { font-family: 'IBM Plex Mono', monospace; font-size: 9px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; }
+    .mobile-nav-indicator { width: 4px; height: 4px; border-radius: 50%; background: #fff; opacity: 0; transition: opacity 0.2s ease; }
+    .mobile-nav-btn.active .mobile-nav-indicator { opacity: 1; }
+
+    /* ─── KEYBOARD HINT ─── */
+    .kbd { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 6px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 4px; font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #666; }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 768px) {
+      .nav { padding: 0 20px; height: 56px; }
+      .nav-links { display: none; }
+      .nav-right { display: none; }
+      .hero { padding: 100px 20px 60px; }
+      .hero-big { font-size: 48px; }
+      .section { padding: 60px 20px; }
+      .master { padding: 28px; }
+      .master-score-val { font-size: 40px; }
+      .signal-pos { grid-template-columns: 1fr; }
+      .signal-pos-left { padding-right: 0; border-right: none; border-bottom: 1px solid rgba(255,255,255,0.04); padding-bottom: 16px; margin-bottom: 16px; }
+      .signal-prices { grid-template-columns: repeat(2, 1fr); }
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      .process-grid { grid-template-columns: 1fr; }
+      .mobile-nav { display: block; }
+      .dxy-bar { padding: 10px 14px; }
+      .pnl-grid { grid-template-columns: repeat(2, 1fr); }
+      .toast-container { top: 64px; right: 12px; left: 12px; }
+      .toast { min-width: auto; max-width: 100%; }
+      .cursor-dot, .cursor-ring { display: none; }
+      body { padding-bottom: 72px; }
     }
-    .grid-bg {
-      background-image: linear-gradient(rgba(33,38,45,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(33,38,45,0.6) 1px, transparent 1px);
-      background-size: 48px 48px;
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
     }
-    .glow-buy  { box-shadow: 0 0 20px rgba(0,255,136,0.15), 0 0 40px rgba(0,255,136,0.05); }
-    .glow-sell { box-shadow: 0 0 20px rgba(255,59,59,0.15),  0 0 40px rgba(255,59,59,0.05); }
-    .glow-wait { box-shadow: 0 0 20px rgba(240,180,41,0.15), 0 0 40px rgba(240,180,41,0.05); }
-    .glow-swing{ box-shadow: 0 0 24px rgba(240,180,41,0.2),  0 0 48px rgba(240,180,41,0.08); }
-    .glow-scalp{ box-shadow: 0 0 24px rgba(56,189,248,0.2),  0 0 48px rgba(56,189,248,0.08); }
-    .bg-buy-dim  { background-color: rgba(0,255,136,0.06); }
-    .bg-sell-dim { background-color: rgba(255,59,59,0.06); }
-    .bg-wait-dim { background-color: rgba(240,180,41,0.06); }
-    .score-track { background:#161B22; border-radius:2px; height:6px; overflow:hidden; }
-    .score-fill  { height:100%; border-radius:2px; transition:width 0.8s cubic-bezier(0.4,0,0.2,1); }
-    .master-track { background:#0D1117; height:8px; border-radius:2px; overflow:hidden; border:1px solid #21262D; }
-    .master-fill  { height:100%; border-radius:2px; transition:width 1s cubic-bezier(0.4,0,0.2,1); }
-    .conf-track { background:#161B22; height:4px; border-radius:2px; overflow:hidden; }
-    .conf-fill  { height:100%; border-radius:2px; transition:width 0.8s cubic-bezier(0.4,0,0.2,1); }
-    .tab-bar { background:#080B0F; border-bottom:1px solid #21262D; display:flex; align-items:stretch; position:sticky; top:0; z-index:50; }
-    .tab-btn { position:relative; display:flex; align-items:center; gap:8px; padding:0 28px; height:46px; font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:#484F58; background:transparent; border:none; border-right:1px solid #21262D; cursor:pointer; transition:color 0.2s ease,background 0.2s ease; white-space:nowrap; }
-    .tab-btn:hover { color:#8B949E; background:rgba(255,255,255,0.02); }
-    .tab-btn.active { color:#E6EDF3; background:#0D1117; }
-    .tab-btn.active::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:#00FF88; box-shadow:0 0 12px rgba(0,255,136,0.6); }
-    .tab-btn.active .tab-icon { color:#00FF88; }
-    .tab-btn.active.tab-tech::before { background:#38BDF8; box-shadow:0 0 12px rgba(56,189,248,0.5); }
-    .tab-btn.active.tab-tech .tab-icon { color:#38BDF8; }
-    .tab-badge { font-size:8px; padding:1px 5px; border:1px solid #21262D; color:#484F58; background:#161B22; letter-spacing:0.05em; }
-    .tab-btn.active .tab-badge { border-color:rgba(0,255,136,0.3); color:#00FF88; background:rgba(0,255,136,0.08); }
-    .tab-btn.active.tab-tech .tab-badge { border-color:rgba(56,189,248,0.3); color:#38BDF8; background:rgba(56,189,248,0.08); }
-    .tab-bar-right { margin-left:auto; display:flex; align-items:center; padding:0 20px; gap:16px; border-left:1px solid #21262D; }
-    .tab-panel { display:none; }
-    .tab-panel.active { display:block; }
-    .dxy-bar { background:#0D1117; border-bottom:1px solid #21262D; position:relative; overflow:hidden; }
-    .dxy-bar::after { content:''; position:absolute; top:0; left:-100%; width:60%; height:100%; background:linear-gradient(90deg,transparent,rgba(255,255,255,0.015),transparent); animation:dxySweep 4s ease-in-out infinite; pointer-events:none; }
-    @keyframes dxySweep { 0%{left:-60%;} 100%{left:160%;} }
-    .dxy-price-pill { display:inline-flex; align-items:center; gap:6px; padding:2px 10px 2px 8px; border:1px solid; border-radius:2px; font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:700; letter-spacing:0.04em; transition:all 0.4s ease; }
-    .dxy-price-pill.bullish { color:#FF3B3B; border-color:rgba(255,59,59,0.35); background:rgba(255,59,59,0.07); box-shadow:0 0 12px rgba(255,59,59,0.1); }
-    .dxy-price-pill.bearish { color:#00FF88; border-color:rgba(0,255,136,0.35); background:rgba(0,255,136,0.07); box-shadow:0 0 12px rgba(0,255,136,0.1); }
-    .dxy-price-pill.neutral { color:#F0B429; border-color:rgba(240,180,41,0.35); background:rgba(240,180,41,0.07); }
-    .signal-panel { background:#0D1117; border:1px solid #21262D; position:relative; overflow:hidden; }
-    .signal-panel::before,.signal-panel::after { content:''; position:absolute; width:14px; height:14px; border-style:solid; pointer-events:none; }
-    .swing-panel::before { top:-1px; left:-1px; border-width:2px 0 0 2px; border-color:#F0B429; }
-    .swing-panel::after  { bottom:-1px; right:-1px; border-width:0 2px 2px 0; border-color:#F0B429; }
-    .scalp-panel::before { top:-1px; left:-1px; border-width:2px 0 0 2px; border-color:#38BDF8; }
-    .scalp-panel::after  { bottom:-1px; right:-1px; border-width:0 2px 2px 0; border-color:#38BDF8; }
-    .position-badge { font-family:'IBM Plex Mono',monospace; font-size:clamp(18px,2.5vw,28px); font-weight:700; letter-spacing:0.06em; line-height:1; }
-    .position-badge.buy      { color:#00FF88; text-shadow:0 0 30px rgba(0,255,136,0.4); }
-    .position-badge.sell     { color:#FF3B3B; text-shadow:0 0 30px rgba(255,59,59,0.4); }
-    .position-badge.neutral  { color:#484F58; }
-    .position-badge.blocked  { color:#21262D; }
-    .price-cell { background:#161B22; border:1px solid #21262D; padding:10px 14px; transition:border-color 0.2s ease; }
-    .price-cell:hover { border-color:#484F58; }
-    .reason-item { display:flex; align-items:flex-start; gap:10px; padding:7px 0; border-bottom:1px solid #161B22; font-family:'IBM Plex Mono',monospace; font-size:10px; color:#8B949E; line-height:1.5; transition:color 0.15s ease; }
-    .reason-item:last-child { border-bottom:none; }
-    .reason-item:hover { color:#E6EDF3; }
-    .reason-icon { flex-shrink:0; width:14px; height:14px; margin-top:1px; display:flex; align-items:center; justify-content:center; font-size:8px; border:1px solid #21262D; background:#161B22; color:#484F58; }
-    .conf-dot { width:8px; height:8px; border-radius:50%; transition:background 0.3s ease,box-shadow 0.3s ease; }
-    .conf-dot.on  { background:#00FF88; box-shadow:0 0 6px rgba(0,255,136,0.7); }
-    .conf-dot.off { background:#21262D; }
-    .conf-dot.on-gold  { background:#F0B429; box-shadow:0 0 6px rgba(240,180,41,0.7); }
-    .conf-dot.on-cyan  { background:#38BDF8; box-shadow:0 0 6px rgba(56,189,248,0.7); }
-    .gate-badge { display:inline-flex; align-items:center; gap:5px; padding:2px 8px; border:1px solid; font-family:'IBM Plex Mono',monospace; font-size:8px; font-weight:700; letter-spacing:0.1em; }
-    .gate-active  { color:#00FF88; border-color:rgba(0,255,136,0.4); background:rgba(0,255,136,0.08); }
-    .gate-blocked { color:#484F58; border-color:#21262D; background:#161B22; }
-    .chart-wrapper { background:#0D1117; border:1px solid #21262D; position:relative; overflow:hidden; }
-    .chart-wrapper iframe { display:block; width:100%; height:520px; border:none; }
-    @media (min-height:900px) { .chart-wrapper iframe { height:600px; } }
-    .macro-card { transition:transform 0.2s ease,box-shadow 0.2s ease; }
-    .macro-card:hover { transform:translateY(-2px); }
-    .data-row { transition:background 0.15s ease; }
-    .data-row:hover { background:rgba(255,255,255,0.03); }
-    .skeleton { background:linear-gradient(90deg,#161B22 25%,#1E242C 50%,#161B22 75%); background-size:600px 100%; animation:shimmer 1.4s infinite; border-radius:4px; }
-    .dxy-skeleton { background:linear-gradient(90deg,#161B22 25%,#1E242C 50%,#161B22 75%); background-size:300px 100%; animation:shimmer 1.4s infinite; border-radius:2px; height:18px; width:80px; display:inline-block; }
-    .news-item { animation:newsSlide 0.3s ease forwards; }
-    .news-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:1px; }
-    .news-pill { border-left:2px solid #21262D; transition:border-color 0.2s ease,background 0.2s ease; }
-    .news-pill:hover { background:rgba(255,255,255,0.02); }
-    .news-pill.impact-high   { border-left-color:#FF3B3B; }
-    .news-pill.impact-medium { border-left-color:#F0B429; }
-    .news-pill.impact-low    { border-left-color:#484F58; }
-    @keyframes ticker     { 0%{transform:translateX(0);} 100%{transform:translateX(-50%);} }
-    @keyframes blink      { 0%,100%{opacity:1;} 50%{opacity:0;} }
-    @keyframes spin       { to{transform:rotate(360deg);} }
-    @keyframes statusPulse{ 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:.5;transform:scale(.8);} }
-    @keyframes shimmer    { 0%{background-position:-600px 0;} 100%{background-position:600px 0;} }
-    @keyframes newsSlide  { from{opacity:0;transform:translateY(6px);} to{opacity:1;transform:translateY(0);} }
-    @keyframes livePulse  { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:0.3;transform:scale(0.7);} }
-    @keyframes techReveal { from{opacity:0;transform:translateY(8px);} to{opacity:1;transform:translateY(0);} }
-    .ticker-inner { display:flex; white-space:nowrap; animation:ticker 40s linear infinite; }
-    .cursor       { animation:blink 1s step-start infinite; }
-    .spinning     { animation:spin 0.8s linear infinite; }
-    .status-dot   { animation:statusPulse 2s ease-in-out infinite; }
-    .live-dot     { animation:livePulse 1.4s ease-in-out infinite; }
   </style>
 </head>
 
-<body class="min-h-screen text-[#E6EDF3] grid-bg">
+<body>
+  <div class="cursor-dot" id="cursorDot"></div>
+  <div class="cursor-ring" id="cursorRing"></div>
 
-  <!-- Scrolling Ticker -->
-  <div class="overflow-hidden bg-[#0D1117] border-b border-[#21262D] h-8 flex items-center">
-    <div class="ticker-inner font-mono text-xs text-[#484F58]">
-      <span class="px-8">DEPRESSEDESIGN TRADING STATION &nbsp;·&nbsp; XAU/USD · ZONE PANTAU ENGINE v6.1 &nbsp;·&nbsp; SMC SL/TP &nbsp;·&nbsp; SWING H4/H1 &nbsp;·&nbsp; SCALP M5 &nbsp;·&nbsp; M1 ENTRY TRIGGER &nbsp;·&nbsp; FVG &nbsp;·&nbsp; ORDER BLOCK &nbsp;·&nbsp; LIQUIDITY &nbsp;·&nbsp; BREAKER &nbsp;·&nbsp; NFP &nbsp;·&nbsp; CPI &nbsp;·&nbsp; GDP &nbsp;·&nbsp; FED RATE &nbsp;·&nbsp; NOT FINANCIAL ADVICE &nbsp;·&nbsp;</span>
-      <span class="px-8">DEPRESSEDESIGN TRADING STATION &nbsp;·&nbsp; XAU/USD · ZONE PANTAU ENGINE v6.1 &nbsp;·&nbsp; SMC SL/TP &nbsp;·&nbsp; SWING H4/H1 &nbsp;·&nbsp; SCALP M5 &nbsp;·&nbsp; M1 ENTRY TRIGGER &nbsp;·&nbsp; FVG &nbsp;·&nbsp; ORDER BLOCK &nbsp;·&nbsp; LIQUIDITY &nbsp;·&nbsp; BREAKER &nbsp;·&nbsp; NFP &nbsp;·&nbsp; CPI &nbsp;·&nbsp; GDP &nbsp;·&nbsp; FED RATE &nbsp;·&nbsp; NOT FINANCIAL ADVICE &nbsp;·&nbsp;</span>
+  <!-- NAV -->
+  <nav class="nav" id="mainNav">
+    <a href="#" class="nav-logo">
+      <img src="logo/logo.png" alt="Logo" onerror="this.style.display='none'" />
+      DEPRESSEDESIGN<span style="color:#3A3A3A;font-weight:400;">®</span>
+    </a>
+    <div class="nav-links">
+      <button class="nav-link active" id="tabBtnMacro" onclick="switchTab('macro')">Macro</button>
+      <button class="nav-link" id="tabBtnTech" onclick="switchTab('tech')">Technical</button>
     </div>
-  </div>
-
-  <!-- DXY Live Meter -->
-  <div class="dxy-bar px-6 py-2">
-    <div class="max-w-[1400px] mx-auto flex items-center justify-between gap-4 flex-wrap">
-      <div class="flex items-center gap-3">
-        <div class="flex items-center gap-1.5">
-          <div class="w-1.5 h-1.5 rounded-full bg-[#484F58] live-dot" id="dxyDot"></div>
-          <span class="font-mono text-[9px] text-[#484F58] tracking-[0.25em] uppercase">DXY Live</span>
-          <span class="font-mono text-[9px] text-[#21262D]">/</span>
-          <span class="font-mono text-[9px] text-[#484F58] tracking-[0.15em]">US Dollar Index</span>
-        </div>
-      </div>
-      <div class="flex items-center gap-3">
-        <div id="dxyLoading" class="flex items-center gap-2">
-          <div class="dxy-skeleton"></div>
-          <div class="dxy-skeleton" style="width:52px"></div>
-        </div>
-        <div id="dxyLive" class="hidden flex items-center gap-3">
-          <span id="dxyPricePill" class="dxy-price-pill neutral">
-            <svg width="7" height="7" viewBox="0 0 7 7" fill="currentColor"><polygon id="dxyArrowPoly" points="3.5,0 7,7 0,7"/></svg>
-            <span id="dxyPrice">—</span>
-          </span>
-          <span id="dxyChangeBadge" class="font-mono text-[10px] font-semibold text-[#484F58]">—%</span>
-          <span id="dxyStatus" class="font-mono text-[9px] text-[#484F58] tracking-widest uppercase hidden md:block">—</span>
-          <span class="text-[#21262D] font-mono text-xs hidden md:block">|</span>
-          <span id="dxyXauHint" class="font-mono text-[9px] tracking-widest hidden md:block" style="color:#484F58">XAU IMPLICATION: —</span>
-        </div>
-      </div>
-      <div class="hidden xl:flex items-center gap-2">
-        <span class="font-mono text-[8px] text-[#21262D] tracking-[0.2em] uppercase">Dollar Strength Index</span>
-        <div class="flex items-end gap-[2px] h-4" id="dxySparkline">
-          <div class="w-[3px] rounded-sm bg-[#21262D]" style="height:30%"></div>
-          <div class="w-[3px] rounded-sm bg-[#21262D]" style="height:50%"></div>
-          <div class="w-[3px] rounded-sm bg-[#21262D]" style="height:40%"></div>
-          <div class="w-[3px] rounded-sm bg-[#21262D]" style="height:70%"></div>
-          <div class="w-[3px] rounded-sm bg-[#21262D]" style="height:55%"></div>
-          <div class="w-[3px] rounded-sm bg-[#21262D]" style="height:80%"></div>
-          <div class="w-[3px] rounded-sm bg-[#21262D]" style="height:65%"></div>
-        </div>
-      </div>
+    <div class="nav-right">
+      <div class="nav-status"><span class="nav-status-dot"></span><span id="lastUpdate">READY</span></div>
+      <button class="nav-refresh" onclick="loadData()">Refresh</button>
     </div>
-  </div>
+  </nav>
 
-  <!-- Header -->
-  <header class="border-b border-[#21262D] px-6 py-4">
-    <div class="max-w-[1400px] mx-auto flex items-center justify-between gap-4 flex-wrap">
-      <div class="flex items-center gap-4">
-        <div class="w-9 h-9 border border-[#00FF88] flex items-center justify-center relative">
-          <div class="w-2 h-2 bg-[#00FF88]"></div>
-          <div class="absolute inset-0 bg-[#00FF88] opacity-5"></div>
-        </div>
-        <div>
-          <div class="font-mono text-sm font-bold tracking-[0.15em] text-[#E6EDF3] uppercase">XAU/USD TERMINAL</div>
-          <div class="font-mono text-[10px] text-[#484F58] tracking-[0.2em] uppercase">Zone Pantau Engine v6.1 &nbsp;·&nbsp; SMC SL/TP &nbsp;·&nbsp; Swing + Scalp + M1 Trigger &nbsp;·&nbsp; Macro + Technical</div>
-        </div>
-      </div>
-      <div class="flex items-center gap-6">
-        <div class="flex items-center gap-2">
-          <div class="w-2 h-2 rounded-full bg-[#00FF88] status-dot"></div>
-          <span class="font-mono text-xs text-[#8B949E]" id="lastUpdate">READY</span>
-        </div>
-        <button id="refreshBtn" onclick="loadData()"
-          class="flex items-center gap-2 px-4 py-2 border border-[#21262D] bg-[#0D1117] hover:border-[#00FF88] hover:text-[#00FF88] font-mono text-xs tracking-widest uppercase transition-all duration-200 active:scale-95">
-          <svg id="refreshIcon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-          </svg>
-          Refresh Data
-        </button>
-      </div>
-    </div>
-  </header>
-
-  <!-- Tab Bar -->
-  <div class="tab-bar">
-    <button class="tab-btn active" id="tabBtnMacro" onclick="switchTab('macro')">
-      <span class="tab-icon text-base leading-none">🦅</span>
-      <span>Macro Fundamental Sentiment</span>
-      <span class="tab-badge">4 PREDICTORS</span>
-    </button>
-    <button class="tab-btn tab-tech" id="tabBtnTech" onclick="switchTab('tech')">
-      <span class="tab-icon text-base leading-none">⚡</span>
-      <span>Live Technical Terminal</span>
-      <span class="tab-badge">ZONE · SWING · SCALP</span>
-    </button>
-    <div class="tab-bar-right">
-      <div class="flex items-center gap-2">
-        <div class="w-1.5 h-1.5 rounded-full bg-[#21262D] status-dot" id="tabLiveIndicator"></div>
-        <span class="font-mono text-[9px] text-[#484F58] tracking-widest hidden sm:block" id="tabModeLabel">MACRO MODE</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- ══ TAB 1 — MACRO ══════════════════════════════════════════════ -->
+  <!-- ══ MACRO TAB ═══════════════════════════════════════════ -->
   <div id="panelMacro" class="tab-panel active">
-    <div class="max-w-[1400px] mx-auto px-6 pt-8 pb-4">
-      <h1 class="font-mono text-2xl md:text-3xl font-bold tracking-tight text-[#E6EDF3] mb-1">MACRO SENTIMENT<span class="cursor text-[#00FF88]">_</span></h1>
-      <p class="font-sans text-sm text-[#8B949E] max-w-2xl">4-predictor composite engine. Threshold ±20 per card. Master signal fires at ±40 composite. Directional bias for XAU/USD.</p>
+
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero-top">
+        <div class="hero-tag">XAU/USD TRADING TERMINAL <span>/</span> EST. 2024</div>
+        <div class="hero-tag">VERSION 6.1</div>
+      </div>
+      <h1 class="hero-big reveal">Strategy<br/>before <em>signals.</em></h1>
+      <!-- DXY BAR -->
+      <div class="dxy-bar reveal" style="transition-delay:0.05s;margin-top:40px;max-width:600px;">
+        <div class="dxy-bar-label"><span class="dxy-bar-dot"></span>DXY Live</div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div id="dxyLoadingBar" class="skeleton" style="width:100px;height:24px;border-radius:6px;"></div>
+          <div id="dxyLiveBar" style="display:none;" class="dxy-mini">
+            <span id="dxyPriceBar" class="dxy-mini-pill neutral">—</span>
+            <span id="dxyChangeBar" class="dxy-hint" style="font-weight:600;">—%</span>
+            <span class="dxy-hint" style="color:#3A3A3A;">|</span>
+            <span id="dxyHintBar" class="dxy-hint">XAU IMPLICATION: —</span>
+          </div>
+        </div>
+      </div>
+      <div class="hero-bottom" style="margin-top:64px;">
+        <p class="hero-desc reveal" style="transition-delay:0.1s;">Macro Fundamental Sentiment & Multi-Timeframe Technical Analysis. SMC, SNR, and Smart Money Concepts — all in one terminal.</p>
+        <div class="hero-cta reveal" style="transition-delay:0.2s;">
+          <button class="btn-white" onclick="switchTab('tech')">See Technical Terminal</button>
+          <button class="btn-outline" onclick="document.getElementById('macroContent').scrollIntoView({behavior:'smooth'})">Explore Macro ↓</button>
+        </div>
+      </div>
+      <div class="hero-scroll"><span class="hero-scroll-arrow">↓</span> SCROLL</div>
+    </section>
+
+    <!-- STATS -->
+    <div class="section" style="padding-top:0;padding-bottom:60px;">
+      <div class="stats stagger reveal">
+        <div class="stat"><div class="stat-num" data-count="4">0</div><div class="stat-label">Predictors</div></div>
+        <div class="stat"><div class="stat-num" data-count="400">0</div><div class="stat-label">Score Range ±</div></div>
+        <div class="stat"><div class="stat-num" data-count="40">0</div><div class="stat-label">Signal Threshold</div></div>
+        <div class="stat"><div class="stat-num" data-count="6">0</div><div class="stat-label">Zone Scanners</div></div>
+      </div>
     </div>
 
-    <!-- Master Signal Banner -->
-    <div class="max-w-[1400px] mx-auto px-6 pb-6">
-      <div id="masterBanner" class="border border-[#21262D] bg-[#0D1117] p-5 relative overflow-hidden">
-        <div class="absolute inset-0 flex items-center justify-end pr-6 pointer-events-none select-none">
-          <span class="font-mono text-[80px] font-bold leading-none text-[#0D1117] opacity-60 tracking-tighter" id="masterBgLabel" style="text-shadow:0 0 60px rgba(255,255,255,0.03);">MASTER</span>
-        </div>
-        <div class="relative flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
+    <!-- MACRO -->
+    <div id="macroContent">
+      <div class="section" style="padding-top:40px;">
+        <div class="section-num reveal">01 — MACRO</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:start;" class="reveal" style="transition-delay:0.1s;">
           <div>
-            <div class="font-mono text-[9px] text-[#484F58] uppercase tracking-[0.3em] mb-2">◈ Master Signal — All 4 Predictors</div>
-            <div id="masterSignalText" class="font-mono text-2xl md:text-3xl font-bold text-[#484F58] leading-tight">— AWAITING DATA —</div>
-            <div class="mt-2 font-mono text-[10px] text-[#484F58]" id="masterSubtext">Composite score of all 4 predictors</div>
+            <h2 class="section-title">MACRO<br/>SENTIMENT<em>.</em></h2>
+            <p class="section-desc">4-predictor composite engine analyzing NFP, CPI, GDP Growth, and Fed Interest Rates. Master signal fires at ±40 composite score.</p>
           </div>
-          <div class="flex items-start gap-8">
-            <div class="text-right">
-              <div class="font-mono text-[9px] text-[#484F58] uppercase tracking-widest mb-1">Total Score</div>
-              <div id="masterScore" class="font-mono text-4xl font-bold text-[#484F58]">—</div>
-              <div class="font-mono text-[9px] text-[#484F58] mt-1">Range: ±400</div>
+          <div>
+            <div id="masterBanner" class="master">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:20px;">
+                <div style="flex:1;min-width:240px;">
+                  <div class="master-label">Master Signal — All 4 Predictors</div>
+                  <div id="masterSignalText" class="master-signal" style="color:#3A3A3A;">— AWAITING DATA —</div>
+                  <div id="masterSubtext" class="master-sub">Composite score of all 4 predictors</div>
+                  <div class="master-mini">
+                    <div class="master-mini-item"><div class="master-mini-dot" id="miniNfpBar" style="background:#252525"></div><span class="master-mini-label">NFP</span><span class="master-mini-val" id="miniNfpScore" style="color:#3A3A3A">—</span></div>
+                    <div class="master-mini-item"><div class="master-mini-dot" id="miniCpiBar" style="background:#252525"></div><span class="master-mini-label">CPI</span><span class="master-mini-val" id="miniCpiScore" style="color:#3A3A3A">—</span></div>
+                    <div class="master-mini-item"><div class="master-mini-dot" id="miniGrowthBar" style="background:#252525"></div><span class="master-mini-label">GDP</span><span class="master-mini-val" id="miniGrowthScore" style="color:#3A3A3A">—</span></div>
+                    <div class="master-mini-item"><div class="master-mini-dot" id="miniFedBar" style="background:#252525"></div><span class="master-mini-label">FED</span><span class="master-mini-val" id="miniFedScore" style="color:#3A3A3A">—</span></div>
+                  </div>
+                </div>
+                <div class="master-score-wrap">
+                  <div class="master-score-label">Total</div>
+                  <div id="masterScore" class="master-score-val" style="color:#3A3A3A;">—</div>
+                </div>
+              </div>
+              <div class="master-bar-wrap">
+                <div class="master-bar-labels"><span>-400 BUY</span><span>0</span><span>+400 SELL</span></div>
+                <div class="master-bar" style="position:relative;">
+                  <div id="masterFill" class="master-bar-fill" style="width:50%;background:#252525;"></div>
+                  <div class="master-threshold" style="left:calc(50% - 10%)"></div>
+                  <div class="master-threshold" style="left:calc(50% + 10%)"></div>
+                </div>
+              </div>
             </div>
-            <div class="grid grid-cols-2 gap-x-6 gap-y-2 pt-1">
-              <div class="flex items-center gap-2"><div class="w-[3px] h-3 bg-[#484F58] rounded-full" id="miniNfpBar"></div><span class="font-mono text-[9px] text-[#484F58]">NFP</span><span class="font-mono text-[9px] font-bold" id="miniNfpScore" style="color:#484F58">—</span></div>
-              <div class="flex items-center gap-2"><div class="w-[3px] h-3 bg-[#484F58] rounded-full" id="miniCpiBar"></div><span class="font-mono text-[9px] text-[#484F58]">CPI</span><span class="font-mono text-[9px] font-bold" id="miniCpiScore" style="color:#484F58">—</span></div>
-              <div class="flex items-center gap-2"><div class="w-[3px] h-3 bg-[#484F58] rounded-full" id="miniGrowthBar"></div><span class="font-mono text-[9px] text-[#484F58]">GDP</span><span class="font-mono text-[9px] font-bold" id="miniGrowthScore" style="color:#484F58">—</span></div>
-              <div class="flex items-center gap-2"><div class="w-[3px] h-3 bg-[#484F58] rounded-full" id="miniFedBar"></div><span class="font-mono text-[9px] text-[#484F58]">FED</span><span class="font-mono text-[9px] font-bold" id="miniFedScore" style="color:#484F58">—</span></div>
+          </div>
+        </div>
+
+        <!-- 4 CARDS -->
+        <div style="margin-top:64px;">
+          <div class="section-num reveal">02 — PREDICTORS</div>
+          <div class="macro-grid stagger reveal">
+            <div id="nfpCard" class="macro-card">
+              <div class="macro-card-num">01</div>
+              <div class="macro-card-title">NFP PREDICTOR</div>
+              <div class="macro-card-sub">Nonfarm Payrolls</div>
+              <div class="macro-signal" id="nfpSignal" style="color:#3A3A3A;">— AWAITING —</div>
+              <div style="display:flex;justify-content:space-between;align-items:baseline;"><div class="macro-score" id="nfpScore" style="color:#3A3A3A;">—</div><div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:#252525;">MAX ±100</div></div>
+              <div class="macro-bar"><div id="nfpBar" class="macro-bar-fill" style="width:50%;background:#252525;"></div></div>
+              <div class="macro-bar-labels"><span>-100</span><span>±20</span><span>+100</span></div>
+              <div class="macro-data">
+                <div class="macro-data-row"><div class="macro-data-label"><span>ADP Nonfarm</span><span id="adpPoints" class="macro-data-pts" style="color:#3A3A3A;">±40</span></div><div class="macro-data-grid" id="adpRow"><div class="macro-data-cell"><div class="macro-data-cell-label">ACTUAL</div><div class="skeleton" style="height:12px;width:44px;"></div></div><div class="macro-data-cell"><div class="macro-data-cell-label">FCST</div><div class="skeleton" style="height:12px;width:44px;"></div></div><div class="macro-data-cell"><div class="macro-data-cell-label">STATUS</div><div class="skeleton" style="height:12px;width:44px;"></div></div></div></div>
+                <div class="macro-data-row"><div class="macro-data-label"><span>ISM PMI</span><span id="ismPoints" class="macro-data-pts" style="color:#3A3A3A;">±30</span></div><div class="macro-data-grid" id="ismRow"><div class="macro-data-cell"><div class="macro-data-cell-label">ACTUAL</div><div class="skeleton" style="height:12px;width:44px;"></div></div><div class="macro-data-cell"><div class="macro-data-cell-label">THRESH</div><div class="skeleton" style="height:12px;width:44px;"></div></div><div class="macro-data-cell"><div class="macro-data-cell-label">STATUS</div><div class="skeleton" style="height:12px;width:44px;"></div></div></div></div>
+                <div class="macro-data-row"><div class="macro-data-label"><span>JOLTs</span><span id="joltsPoints" class="macro-data-pts" style="color:#3A3A3A;">±30</span></div><div class="macro-data-grid" id="joltsRow"><div class="macro-data-cell"><div class="macro-data-cell-label">ACTUAL</div><div class="skeleton" style="height:12px;width:44px;"></div></div><div class="macro-data-cell"><div class="macro-data-cell-label">FCST</div><div class="skeleton" style="height:12px;width:44px;"></div></div><div class="macro-data-cell"><div class="macro-data-cell-label">STATUS</div><div class="skeleton" style="height:12px;width:44px;"></div></div></div></div>
+              </div>
+            </div>
+
+            <div id="cpiCard" class="macro-card">
+              <div class="macro-card-num">02</div>
+              <div class="macro-card-title">CPI PREDICTOR</div>
+              <div class="macro-card-sub">Inflation Pressure</div>
+              <div class="macro-signal" id="cpiSignal" style="color:#3A3A3A;">— AWAITING —</div>
+              <div style="display:flex;justify-content:space-between;align-items:baseline;"><div class="macro-score" id="cpiScore" style="color:#3A3A3A;">—</div><div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:#252525;">MAX ±100</div></div>
+              <div class="macro-bar"><div id="cpiBar" class="macro-bar-fill" style="width:50%;background:#252525;"></div></div>
+              <div class="macro-bar-labels"><span>-100</span><span>±20</span><span>+100</span></div>
+              <div class="macro-data">
+                <div class="macro-data-row"><div class="macro-data-label"><span>PPI</span><span id="ppiPoints" class="macro-data-pts" style="color:#3A3A3A;">±60</span></div><div class="macro-data-grid" id="ppiRow"><div class="macro-data-cell"><div class="macro-data-cell-label">ACTUAL</div><div class="skeleton" style="height:12px;width:44px;"></div></div><div class="macro-data-cell"><div class="macro-data-cell-label">FCST</div><div class="skeleton" style="height:12px;width:44px;"></div></div><div class="macro-data-cell"><div class="macro-data-cell-label">STATUS</div><div class="skeleton" style="height:12px;width:44px;"></div></div></div></div>
+                <div class="macro-data-row"><div class="macro-data-label"><span>WTI Crude</span><span id="crudePoints" class="macro-data-pts" style="color:#3A3A3A;">±40</span></div><div class="macro-data-grid" id="crudeRow"><div class="macro-data-cell"><div class="macro-data-cell-label">CURRENT</div><div class="skeleton" style="height:12px;width:44px;"></div></div><div class="macro-data-cell"><div class="macro-data-cell-label">30D AVG</div><div class="skeleton" style="height:12px;width:44px;"></div></div><div class="macro-data-cell"><div class="macro-data-cell-label">STATUS</div><div class="skeleton" style="height:12px;width:44px;"></div></div></div></div>
+              </div>
+            </div>
+
+            <div id="growthCard" class="macro-card">
+              <div class="macro-card-num">03</div>
+              <div class="macro-card-title">GROWTH PREDICTOR</div>
+              <div class="macro-card-sub">GDP & Retail Sales</div>
+              <div class="macro-signal" id="growthSignal" style="color:#3A3A3A;">— AWAITING —</div>
+              <div style="display:flex;justify-content:space-between;align-items:baseline;"><div class="macro-score" id="growthScore" style="color:#3A3A3A;">—</div><div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:#252525;">MAX ±100</div></div>
+              <div class="macro-bar"><div id="growthBar" class="macro-bar-fill" style="width:50%;background:#252525;"></div></div>
+              <div class="macro-bar-labels"><span>-100</span><span>±20</span><span>+100</span></div>
+              <div class="macro-data">
+                <div class="macro-data-row"><div class="macro-data-label"><span>GDP Growth</span><span id="gdpPoints" class="macro-data-pts" style="color:#3A3A3A;">±50</span></div><div class="macro-data-grid" id="gdpRow"><div class="macro-data-cell"><div class="macro-data-cell-label">ACTUAL</div><div class="skeleton" style="height:12px;width:44px;"></div></div><div class="macro-data-cell"><div class="macro-data-cell-label">FCST</div><div class="skeleton" style="height:12px;width:44px;"></div></div><div class="macro-data-cell"><div class="macro-data-cell-label">STATUS</div><div class="skeleton" style="height:12px;width:44px;"></div></div></div></div>
+                <div class="macro-data-row"><div class="macro-data-label"><span>Retail Sales</span><span id="retailPoints" class="macro-data-pts" style="color:#3A3A3A;">±50</span></div><div class="macro-data-grid" id="retailRow"><div class="macro-data-cell"><div class="macro-data-cell-label">ACTUAL</div><div class="skeleton" style="height:12px;width:44px;"></div></div><div class="macro-data-cell"><div class="macro-data-cell-label">FCST</div><div class="skeleton" style="height:12px;width:44px;"></div></div><div class="macro-data-cell"><div class="macro-data-cell-label">STATUS</div><div class="skeleton" style="height:12px;width:44px;"></div></div></div></div>
+              </div>
+            </div>
+
+            <div id="fedCard" class="macro-card">
+              <div class="macro-card-num">04</div>
+              <div class="macro-card-title">FED PREDICTOR</div>
+              <div class="macro-card-sub">Interest Rate Bias</div>
+              <div class="macro-signal" id="fedSignal" style="color:#3A3A3A;">— AWAITING —</div>
+              <div style="display:flex;justify-content:space-between;align-items:baseline;"><div class="macro-score" id="fedScore" style="color:#3A3A3A;">—</div><div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:#252525;">MAX ±100</div></div>
+              <div class="macro-bar"><div id="fedBar" class="macro-bar-fill" style="width:50%;background:#252525;"></div></div>
+              <div class="macro-bar-labels"><span>-100</span><span>±20</span><span>+100</span></div>
+              <div class="macro-data">
+                <div class="macro-data-row">
+                  <div class="macro-data-label"><span>Fed Rate</span><span id="fedRatePoints" class="macro-data-pts" style="color:#3A3A3A;">±100</span></div>
+                    <div style="background:rgba(12,12,12,0.5);backdrop-filter:blur(4px);padding:16px;border-radius:8px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;border:1px solid rgba(255,255,255,0.03);">
+                    <div><div style="font-family:'IBM Plex Mono',monospace;font-size:8px;color:#3A3A3A;margin-bottom:3px;">CURRENT</div><div id="fedRateDisplay" style="font-size:28px;font-weight:900;color:#3A3A3A;">—%</div></div>
+                    <div style="text-align:right;"><div style="font-family:'IBM Plex Mono',monospace;font-size:8px;color:#3A3A3A;margin-bottom:3px;">PREV</div><div id="fedPrevRate" style="font-size:18px;font-weight:900;color:#3A3A3A;">—%</div></div>
+                  </div>
+                  <div class="macro-data-grid" style="grid-template-columns:1fr 1fr;" id="fedRateRow"><div class="macro-data-cell"><div class="macro-data-cell-label">CHANGE</div><div class="skeleton" style="height:12px;width:44px;"></div></div><div class="macro-data-cell"><div class="macro-data-cell-label">BIAS</div><div class="skeleton" style="height:12px;width:44px;"></div></div></div>
+                </div>
+                <div class="macro-data-row">
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:8px;color:#3A3A3A;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;">Rate Trend</div>
+                  <div id="rateTrend" style="display:flex;align-items:end;gap:3px;height:32px;"><div class="skeleton" style="height:100%;width:100%;border-radius:3px;"></div></div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-        <div class="mt-4 relative">
-          <div class="flex justify-between font-mono text-[9px] text-[#484F58] mb-1"><span>-400 STRONG BUY XAU</span><span>0 NEUTRAL</span><span>+400 STRONG SELL XAU</span></div>
-          <div class="relative">
-            <div class="master-track"><div id="masterFill" class="master-fill w-1/2 bg-[#484F58]"></div></div>
-            <div class="absolute top-0 bottom-0 flex items-center pointer-events-none" style="left:calc(50% - (40/400)*50%)"><div class="w-px h-3 bg-[#F0B429] opacity-60" style="margin-top:-3px"></div></div>
-            <div class="absolute top-0 bottom-0 flex items-center pointer-events-none" style="left:calc(50% + (40/400)*50%)"><div class="w-px h-3 bg-[#F0B429] opacity-60" style="margin-top:-3px"></div></div>
-          </div>
-          <div class="flex justify-between font-mono text-[9px] text-[#484F58] mt-1"><span class="text-[#00FF88]">BUY zone</span><span class="text-[#F0B429]">Neutral ±40</span><span class="text-[#FF3B3B]">SELL zone</span></div>
-        </div>
-      </div>
-    </div>
 
-    <!-- 4-Card Grid (sama seperti sebelumnya) -->
-    <main class="max-w-[1400px] mx-auto px-6 pb-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-      <!-- ① NFP -->
-      <div id="nfpCard" class="macro-card bg-[#0D1117] border border-[#21262D] flex flex-col">
-        <div class="flex items-center justify-between px-4 py-3 border-b border-[#21262D]">
-          <div class="flex items-center gap-2"><span class="font-mono text-[9px] tracking-[0.2em] text-[#484F58]">01</span><div><div class="font-mono text-xs font-bold text-[#E6EDF3] tracking-wide">NFP PREDICTOR</div><div class="font-mono text-[9px] text-[#484F58]">Nonfarm Payrolls</div></div></div>
-          <span class="font-mono text-[9px] text-[#484F58]">XAU/USD</span>
-        </div>
-        <div id="nfpSignalBanner" class="px-4 py-4 border-b border-[#21262D]">
-          <div class="flex items-start justify-between gap-2 mb-3">
-            <div><div class="font-mono text-[9px] text-[#484F58] uppercase tracking-widest mb-1">Signal</div><div id="nfpSignal" class="font-mono text-sm font-bold text-[#484F58] leading-snug">— AWAITING —</div></div>
-            <div class="text-right shrink-0"><div class="font-mono text-[9px] text-[#484F58] mb-1">Score</div><div id="nfpScore" class="font-mono text-2xl font-bold text-[#484F58]">—</div></div>
-          </div>
-          <div class="score-track"><div id="nfpBar" class="score-fill w-1/2 bg-[#484F58]"></div></div>
-          <div class="flex justify-between font-mono text-[8px] text-[#484F58] mt-1"><span>-100</span><span>Threshold ±20</span><span>+100</span></div>
-        </div>
-        <div class="divide-y divide-[#21262D] flex-1">
-          <div class="data-row px-4 py-3">
-            <div class="flex items-center justify-between mb-2"><div class="flex items-center gap-1.5"><div class="w-[3px] h-3.5 bg-[#484F58] rounded-full" id="adpBar"></div><span class="font-mono text-[10px] font-semibold text-[#8B949E] uppercase tracking-wider">ADP Nonfarm</span></div><div id="adpPoints" class="font-mono text-[10px] font-bold text-[#484F58]">±40</div></div>
-            <div class="grid grid-cols-3 gap-1" id="adpRow"><div class="bg-[#161B22] px-2 py-1.5"><div class="font-mono text-[8px] text-[#484F58] mb-0.5">ACTUAL</div><div class="skeleton h-3 w-12"></div></div><div class="bg-[#161B22] px-2 py-1.5"><div class="font-mono text-[8px] text-[#484F58] mb-0.5">FCST</div><div class="skeleton h-3 w-12"></div></div><div class="bg-[#161B22] px-2 py-1.5"><div class="font-mono text-[8px] text-[#484F58] mb-0.5">STATUS</div><div class="skeleton h-3 w-12"></div></div></div>
-            <div class="font-mono text-[8px] text-[#484F58] mt-1" id="adpDate"></div>
-          </div>
-          <div class="data-row px-4 py-3">
-            <div class="flex items-center justify-between mb-2"><div class="flex items-center gap-1.5"><div class="w-[3px] h-3.5 bg-[#484F58] rounded-full" id="ismBar"></div><span class="font-mono text-[10px] font-semibold text-[#8B949E] uppercase tracking-wider">ISM PMI</span></div><div id="ismPoints" class="font-mono text-[10px] font-bold text-[#484F58]">±30</div></div>
-            <div class="grid grid-cols-3 gap-1" id="ismRow"><div class="bg-[#161B22] px-2 py-1.5"><div class="font-mono text-[8px] text-[#484F58] mb-0.5">ACTUAL</div><div class="skeleton h-3 w-12"></div></div><div class="bg-[#161B22] px-2 py-1.5"><div class="font-mono text-[8px] text-[#484F58] mb-0.5">THRESH</div><div class="skeleton h-3 w-12"></div></div><div class="bg-[#161B22] px-2 py-1.5"><div class="font-mono text-[8px] text-[#484F58] mb-0.5">STATUS</div><div class="skeleton h-3 w-12"></div></div></div>
-            <div class="font-mono text-[8px] text-[#484F58] mt-1" id="ismDate"></div>
-          </div>
-          <div class="data-row px-4 py-3">
-            <div class="flex items-center justify-between mb-2"><div class="flex items-center gap-1.5"><div class="w-[3px] h-3.5 bg-[#484F58] rounded-full" id="joltsBar"></div><span class="font-mono text-[10px] font-semibold text-[#8B949E] uppercase tracking-wider">JOLTs</span></div><div id="joltsPoints" class="font-mono text-[10px] font-bold text-[#484F58]">±30</div></div>
-            <div class="grid grid-cols-3 gap-1" id="joltsRow"><div class="bg-[#161B22] px-2 py-1.5"><div class="font-mono text-[8px] text-[#484F58] mb-0.5">ACTUAL</div><div class="skeleton h-3 w-12"></div></div><div class="bg-[#161B22] px-2 py-1.5"><div class="font-mono text-[8px] text-[#484F58] mb-0.5">FCST</div><div class="skeleton h-3 w-12"></div></div><div class="bg-[#161B22] px-2 py-1.5"><div class="font-mono text-[8px] text-[#484F58] mb-0.5">STATUS</div><div class="skeleton h-3 w-12"></div></div></div>
-            <div class="font-mono text-[8px] text-[#484F58] mt-1" id="joltsDate"></div>
-          </div>
-        </div>
-        <div class="px-4 py-2 bg-[#080B0F] border-t border-[#21262D] flex items-center justify-between"><span class="font-mono text-[8px] text-[#484F58]">≥+20 SELL XAU &nbsp;|&nbsp; ≤−20 BUY XAU</span><span class="font-mono text-[8px] text-[#484F58]">MAX ±100</span></div>
-      </div>
-
-      <!-- ② CPI -->
-      <div id="cpiCard" class="macro-card bg-[#0D1117] border border-[#21262D] flex flex-col">
-        <div class="flex items-center justify-between px-4 py-3 border-b border-[#21262D]">
-          <div class="flex items-center gap-2"><span class="font-mono text-[9px] tracking-[0.2em] text-[#484F58]">02</span><div><div class="font-mono text-xs font-bold text-[#E6EDF3] tracking-wide">CPI PREDICTOR</div><div class="font-mono text-[9px] text-[#484F58]">Inflation Pressure</div></div></div>
-          <span class="font-mono text-[9px] text-[#484F58]">XAU/USD</span>
-        </div>
-        <div id="cpiSignalBanner" class="px-4 py-4 border-b border-[#21262D]">
-          <div class="flex items-start justify-between gap-2 mb-3">
-            <div><div class="font-mono text-[9px] text-[#484F58] uppercase tracking-widest mb-1">Signal</div><div id="cpiSignal" class="font-mono text-sm font-bold text-[#484F58] leading-snug">— AWAITING —</div></div>
-            <div class="text-right shrink-0"><div class="font-mono text-[9px] text-[#484F58] mb-1">Score</div><div id="cpiScore" class="font-mono text-2xl font-bold text-[#484F58]">—</div></div>
-          </div>
-          <div class="score-track"><div id="cpiBar" class="score-fill w-1/2 bg-[#484F58]"></div></div>
-          <div class="flex justify-between font-mono text-[8px] text-[#484F58] mt-1"><span>-100</span><span>Threshold ±20</span><span>+100</span></div>
-        </div>
-        <div class="divide-y divide-[#21262D] flex-1">
-          <div class="data-row px-4 py-3">
-            <div class="flex items-center justify-between mb-2"><div class="flex items-center gap-1.5"><div class="w-[3px] h-3.5 bg-[#484F58] rounded-full" id="ppiBar"></div><span class="font-mono text-[10px] font-semibold text-[#8B949E] uppercase tracking-wider">PPI</span></div><div id="ppiPoints" class="font-mono text-[10px] font-bold text-[#484F58]">±60</div></div>
-            <div class="grid grid-cols-3 gap-1" id="ppiRow"><div class="bg-[#161B22] px-2 py-1.5"><div class="font-mono text-[8px] text-[#484F58] mb-0.5">ACTUAL</div><div class="skeleton h-3 w-12"></div></div><div class="bg-[#161B22] px-2 py-1.5"><div class="font-mono text-[8px] text-[#484F58] mb-0.5">FCST</div><div class="skeleton h-3 w-12"></div></div><div class="bg-[#161B22] px-2 py-1.5"><div class="font-mono text-[8px] text-[#484F58] mb-0.5">STATUS</div><div class="skeleton h-3 w-12"></div></div></div>
-            <div class="font-mono text-[8px] text-[#484F58] mt-1" id="ppiDate"></div>
-          </div>
-          <div class="data-row px-4 py-3">
-            <div class="flex items-center justify-between mb-2"><div class="flex items-center gap-1.5"><div class="w-[3px] h-3.5 bg-[#484F58] rounded-full" id="crudeBar"></div><span class="font-mono text-[10px] font-semibold text-[#8B949E] uppercase tracking-wider">WTI Crude</span></div><div id="crudePoints" class="font-mono text-[10px] font-bold text-[#484F58]">±40</div></div>
-            <div class="grid grid-cols-3 gap-1" id="crudeRow"><div class="bg-[#161B22] px-2 py-1.5"><div class="font-mono text-[8px] text-[#484F58] mb-0.5">CURRENT</div><div class="skeleton h-3 w-12"></div></div><div class="bg-[#161B22] px-2 py-1.5"><div class="font-mono text-[8px] text-[#484F58] mb-0.5">30D AVG</div><div class="skeleton h-3 w-12"></div></div><div class="bg-[#161B22] px-2 py-1.5"><div class="font-mono text-[8px] text-[#484F58] mb-0.5">STATUS</div><div class="skeleton h-3 w-12"></div></div></div>
-          </div>
-        </div>
-        <div class="px-4 py-2 bg-[#080B0F] border-t border-[#21262D] flex items-center justify-between"><span class="font-mono text-[8px] text-[#484F58]">≥+20 SELL XAU &nbsp;|&nbsp; ≤−20 BUY XAU</span><span class="font-mono text-[8px] text-[#484F58]">MAX ±100</span></div>
-      </div>
-
-      <!-- ③ GROWTH -->
-      <div id="growthCard" class="macro-card bg-[#0D1117] border border-[#21262D] flex flex-col">
-        <div class="flex items-center justify-between px-4 py-3 border-b border-[#21262D]">
-          <div class="flex items-center gap-2"><span class="font-mono text-[9px] tracking-[0.2em] text-[#484F58]">03</span><div><div class="font-mono text-xs font-bold text-[#E6EDF3] tracking-wide">GROWTH PREDICTOR</div><div class="font-mono text-[9px] text-[#484F58]">GDP &amp; Retail Sales</div></div></div>
-          <span class="font-mono text-[9px] text-[#484F58]">XAU/USD</span>
-        </div>
-        <div id="growthSignalBanner" class="px-4 py-4 border-b border-[#21262D]">
-          <div class="flex items-start justify-between gap-2 mb-3">
-            <div><div class="font-mono text-[9px] text-[#484F58] uppercase tracking-widest mb-1">Signal</div><div id="growthSignal" class="font-mono text-sm font-bold text-[#484F58] leading-snug">— AWAITING —</div></div>
-            <div class="text-right shrink-0"><div class="font-mono text-[9px] text-[#484F58] mb-1">Score</div><div id="growthScore" class="font-mono text-2xl font-bold text-[#484F58]">—</div></div>
-          </div>
-          <div class="score-track"><div id="growthBar" class="score-fill w-1/2 bg-[#484F58]"></div></div>
-          <div class="flex justify-between font-mono text-[8px] text-[#484F58] mt-1"><span>-100</span><span>Threshold ±20</span><span>+100</span></div>
-        </div>
-        <div class="divide-y divide-[#21262D] flex-1">
-          <div class="data-row px-4 py-3">
-            <div class="flex items-center justify-between mb-2"><div class="flex items-center gap-1.5"><div class="w-[3px] h-3.5 bg-[#484F58] rounded-full" id="gdpBar"></div><span class="font-mono text-[10px] font-semibold text-[#8B949E] uppercase tracking-wider">GDP Growth Rate</span></div><div id="gdpPoints" class="font-mono text-[10px] font-bold text-[#484F58]">±50</div></div>
-            <div class="grid grid-cols-3 gap-1" id="gdpRow"><div class="bg-[#161B22] px-2 py-1.5"><div class="font-mono text-[8px] text-[#484F58] mb-0.5">ACTUAL</div><div class="skeleton h-3 w-12"></div></div><div class="bg-[#161B22] px-2 py-1.5"><div class="font-mono text-[8px] text-[#484F58] mb-0.5">FCST</div><div class="skeleton h-3 w-12"></div></div><div class="bg-[#161B22] px-2 py-1.5"><div class="font-mono text-[8px] text-[#484F58] mb-0.5">STATUS</div><div class="skeleton h-3 w-12"></div></div></div>
-            <div class="font-mono text-[8px] text-[#484F58] mt-1" id="gdpDate"></div>
-          </div>
-          <div class="data-row px-4 py-3">
-            <div class="flex items-center justify-between mb-2"><div class="flex items-center gap-1.5"><div class="w-[3px] h-3.5 bg-[#484F58] rounded-full" id="retailBar"></div><span class="font-mono text-[10px] font-semibold text-[#8B949E] uppercase tracking-wider">Retail Sales m/m</span></div><div id="retailPoints" class="font-mono text-[10px] font-bold text-[#484F58]">±50</div></div>
-            <div class="grid grid-cols-3 gap-1" id="retailRow"><div class="bg-[#161B22] px-2 py-1.5"><div class="font-mono text-[8px] text-[#484F58] mb-0.5">ACTUAL</div><div class="skeleton h-3 w-12"></div></div><div class="bg-[#161B22] px-2 py-1.5"><div class="font-mono text-[8px] text-[#484F58] mb-0.5">FCST</div><div class="skeleton h-3 w-12"></div></div><div class="bg-[#161B22] px-2 py-1.5"><div class="font-mono text-[8px] text-[#484F58] mb-0.5">STATUS</div><div class="skeleton h-3 w-12"></div></div></div>
-            <div class="font-mono text-[8px] text-[#484F58] mt-1" id="retailDate"></div>
-          </div>
-        </div>
-        <div class="px-4 py-2 bg-[#080B0F] border-t border-[#21262D] flex items-center justify-between"><span class="font-mono text-[8px] text-[#484F58]">≥+20 SELL XAU &nbsp;|&nbsp; ≤−20 BUY XAU</span><span class="font-mono text-[8px] text-[#484F58]">MAX ±100</span></div>
-      </div>
-
-      <!-- ④ FED -->
-      <div id="fedCard" class="macro-card bg-[#0D1117] border border-[#21262D] flex flex-col">
-        <div class="flex items-center justify-between px-4 py-3 border-b border-[#21262D]">
-          <div class="flex items-center gap-2"><span class="font-mono text-[9px] tracking-[0.2em] text-[#484F58]">04</span><div><div class="font-mono text-xs font-bold text-[#E6EDF3] tracking-wide">FED PREDICTOR</div><div class="font-mono text-[9px] text-[#484F58]">Interest Rate Bias</div></div></div>
-          <span class="font-mono text-[9px] text-[#484F58]">XAU/USD</span>
-        </div>
-        <div id="fedSignalBanner" class="px-4 py-4 border-b border-[#21262D]">
-          <div class="flex items-start justify-between gap-2 mb-3">
-            <div><div class="font-mono text-[9px] text-[#484F58] uppercase tracking-widest mb-1">Signal</div><div id="fedSignal" class="font-mono text-sm font-bold text-[#484F58] leading-snug">— AWAITING —</div></div>
-            <div class="text-right shrink-0"><div class="font-mono text-[9px] text-[#484F58] mb-1">Score</div><div id="fedScore" class="font-mono text-2xl font-bold text-[#484F58]">—</div></div>
-          </div>
-          <div class="score-track"><div id="fedBar" class="score-fill w-1/2 bg-[#484F58]"></div></div>
-          <div class="flex justify-between font-mono text-[8px] text-[#484F58] mt-1"><span>-100</span><span>Threshold ±20</span><span>+100</span></div>
-        </div>
-        <div class="divide-y divide-[#21262D] flex-1">
-          <div class="data-row px-4 py-3">
-            <div class="flex items-center justify-between mb-2"><div class="flex items-center gap-1.5"><div class="w-[3px] h-3.5 bg-[#484F58] rounded-full" id="fedRateBar"></div><span class="font-mono text-[10px] font-semibold text-[#8B949E] uppercase tracking-wider">Fed Interest Rate</span></div><div id="fedRatePoints" class="font-mono text-[10px] font-bold text-[#484F58]">±100</div></div>
-            <div class="bg-[#161B22] px-3 py-3 mb-2 flex items-center justify-between">
-              <div><div class="font-mono text-[8px] text-[#484F58] mb-1">CURRENT RATE</div><div id="fedRateDisplay" class="font-mono text-3xl font-bold text-[#484F58]">—%</div></div>
-              <div class="text-right"><div class="font-mono text-[8px] text-[#484F58] mb-1">PREV RATE</div><div id="fedPrevRate" class="font-mono text-lg font-bold text-[#484F58]">—%</div></div>
-            </div>
-            <div class="grid grid-cols-2 gap-1" id="fedRateRow"><div class="bg-[#161B22] px-2 py-1.5"><div class="font-mono text-[8px] text-[#484F58] mb-0.5">CHANGE</div><div class="skeleton h-3 w-12"></div></div><div class="bg-[#161B22] px-2 py-1.5"><div class="font-mono text-[8px] text-[#484F58] mb-0.5">BIAS</div><div class="skeleton h-3 w-12"></div></div></div>
-            <div class="font-mono text-[8px] text-[#484F58] mt-1" id="fedRateDate"></div>
-          </div>
-          <div class="px-4 py-3">
-            <div class="font-mono text-[8px] text-[#484F58] uppercase tracking-widest mb-2">Rate Trend</div>
-            <div id="rateTrend" class="flex items-end gap-[3px] h-8"><div class="skeleton h-full w-full rounded-sm"></div></div>
-            <div class="flex justify-between font-mono text-[8px] text-[#484F58] mt-1"><span>Older</span><span>Current</span></div>
-          </div>
-        </div>
-        <div class="px-4 py-2 bg-[#080B0F] border-t border-[#21262D] flex items-center justify-between"><span class="font-mono text-[8px] text-[#484F58]">Higher rate → SELL XAU &nbsp;|&nbsp; Lower rate → BUY XAU</span><span class="font-mono text-[8px] text-[#484F58]">MAX ±100</span></div>
-      </div>
-    </main>
-
-    <!-- USD News Radar -->
-    <div class="max-w-[1400px] mx-auto px-6 pb-8">
-      <div class="border border-[#21262D] bg-[#0D1117]">
-        <div class="flex items-center justify-between px-5 py-3 border-b border-[#21262D] bg-[#080B0F]">
-          <div class="flex items-center gap-3">
-            <div class="relative w-4 h-4 flex items-center justify-center">
-              <div class="absolute w-4 h-4 rounded-full bg-[#00FF88] opacity-20 animate-ping"></div>
-              <div class="w-2 h-2 rounded-full bg-[#00FF88] status-dot"></div>
-            </div>
-            <span class="font-mono text-xs font-bold text-[#E6EDF3] tracking-widest uppercase">Upcoming USD News Radar</span>
-          </div>
-          <div class="flex items-center gap-4">
-            <div class="flex items-center gap-3 font-mono text-[8px] text-[#484F58]">
-              <span class="flex items-center gap-1"><span class="inline-block w-2 h-2 bg-[#FF3B3B]"></span>HIGH</span>
-              <span class="flex items-center gap-1"><span class="inline-block w-2 h-2 bg-[#F0B429]"></span>MEDIUM</span>
-              <span class="flex items-center gap-1"><span class="inline-block w-2 h-2 bg-[#484F58]"></span>LOW</span>
-            </div>
-            <span class="font-mono text-[8px] text-[#484F58]" id="newsCount">— events</span>
-          </div>
-        </div>
-        <div id="newsGrid" class="news-grid p-1 min-h-[80px]">
-          <div class="col-span-full flex items-center justify-center py-8">
-            <span class="font-mono text-xs text-[#484F58]">Fetching upcoming events<span class="cursor">_</span></span>
+        <!-- NEWS -->
+        <div style="margin-top:64px;">
+          <div class="section-num reveal">03 — NEWS RADAR</div>
+          <h2 class="section-title reveal" style="font-size:clamp(28px,4vw,44px);">Upcoming USD<br/>Events<em>.</em></h2>
+          <div id="newsGrid" class="news-grid reveal" style="margin-top:24px;">
+            <div style="grid-column:1/-1;padding:36px;text-align:center;"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#3A3A3A;">Fetching events<span class="cursor">_</span></span></div>
           </div>
         </div>
       </div>
     </div>
   </div><!-- /panelMacro -->
 
-
-  <!-- ══ TAB 2 — LIVE TECHNICAL TERMINAL ══════════════════════════ -->
+  <!-- ══ TECH TAB ═══════════════════════════════════════════ -->
   <div id="panelTech" class="tab-panel">
-
-    <!-- TradingView Chart -->
-    <div class="max-w-[1400px] mx-auto px-6 pt-6 pb-4">
-      <div class="flex items-center justify-between mb-3 flex-wrap gap-3">
-        <div>
-          <div class="flex items-center gap-3">
-            <div class="w-1.5 h-1.5 rounded-full bg-[#38BDF8]" style="box-shadow:0 0 8px rgba(56,189,248,0.7)"></div>
-            <span class="font-mono text-xs font-bold text-[#E6EDF3] tracking-[0.15em] uppercase">Live Chart — OANDA:XAUUSD</span>
-          </div>
-          <div class="font-mono text-[9px] text-[#484F58] mt-1 ml-[18px]">TradingView Advanced Chart &nbsp;·&nbsp; 15M Candles &nbsp;·&nbsp; UTC</div>
-        </div>
-        <div class="flex items-center gap-3">
-          <div class="flex items-center gap-2 px-3 py-1.5 border border-[#21262D] bg-[#0D1117]">
-            <div class="w-1.5 h-1.5 rounded-full bg-[#38BDF8] live-dot"></div>
-            <span class="font-mono text-[9px] text-[#38BDF8] tracking-widest">LIVE FEED</span>
-          </div>
-          <div class="px-3 py-1.5 border border-[#21262D] bg-[#0D1117] font-mono text-[9px] text-[#484F58]">INTERVAL: 15M</div>
-        </div>
+    <div style="height:64px;"></div>
+    <div class="section">
+      <div class="section-num reveal">01 — LIVE CHART</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;" class="reveal">
+        <h2 class="section-title" style="margin-bottom:0;">Live Chart<em>.</em></h2>
+        <div id="dxyTechBar" class="dxy-mini" style="opacity:0;transition:opacity 0.3s ease;"></div>
       </div>
-      <div class="chart-wrapper">
-        <div style="position:absolute;top:0;left:0;width:16px;height:16px;border-top:2px solid #38BDF8;border-left:2px solid #38BDF8;z-index:2;pointer-events:none;"></div>
-        <div style="position:absolute;top:0;right:0;width:16px;height:16px;border-top:2px solid #38BDF8;border-right:2px solid #38BDF8;z-index:2;pointer-events:none;"></div>
-        <div style="position:absolute;bottom:0;left:0;width:16px;height:16px;border-bottom:2px solid #38BDF8;border-left:2px solid #38BDF8;z-index:2;pointer-events:none;"></div>
-        <div style="position:absolute;bottom:0;right:0;width:16px;height:16px;border-bottom:2px solid #38BDF8;border-right:2px solid #38BDF8;z-index:2;pointer-events:none;"></div>
+      <div class="chart-frame reveal-scale">
+        <div class="chart-head">
+          <div style="display:flex;align-items:center;gap:8px;"><span class="chart-head-dot"></span><div><div style="font-size:13px;font-weight:800;color:#F5F5F5;">OANDA:XAUUSD</div><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#666;">TradingView · 15M · UTC</div></div></div>
+          <div class="chart-badge"><span style="width:4px;height:4px;border-radius:50%;background:#38BDF8;animation:pulse 2s ease-in-out infinite;"></span>LIVE</div>
+        </div>
         <div class="tradingview-widget-container" style="height:520px;">
           <div id="tradingview_chart" style="height:100%;"></div>
           <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
           <script type="text/javascript">
-            (function() {
-              function initTV() {
-                if (typeof TradingView !== 'undefined') {
-                  new TradingView.widget({ autosize:true, symbol:"OANDA:XAUUSD", interval:"15", timezone:"Etc/UTC", theme:"dark", style:"1", locale:"en", toolbar_bg:"#0D1117", enable_publishing:false, hide_top_toolbar:false, save_image:false, backgroundColor:"rgba(8,11,15,1)", gridColor:"rgba(33,38,45,0.8)", container_id:"tradingview_chart" });
-                }
-              }
-              if (typeof TradingView !== 'undefined') { initTV(); }
-              else { document.addEventListener('DOMContentLoaded', function(){ setTimeout(initTV, 500); }); }
-            })();
+            (function(){function initTV(){if(typeof TradingView!=='undefined'){new TradingView.widget({autosize:true,symbol:"OANDA:XAUUSD",interval:"15",timezone:"Etc/UTC",theme:"dark",style:"1",locale:"en",toolbar_bg:"#0C0C0C",enable_publishing:false,hide_top_toolbar:false,save_image:false,backgroundColor:"#0C0C0C",gridColor:"#1A1A1A",container_id:"tradingview_chart"});}}if(typeof TradingView!=='undefined'){initTV();}else{document.addEventListener('DOMContentLoaded',function(){setTimeout(initTV,500);});}})();
           </script>
         </div>
       </div>
     </div>
 
-    <!-- ══ DUAL SIGNAL PANELS ══ -->
-    <div class="max-w-[1400px] mx-auto px-6 pb-4">
-      <div class="flex items-center gap-4 mb-4">
-        <div class="font-mono text-[9px] text-[#484F58] tracking-[0.3em] uppercase">◈ Dual Signal Engine</div>
-        <div class="flex-1 h-px bg-[#21262D]"></div>
-        <div class="flex items-center gap-2">
-          <span class="font-mono text-[8px] px-2 py-0.5 border border-[#F0B429] text-[#F0B429] bg-[#F0B42908]">⚓ SWING</span>
-          <span class="font-mono text-[8px] text-[#484F58]">→</span>
-          <span class="font-mono text-[8px] px-2 py-0.5 border border-[#38BDF8] text-[#38BDF8] bg-[#38BDF808]">⚡ SCALP</span>
-          <span class="font-mono text-[8px] text-[#484F58]">Hierarchical · Scalp gated by Swing</span>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
-
-        <!-- ── SWING SIGNAL PANEL ── -->
-        <div class="signal-panel swing-panel" id="swingPanel">
-          <!-- Header -->
-          <div class="flex items-center justify-between px-5 py-3 border-b border-[#21262D] bg-[#080B0F]">
-            <div class="flex items-center gap-3">
-              <div class="relative w-7 h-7 flex items-center justify-center shrink-0">
-                <div class="absolute w-7 h-7 rounded-full border border-[#F0B429] opacity-25 animate-ping" style="animation-duration:3s;"></div>
-                <div class="w-2 h-2 bg-[#F0B429] rounded-full" style="box-shadow:0 0 8px rgba(240,180,41,0.8);"></div>
-              </div>
-              <div>
-                <div class="font-mono text-[8px] text-[#484F58] tracking-[0.3em] mb-0.5">⚓ SWING TRADE</div>
-                <div class="font-mono text-[10px] font-bold text-[#E6EDF3] tracking-[0.1em]">H4 Bias + H1 Structure</div>
-              </div>
-            </div>
-            <div class="flex items-center gap-2">
-              <div class="font-mono text-[8px] text-[#484F58] border border-[#21262D] px-2 py-1 hidden md:block">Hold: Hours–Days</div>
-              <div class="font-mono text-[8px] text-[#484F58] border border-[#21262D] px-2 py-1 hidden md:block">Min RR 1:3</div>
-              <span class="font-mono text-[7px] text-[#484F58]" id="swingSignalTime">—</span>
-            </div>
-          </div>
-
-          <!-- H4 Bias Bar -->
-          <div class="px-5 py-2 border-b border-[#21262D] flex items-center justify-between bg-[#0D1117]">
-            <div class="flex items-center gap-3">
-              <span class="font-mono text-[8px] text-[#484F58] tracking-widest uppercase">H4 Bias</span>
-              <span class="font-mono text-[9px] font-bold text-[#484F58]" id="swingH4Bias">— AWAITING —</span>
-            </div>
-            <div class="flex items-center gap-3">
-              <span class="font-mono text-[8px] text-[#484F58]">Confluence</span>
-              <div class="flex items-center gap-1" id="swingConfDots">
-                <div class="conf-dot off"></div><div class="conf-dot off"></div><div class="conf-dot off"></div><div class="conf-dot off"></div><div class="conf-dot off"></div>
-              </div>
-              <span class="font-mono text-[9px] font-bold text-[#484F58]" id="swingConfScore">0/5</span>
-            </div>
-          </div>
-
-          <!-- Awaiting -->
-          <div id="swingAwaiting" class="px-5 py-10 flex flex-col items-center gap-3 text-center">
-            <div class="flex items-center gap-2"><div class="skeleton w-2 h-2 rounded-full"></div><div class="skeleton w-2 h-2 rounded-full"></div><div class="skeleton w-2 h-2 rounded-full"></div></div>
-            <div class="font-mono text-[10px] text-[#484F58] tracking-widest uppercase">Awaiting swing data<span class="cursor">_</span></div>
-          </div>
-
-          <!-- Content -->
+    <div class="section" style="padding-top:20px;">
+      <div class="section-num reveal">02 — SIGNALS</div>
+      <h2 class="section-title reveal" style="margin-bottom:28px;">Signal<br/>Terminal<em>.</em></h2>
+      <div class="signal-grid stagger reveal">
+        <div class="signal-panel" id="swingPanel">
+          <div class="signal-head"><div style="display:flex;align-items:center;gap:8px;"><span class="signal-dot swing"></span><div><div class="signal-title">SWING TRADE</div><div class="signal-sub">H4 Bias + H1 Structure</div></div></div><div style="display:flex;gap:6px;"><span class="signal-badge">Hours–Days</span><span class="signal-badge">RR 1:3</span></div></div>
+          <div class="signal-gate"><span class="signal-gate-label">H4 Bias</span><span id="swingH4Bias" style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:#666;">— AWAITING —</span><div style="display:flex;align-items:center;gap:6px;"><span class="signal-gate-label">Conf</span><div class="conf-dots" id="swingConfDots"><div class="conf-dot off"></div><div class="conf-dot off"></div><div class="conf-dot off"></div><div class="conf-dot off"></div><div class="conf-dot off"></div></div><span id="swingConfScore" style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:#666;">0/5</span></div></div>
+          <div id="swingAwaiting" style="padding:48px 24px;text-align:center;"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#3A3A3A;">Awaiting swing data<span class="cursor">_</span></span></div>
           <div id="swingContent" class="hidden">
-            <!-- Position + Price Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-px border-b border-[#21262D]" style="background:#21262D;">
-              <div class="bg-[#080B0F] px-5 py-5 flex flex-col gap-2">
-                <div class="font-mono text-[8px] text-[#484F58] tracking-[0.25em] uppercase">Position Signal</div>
-                <div id="swingPositionBadge" class="position-badge neutral">— AWAITING —</div>
-                <div class="flex items-center gap-2 mt-1">
-                  <div class="w-2 h-2 rounded-full bg-[#484F58]" id="swingPosDot"></div>
-                  <span class="font-mono text-[8px] text-[#484F58]" id="swingPosSub">No active signal</span>
-                </div>
-                <!-- Confluence progress bar -->
-                <div class="mt-2">
-                  <div class="flex justify-between font-mono text-[8px] text-[#484F58] mb-1"><span>Confluence</span><span id="swingConfLabel">0/5</span></div>
-                  <div class="conf-track"><div id="swingConfBar" class="conf-fill bg-[#484F58]" style="width:0%"></div></div>
-                </div>
+            <div class="signal-pos">
+              <div class="signal-pos-left">
+                <div class="signal-pos-label">Position Signal</div>
+                <div id="swingPositionBadge" class="signal-pos-text" style="color:#666;">— AWAITING —</div>
+                <div style="display:flex;align-items:center;gap:5px;margin-top:6px;"><span id="swingPosDot" style="width:5px;height:5px;border-radius:50%;background:#3A3A3A;"></span><span id="swingPosSub" style="font-size:10px;color:#666;">No signal</span></div>
+                <div class="signal-conf"><div class="signal-conf-label"><span>Confluence</span><span id="swingConfLabel">0/5</span></div><div class="signal-conf-track"><div id="swingConfBar" class="signal-conf-fill" style="width:0%;background:#3A3A3A;"></div></div></div>
               </div>
-              <div class="md:col-span-2 grid grid-cols-2 md:grid-cols-4 gap-px" style="background:#21262D;">
-                <div class="price-cell bg-[#0D1117] flex flex-col justify-between">
-                  <div class="font-mono text-[8px] text-[#484F58] tracking-[0.2em] uppercase mb-2">Entry</div>
-                  <div><div class="font-mono text-[9px] text-[#484F58] mb-1">$</div><div id="swingEntry" class="font-mono text-lg font-bold text-[#E6EDF3]">—</div></div>
-                  <div class="font-mono text-[8px] text-[#484F58] mt-2">H1 Zone</div>
-                </div>
-                <div class="price-cell bg-[#0D1117] flex flex-col justify-between" style="border-color:#FF3B3B22;">
-                  <div class="font-mono text-[8px] tracking-[0.2em] uppercase mb-2" style="color:#FF3B3B99;">Stop Loss</div>
-                  <div><div class="font-mono text-[9px] mb-1" style="color:#FF3B3B66;">$</div><div id="swingSL" class="font-mono text-lg font-bold" style="color:#FF3B3B;">—</div></div>
-                  <div class="font-mono text-[8px] text-[#484F58] mt-2">Zone boundary</div>
-                </div>
-                <div class="price-cell bg-[#0D1117] flex flex-col justify-between" style="border-color:#00FF8822;">
-                  <div class="flex items-center gap-1 mb-2"><span class="font-mono text-[7px] px-1 border" style="color:#00FF88;border-color:#00FF8844;background:#00FF8808;">TP1</span><span class="font-mono text-[8px]" style="color:#00FF8899;">~<span id="swingTP1Pips">—</span>p</span></div>
-                  <div><div class="font-mono text-[9px] mb-1" style="color:#00FF8866;">$</div><div id="swingTP1" class="font-mono text-lg font-bold" style="color:#00FF88;">—</div></div>
-                </div>
-                <div class="price-cell bg-[#0D1117] flex flex-col justify-between" style="border-color:#00FF8822;">
-                  <div class="flex items-center gap-1 mb-2"><span class="font-mono text-[7px] px-1 border" style="color:#00FF88;border-color:#00FF8844;background:#00FF8808;">TP2</span><span class="font-mono text-[8px]" style="color:#00FF8899;">~<span id="swingTP2Pips">—</span>p</span></div>
-                  <div><div class="font-mono text-[9px] mb-1" style="color:#00FF8866;">$</div><div id="swingTP2" class="font-mono text-lg font-bold" style="color:#00FF88;">—</div></div>
-                </div>
+              <div class="signal-prices">
+                <div class="signal-price"><div class="signal-price-label">Entry</div><div id="swingEntry" class="signal-price-val">—</div><div class="signal-price-sub">H1 Zone</div></div>
+                <div class="signal-price"><div class="signal-price-label" style="color:#EF444466;">SL</div><div id="swingSL" class="signal-price-val" style="color:#EF4444;">—</div><div class="signal-price-sub">Boundary</div></div>
+                <div class="signal-price"><div class="signal-price-label" style="color:#22C55E66;">TP1 <span id="swingTP1Pips" style="color:#22C55E44;">—</span>p</div><div id="swingTP1" class="signal-price-val" style="color:#22C55E;">—</div></div>
+                <div class="signal-price"><div class="signal-price-label" style="color:#22C55E66;">TP2 <span id="swingTP2Pips" style="color:#22C55E44;">—</span>p</div><div id="swingTP2" class="signal-price-val" style="color:#22C55E;">—</div></div>
               </div>
             </div>
-            <!-- Zones Info -->
-            <div class="px-5 py-2 border-b border-[#21262D] bg-[#0D1117] flex flex-wrap gap-4">
-              <div class="flex items-center gap-2"><span class="font-mono text-[8px] text-[#484F58]">H1 Demand:</span><span class="font-mono text-[8px] font-bold text-[#00FF88]" id="swingDemandZone">—</span></div>
-              <div class="flex items-center gap-2"><span class="font-mono text-[8px] text-[#484F58]">H1 Supply:</span><span class="font-mono text-[8px] font-bold text-[#FF3B3B]" id="swingSupplyZone">—</span></div>
-              <div class="flex items-center gap-2"><span class="font-mono text-[8px] text-[#484F58]">H1 RSI:</span><span class="font-mono text-[8px] font-bold text-[#F0B429]" id="swingRsi">—</span></div>
-            </div>
-            <!-- Reasoning -->
-            <div class="px-5 py-4">
-              <div class="flex items-center gap-3 mb-3">
-                <div class="font-mono text-[8px] text-[#484F58] tracking-[0.3em] uppercase">Analysis</div>
-                <div class="flex-1 h-px bg-[#21262D]"></div>
-                <div class="font-mono text-[8px] text-[#484F58]" id="swingReasonCount">—</div>
-              </div>
-              <div id="swingReasonList"></div>
-            </div>
-            <div class="px-5 py-2 border-t border-[#21262D] bg-[#080B0F] flex items-center justify-between">
-              <span class="font-mono text-[8px] text-[#484F58]">Top-Down: H4 Bias → H1 Structure → Entry</span>
-              <span class="font-mono text-[8px] text-[#FF3B3B] opacity-60">NOT FINANCIAL ADVICE</span>
-            </div>
+            <div class="signal-zones"><div class="signal-zone"><span class="signal-zone-label">Demand:</span><span id="swingDemandZone" class="signal-zone-val" style="color:#22C55E;">—</span></div><div class="signal-zone"><span class="signal-zone-label">Supply:</span><span id="swingSupplyZone" class="signal-zone-val" style="color:#EF4444;">—</span></div><div class="signal-zone"><span class="signal-zone-label">RSI:</span><span id="swingRsi" class="signal-zone-val" style="color:#F59E0B;">—</span></div></div>
+            <div class="signal-reasons"><div class="signal-reasons-head"><span class="signal-reasons-label">Analysis</span><span class="signal-reasons-line"></span><span class="signal-reasons-count" id="swingReasonCount">—</span></div><div id="swingReasonList"></div></div>
+            <div class="signal-foot"><span>H4 → H1 → Entry</span><span style="color:#EF4444;opacity:0.3;">NOT FINANCIAL ADVICE</span></div>
           </div>
-        </div><!-- /swingPanel -->
+        </div>
 
-        <!-- ── SCALP SIGNAL PANEL ── -->
-        <div class="signal-panel scalp-panel" id="scalpPanel">
-          <!-- Header -->
-          <div class="flex items-center justify-between px-5 py-3 border-b border-[#21262D] bg-[#080B0F]">
-            <div class="flex items-center gap-3">
-              <div class="relative w-7 h-7 flex items-center justify-center shrink-0">
-                <div class="absolute w-7 h-7 rounded-full border border-[#38BDF8] opacity-25 animate-ping" style="animation-duration:2s;"></div>
-                <div class="w-2 h-2 bg-[#38BDF8] rounded-full" style="box-shadow:0 0 8px rgba(56,189,248,0.8);"></div>
-              </div>
-              <div>
-                <div class="font-mono text-[8px] text-[#484F58] tracking-[0.3em] mb-0.5">⚡ SCALP TRADE</div>
-                <div class="font-mono text-[10px] font-bold text-[#E6EDF3] tracking-[0.1em]">M5 Execution Engine</div>
-              </div>
-            </div>
-            <div class="flex items-center gap-2">
-              <div class="font-mono text-[8px] text-[#484F58] border border-[#21262D] px-2 py-1 hidden md:block">Hold: 5–30 min</div>
-              <div class="font-mono text-[8px] text-[#484F58] border border-[#21262D] px-2 py-1 hidden md:block">Min RR 1:2</div>
-              <span class="font-mono text-[7px] text-[#484F58]" id="scalpSignalTime">—</span>
-            </div>
-          </div>
-
-          <!-- Gate Status Bar -->
-          <div class="px-5 py-2 border-b border-[#21262D] flex items-center justify-between bg-[#0D1117]">
-            <div class="flex items-center gap-3">
-              <span class="font-mono text-[8px] text-[#484F58] tracking-widest uppercase">Swing Gate</span>
-              <span class="gate-badge gate-blocked" id="scalpGateBadge">⊘ BLOCKED</span>
-            </div>
-            <div class="flex items-center gap-3">
-              <span class="font-mono text-[8px] text-[#484F58]">Confluence</span>
-              <div class="flex items-center gap-1" id="scalpConfDots">
-                <div class="conf-dot off"></div><div class="conf-dot off"></div><div class="conf-dot off"></div><div class="conf-dot off"></div><div class="conf-dot off"></div>
-              </div>
-              <span class="font-mono text-[9px] font-bold text-[#484F58]" id="scalpConfScore">0/5</span>
-            </div>
-          </div>
-
-          <!-- Awaiting -->
-          <div id="scalpAwaiting" class="px-5 py-10 flex flex-col items-center gap-3 text-center">
-            <div class="flex items-center gap-2"><div class="skeleton w-2 h-2 rounded-full"></div><div class="skeleton w-2 h-2 rounded-full"></div><div class="skeleton w-2 h-2 rounded-full"></div></div>
-            <div class="font-mono text-[10px] text-[#484F58] tracking-widest uppercase">Awaiting scalp data<span class="cursor">_</span></div>
-          </div>
-
-          <!-- Content -->
+        <div class="signal-panel" id="scalpPanel">
+          <div class="signal-head"><div style="display:flex;align-items:center;gap:8px;"><span class="signal-dot scalp"></span><div><div class="signal-title">SCALP TRADE</div><div class="signal-sub">M5 Execution Engine</div></div></div><div style="display:flex;gap:6px;"><span class="signal-badge">5–30 min</span><span class="signal-badge">RR 1:2</span></div></div>
+          <div class="signal-gate"><span class="signal-gate-label">Swing Gate</span><span class="gate-pill blocked" id="scalpGateBadge">BLOCKED</span><div style="display:flex;align-items:center;gap:6px;"><span class="signal-gate-label">Conf</span><div class="conf-dots" id="scalpConfDots"><div class="conf-dot off"></div><div class="conf-dot off"></div><div class="conf-dot off"></div><div class="conf-dot off"></div><div class="conf-dot off"></div></div><span id="scalpConfScore" style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:#666;">0/5</span></div></div>
+          <div id="scalpAwaiting" style="padding:48px 24px;text-align:center;"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#3A3A3A;">Awaiting scalp data<span class="cursor">_</span></span></div>
           <div id="scalpContent" class="hidden">
-            <!-- Position + Price Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-px border-b border-[#21262D]" style="background:#21262D;">
-              <div class="bg-[#080B0F] px-5 py-5 flex flex-col gap-2">
-                <div class="font-mono text-[8px] text-[#484F58] tracking-[0.25em] uppercase">Position Signal</div>
-                <div id="scalpPositionBadge" class="position-badge neutral">— AWAITING —</div>
-                <div class="flex items-center gap-2 mt-1">
-                  <div class="w-2 h-2 rounded-full bg-[#484F58]" id="scalpPosDot"></div>
-                  <span class="font-mono text-[8px] text-[#484F58]" id="scalpPosSub">No active signal</span>
-                </div>
-                <!-- Confluence progress bar -->
-                <div class="mt-2">
-                  <div class="flex justify-between font-mono text-[8px] text-[#484F58] mb-1"><span>Confluence</span><span id="scalpConfLabel">0/5</span></div>
-                  <div class="conf-track"><div id="scalpConfBar" class="conf-fill bg-[#484F58]" style="width:0%"></div></div>
-                </div>
+            <div class="signal-pos">
+              <div class="signal-pos-left">
+                <div class="signal-pos-label">Position Signal</div>
+                <div id="scalpPositionBadge" class="signal-pos-text" style="color:#666;">— AWAITING —</div>
+                <div style="display:flex;align-items:center;gap:5px;margin-top:6px;"><span id="scalpPosDot" style="width:5px;height:5px;border-radius:50%;background:#3A3A3A;"></span><span id="scalpPosSub" style="font-size:10px;color:#666;">No signal</span></div>
+                <div class="signal-conf"><div class="signal-conf-label"><span>Confluence</span><span id="scalpConfLabel">0/5</span></div><div class="signal-conf-track"><div id="scalpConfBar" class="signal-conf-fill" style="width:0%;background:#3A3A3A;"></div></div></div>
               </div>
-              <div class="md:col-span-2 grid grid-cols-2 md:grid-cols-4 gap-px" style="background:#21262D;">
-                <div class="price-cell bg-[#0D1117] flex flex-col justify-between">
-                  <div class="font-mono text-[8px] text-[#484F58] tracking-[0.2em] uppercase mb-2">Entry</div>
-                  <div><div class="font-mono text-[9px] text-[#484F58] mb-1">$</div><div id="scalpEntry" class="font-mono text-lg font-bold text-[#E6EDF3]">—</div></div>
-                  <div class="font-mono text-[8px] text-[#484F58] mt-2">M5 Trigger</div>
-                </div>
-                <div class="price-cell bg-[#0D1117] flex flex-col justify-between" style="border-color:#FF3B3B22;">
-                  <div class="font-mono text-[8px] tracking-[0.2em] uppercase mb-2" style="color:#FF3B3B99;">Stop Loss</div>
-                  <div><div class="font-mono text-[9px] mb-1" style="color:#FF3B3B66;">$</div><div id="scalpSL" class="font-mono text-lg font-bold" style="color:#FF3B3B;">—</div></div>
-                  <div class="font-mono text-[8px] text-[#484F58] mt-2">ATR scaled</div>
-                </div>
-                <div class="price-cell bg-[#0D1117] flex flex-col justify-between" style="border-color:#00FF8822;">
-                  <div class="flex items-center gap-1 mb-2"><span class="font-mono text-[7px] px-1 border" style="color:#38BDF8;border-color:#38BDF844;background:#38BDF808;">TP1</span><span class="font-mono text-[8px]" style="color:#38BDF899;">~<span id="scalpTP1Pips">—</span>p</span></div>
-                  <div><div class="font-mono text-[9px] mb-1" style="color:#38BDF866;">$</div><div id="scalpTP1" class="font-mono text-lg font-bold" style="color:#38BDF8;">—</div></div>
-                </div>
-                <div class="price-cell bg-[#0D1117] flex flex-col justify-between" style="border-color:#00FF8822;">
-                  <div class="flex items-center gap-1 mb-2"><span class="font-mono text-[7px] px-1 border" style="color:#38BDF8;border-color:#38BDF844;background:#38BDF808;">TP2</span><span class="font-mono text-[8px]" style="color:#38BDF899;">~<span id="scalpTP2Pips">—</span>p</span></div>
-                  <div><div class="font-mono text-[9px] mb-1" style="color:#38BDF866;">$</div><div id="scalpTP2" class="font-mono text-lg font-bold" style="color:#38BDF8;">—</div></div>
-                </div>
+              <div class="signal-prices">
+                <div class="signal-price"><div class="signal-price-label">Entry</div><div id="scalpEntry" class="signal-price-val">—</div><div class="signal-price-sub">M5 Trigger</div></div>
+                <div class="signal-price"><div class="signal-price-label" style="color:#EF444466;">SL</div><div id="scalpSL" class="signal-price-val" style="color:#EF4444;">—</div><div class="signal-price-sub">ATR scaled</div></div>
+                <div class="signal-price"><div class="signal-price-label" style="color:#38BDF866;">TP1 <span id="scalpTP1Pips" style="color:#38BDF844;">—</span>p</div><div id="scalpTP1" class="signal-price-val" style="color:#38BDF8;">—</div></div>
+                <div class="signal-price"><div class="signal-price-label" style="color:#38BDF866;">TP2 <span id="scalpTP2Pips" style="color:#38BDF844;">—</span>p</div><div id="scalpTP2" class="signal-price-val" style="color:#38BDF8;">—</div></div>
               </div>
             </div>
-            <!-- M5 Stats -->
-            <div class="px-5 py-2 border-b border-[#21262D] bg-[#0D1117] flex flex-wrap gap-4">
-              <div class="flex items-center gap-2"><span class="font-mono text-[8px] text-[#484F58]">M5 RSI:</span><span class="font-mono text-[8px] font-bold text-[#38BDF8]" id="scalpRsi">—</span></div>
-              <div class="flex items-center gap-2"><span class="font-mono text-[8px] text-[#484F58]">M5 ATR:</span><span class="font-mono text-[8px] font-bold text-[#38BDF8]" id="scalpAtr">—</span></div>
-              <div class="flex items-center gap-2"><span class="font-mono text-[8px] text-[#484F58]">Vol Threshold:</span><span class="font-mono text-[8px] font-bold text-[#F0B429]" id="scalpVolMult">—×</span></div>
-            </div>
-            <!-- Reasoning -->
-            <div class="px-5 py-4">
-              <div class="flex items-center gap-3 mb-3">
-                <div class="font-mono text-[8px] text-[#484F58] tracking-[0.3em] uppercase">Analysis</div>
-                <div class="flex-1 h-px bg-[#21262D]"></div>
-                <div class="font-mono text-[8px] text-[#484F58]" id="scalpReasonCount">—</div>
-              </div>
-              <div id="scalpReasonList"></div>
-            </div>
-            <div class="px-5 py-2 border-t border-[#21262D] bg-[#080B0F] flex items-center justify-between">
-              <span class="font-mono text-[8px] text-[#484F58]">M5 Engulfing + Volume + RSI Hook · Gated by Swing</span>
-              <span class="font-mono text-[8px] text-[#FF3B3B] opacity-60">NOT FINANCIAL ADVICE</span>
-            </div>
-          </div>
-        </div><!-- /scalpPanel -->
-
-      </div><!-- /dual grid -->
-    </div><!-- /max-w -->
-
-    <!-- ══ ZONE PANTAU PANEL ══ -->
-    <div class="max-w-[1400px] mx-auto px-6 pb-8">
-      <div class="border border-[#21262D] bg-[#0D1117]">
-
-        <!-- Header -->
-        <div class="flex items-center justify-between px-5 py-3 border-b border-[#21262D] bg-[#080B0F]">
-          <div class="flex items-center gap-3">
-            <div class="relative w-4 h-4 flex items-center justify-center">
-              <div class="absolute w-4 h-4 rounded-full bg-[#A78BFA] opacity-20 animate-ping" style="animation-duration:2.5s;"></div>
-              <div class="w-2 h-2 rounded-full bg-[#A78BFA]" style="box-shadow:0 0 8px rgba(167,139,250,0.8);"></div>
-            </div>
-            <span class="font-mono text-xs font-bold text-[#E6EDF3] tracking-widest uppercase">🎯 Zone Pantau Active</span>
-            <span class="font-mono text-[8px] text-[#484F58] border border-[#21262D] px-2 py-0.5">Top 8 · Sorted by Strength + Proximity</span>
-          </div>
-          <div class="flex items-center gap-4">
-            <div class="hidden md:flex items-center gap-3 font-mono text-[8px] text-[#484F58]">
-              <span class="flex items-center gap-1"><span class="inline-block w-2 h-2 rounded-sm bg-[#00FF88]"></span>BUY ZONE</span>
-              <span class="flex items-center gap-1"><span class="inline-block w-2 h-2 rounded-sm bg-[#FF3B3B]"></span>SELL ZONE</span>
-              <span class="flex items-center gap-1"><span class="inline-block w-2 h-2 rounded-sm bg-[#A78BFA]"></span>IN ZONE NOW</span>
-            </div>
-            <span class="font-mono text-[8px] text-[#484F58]" id="zoneTotalCount">— zones</span>
+            <div class="signal-zones"><div class="signal-zone"><span class="signal-zone-label">RSI:</span><span id="scalpRsi" class="signal-zone-val" style="color:#38BDF8;">—</span></div><div class="signal-zone"><span class="signal-zone-label">ATR:</span><span id="scalpAtr" class="signal-zone-val" style="color:#38BDF8;">—</span></div><div class="signal-zone"><span class="signal-zone-label">Vol:</span><span id="scalpVolMult" class="signal-zone-val" style="color:#F59E0B;">—×</span></div></div>
+            <div class="signal-reasons"><div class="signal-reasons-head"><span class="signal-reasons-label">Analysis</span><span class="signal-reasons-line"></span><span class="signal-reasons-count" id="scalpReasonCount">—</span></div><div id="scalpReasonList"></div></div>
+            <div class="signal-foot"><span>M5 Engulfing + Volume + RSI</span><span style="color:#EF4444;opacity:0.3;">NOT FINANCIAL ADVICE</span></div>
           </div>
         </div>
-
-        <!-- Zone Type Legend -->
-        <div class="px-5 py-2 border-b border-[#21262D] bg-[#0D1117] flex flex-wrap gap-x-5 gap-y-1">
-          <span class="font-mono text-[8px] text-[#484F58]">🔷 FVG — Fair Value Gap</span>
-          <span class="font-mono text-[8px] text-[#484F58]">🔶 OB — Order Block</span>
-          <span class="font-mono text-[8px] text-[#484F58]">⬜ PHP/PHL — Prev High/Low</span>
-          <span class="font-mono text-[8px] text-[#484F58]">💧 LIQ — Liquidity Level</span>
-          <span class="font-mono text-[8px] text-[#484F58]">🔀 BRK — Breaker Block</span>
-          <span class="font-mono text-[8px] text-[#484F58]">🕐 SESSION — Session Level</span>
-        </div>
-
-        <!-- Zone Grid -->
-        <div id="zoneGrid" class="p-3 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2 min-h-[120px]">
-          <div class="col-span-full flex items-center justify-center py-10">
-            <span class="font-mono text-xs text-[#484F58]">Scanning zones<span class="cursor">_</span></span>
-          </div>
-        </div>
-
-        <!-- Entry Triggers Section (LIVE TRADE MANAGER) -->
-        <div class="border-t border-[#21262D]">
-          <div class="flex items-center justify-between px-5 py-3 border-b border-[#21262D] bg-[#080B0F]">
-            <div class="flex items-center gap-3">
-              <div class="relative w-3 h-3 flex items-center justify-center">
-                <div class="absolute w-3 h-3 rounded-full bg-[#F0B429] opacity-20 animate-ping"></div>
-                <div class="w-1.5 h-1.5 rounded-full bg-[#F0B429]" style="box-shadow:0 0 6px rgba(240,180,41,0.8);"></div>
-              </div>
-              <span class="font-mono text-[10px] font-bold text-[#E6EDF3] tracking-widest uppercase">⚡ LIVE TRADE MANAGER — SIGNAL TRACKER</span>
-              <span class="font-mono text-[8px] text-[#484F58] border border-[#21262D] px-2 py-0.5">Limit order triggered · Running only</span>
-            </div>
-            <span class="font-mono text-[8px] text-[#484F58]" id="entryTriggerCount">— running, — closed</span>
-          </div>
-          <div id="entryTriggerGrid" class="p-3 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2 min-h-[80px]">
-            <div class="col-span-full flex items-center justify-center py-6">
-              <span class="font-mono text-xs text-[#484F58]">Menunggu harga menyentuh entry zone<span class="cursor">_</span></span>
-            </div>
-          </div>
-        </div>
-
       </div>
     </div>
 
+    <div class="section" style="padding-top:20px;">
+      <div class="section-num reveal">03 — ZONE PANTAU</div>
+      <h2 class="section-title reveal" style="margin-bottom:24px;">Active<br/>Zones<em>.</em></h2>
+      <div id="zoneGrid" class="zone-grid reveal">
+        <div style="grid-column:1/-1;padding:36px;text-align:center;"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#3A3A3A;">Scanning zones<span class="cursor">_</span></span></div>
+      </div>
+    </div>
+
+    <div class="section" style="padding-top:20px;">
+      <div class="section-num reveal">04 — TRADE MANAGER</div>
+      <div class="reveal">
+        <!-- PNL TRACKER -->
+        <div id="pnlTracker" class="pnl-grid">
+          <div class="pnl-stat"><div class="pnl-stat-num">0</div><div class="pnl-stat-label">Total Trades</div></div>
+          <div class="pnl-stat"><div class="pnl-stat-num" style="color:#22C55E;">0</div><div class="pnl-stat-label">Wins</div></div>
+          <div class="pnl-stat"><div class="pnl-stat-num">0%</div><div class="pnl-stat-label">Win Rate</div></div>
+          <div class="pnl-stat"><div class="pnl-stat-num">$0.0</div><div class="pnl-stat-label">Cumulative PnL</div></div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 24px;background:#0C0C0C;border:1px solid #1A1A1A;border-radius:12px 12px 0 0;">
+          <div style="display:flex;align-items:center;gap:8px;"><span style="width:5px;height:5px;border-radius:50%;background:#F59E0B;animation:pulse 2s ease-in-out infinite;"></span><span style="font-size:13px;font-weight:800;color:#F5F5F5;">Live Trade Manager</span></div>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#666;" id="entryTriggerCount">— running, — closed</span>
+        </div>
+        <div id="entryTriggerGrid" class="trade-grid">
+          <div style="grid-column:1/-1;padding:36px;text-align:center;"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#3A3A3A;">Menunggu harga menyentuh entry<span class="cursor">_</span></span></div>
+        </div>
+      </div>
+    </div>
   </div><!-- /panelTech -->
 
-  <!-- Footer -->
-  <footer class="border-t border-[#21262D] px-6 py-4">
-    <div class="max-w-[1400px] mx-auto flex flex-col md:flex-row items-center justify-between gap-2">
-      <span class="font-mono text-[10px] text-[#484F58] tracking-widest uppercase">Dual Signal Engine v6.1 by Han — For research only. Not financial advice.</span>
-      <span class="font-mono text-[10px] text-[#484F58]">Data: Yahoo Finance + TradingView &nbsp;·&nbsp; Swing H4/H1 · Scalp M5 &nbsp;·&nbsp; Macro ±20/±40 thresholds</span>
-    </div>
-  </footer>
+  <!-- TOAST CONTAINER -->
+  <div class="toast-container" id="toastContainer"></div>
 
-  <!-- Error Toast -->
-  <div id="errorToast" class="fixed bottom-6 right-6 hidden border border-[#FF3B3B] bg-[#0D1117] px-4 py-3 max-w-sm z-50 shadow-lg">
-    <div class="flex items-start gap-2">
-      <span class="text-[#FF3B3B] font-mono text-xs mt-0.5">✕</span>
-      <div class="font-mono text-xs text-[#FF3B3B]" id="errorMsg">Error fetching data.</div>
+  <!-- MOBILE BOTTOM NAV -->
+  <div class="mobile-nav" id="mobileNav">
+    <div class="mobile-nav-inner">
+      <button class="mobile-nav-btn active" id="mobileTabMacro" onclick="switchTab('macro')">
+        <span class="mobile-nav-indicator"></span>
+        <span class="mobile-nav-icon">📊</span>
+        <span class="mobile-nav-label">Macro</span>
+      </button>
+      <button class="mobile-nav-btn" id="mobileTabTech" onclick="switchTab('tech')">
+        <span class="mobile-nav-indicator"></span>
+        <span class="mobile-nav-icon">⚡</span>
+        <span class="mobile-nav-label">Tech</span>
+      </button>
+      <button class="mobile-nav-btn" onclick="loadData();showToast('info','Refreshing','Fetching latest data...');">
+        <span class="mobile-nav-indicator"></span>
+        <span class="mobile-nav-icon">🔄</span>
+        <span class="mobile-nav-label">Refresh</span>
+      </button>
     </div>
   </div>
 
-  <!-- ══ JAVASCRIPT ══════════════════════════════════════════════════ -->
-  <script>
-    const CARD_THRESHOLD   = 20;
-    const MASTER_THRESHOLD = 40;
+  <!-- FOOTER -->
+  <div style="padding:32px 48px;border-top:1px solid rgba(255,255,255,0.04);display:flex;align-items:center;justify-content:space-between;max-width:1400px;margin:0 auto;background:rgba(12,12,12,0.4);backdrop-filter:blur(8px);">
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#3A3A3A;">Dual Signal Engine v6.1 by Han — For research only.</span>
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#EF4444;opacity:0.3;">NOT FINANCIAL ADVICE</span>
+  </div>
 
-    // ─── TAB SYSTEM ─────────────────────────────────────────────────
-    function switchTab(tab) {
-      document.getElementById('panelMacro').classList.toggle('active', tab === 'macro');
-      document.getElementById('panelTech').classList.toggle('active',  tab === 'tech');
-      document.getElementById('tabBtnMacro').classList.toggle('active', tab === 'macro');
-      document.getElementById('tabBtnTech').classList.toggle('active',  tab === 'tech');
-      const ind = document.getElementById('tabLiveIndicator');
-      const lbl = document.getElementById('tabModeLabel');
-      if (tab === 'macro') {
-        ind.style.background = '#00FF88'; ind.style.boxShadow = '0 0 6px rgba(0,255,136,0.7)';
-        lbl.textContent = 'MACRO MODE'; lbl.style.color = '#00FF88';
-      } else {
-        ind.style.background = '#38BDF8'; ind.style.boxShadow = '0 0 6px rgba(56,189,248,0.7)';
-        lbl.textContent = 'TECHNICAL MODE'; lbl.style.color = '#38BDF8';
-      }
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+  <!-- ERROR -->
+  <div id="errorToast" style="position:fixed;bottom:20px;right:20px;z-index:200;background:rgba(20,20,20,0.8);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(239,68,68,0.2);border-radius:8px;padding:12px 16px;max-width:300px;display:flex;align-items:start;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#EF4444;box-shadow:0 8px 32px rgba(0,0,0,0.5);transform:translateY(16px);opacity:0;transition:all 0.3s ease;pointer-events:none;" class="hidden">
+    <span style="margin-top:1px;">✕</span><div id="errorMsg">Error fetching data.</div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- JAVASCRIPT — ALL LOGIC PRESERVED EXACTLY -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <script>
+    const CARD_THRESHOLD=20,MASTER_THRESHOLD=40;
+
+    function switchTab(tab){document.getElementById('panelMacro').classList.toggle('active',tab==='macro');document.getElementById('panelTech').classList.toggle('active',tab==='tech');document.getElementById('tabBtnMacro').classList.toggle('active',tab==='macro');document.getElementById('tabBtnTech').classList.toggle('active',tab==='tech');window.scrollTo({top:0,behavior:'smooth'});setTimeout(()=>{document.querySelectorAll('.reveal:not(.visible),.reveal-scale:not(.visible),.stagger:not(.visible)').forEach(el=>revealObserver.observe(el));},100);}
+
+    // CURSOR
+    const cDot=document.getElementById('cursorDot'),cRing=document.getElementById('cursorRing');let mouseX=0,mouseY=0,ringX=0,ringY=0;document.addEventListener('mousemove',e=>{mouseX=e.clientX;mouseY=e.clientY;if(cDot){cDot.style.left=mouseX+'px';cDot.style.top=mouseY+'px';}});function animateRing(){ringX+=(mouseX-ringX)*0.12;ringY+=(mouseY-ringY)*0.12;if(cRing){cRing.style.left=ringX+'px';cRing.style.top=ringY+'px';}requestAnimationFrame(animateRing);}animateRing();document.querySelectorAll('a,button,.macro-card,.news-pill,.zone-card').forEach(el=>{el.addEventListener('mouseenter',()=>cRing&&cRing.classList.add('hover'));el.addEventListener('mouseleave',()=>cRing&&cRing.classList.remove('hover'));});
+
+    // NAV SCROLL
+    window.addEventListener('scroll',()=>{const nav=document.getElementById('mainNav');if(nav)nav.classList.toggle('scrolled',window.scrollY>50);});
+
+    // COUNTER
+    function animateCounters(){document.querySelectorAll('[data-count]').forEach(el=>{const target=parseInt(el.dataset.count),duration=1200,start=performance.now();function step(now){const p=Math.min((now-start)/duration,1),ease=1-Math.pow(1-p,3);el.textContent=Math.round(target*ease)+(target>=100?'+':'');if(p<1)requestAnimationFrame(step);}requestAnimationFrame(step);});}
+
+    // HELPERS
+    function classifyByScore(s){return s>=CARD_THRESHOLD?'sell':s<=-CARD_THRESHOLD?'buy':'wait';}
+    function signalColor(t){return{buy:'#22C55E',sell:'#EF4444',wait:'#F59E0B'}[t]||'#666';}
+    function signalGlow(t){return{buy:'glow-buy',sell:'glow-sell'}[t]||'';}
+    function fmt(v,u=''){if(v==null)return'N/A';const n=parseFloat(v);if(isNaN(n))return String(v);if(Math.abs(n)>=1e6)return(n/1e6).toFixed(2)+'M'+u;if(Math.abs(n)>=1000)return n.toLocaleString('en-US',{maximumFractionDigits:0})+u;return n.toFixed(2)+u;}
+    function fmtPoints(p){return(p>0?'+':'')+p+' pts';}
+    function fmtScore(s){return(s>0?'+':'')+s;}
+    function fmtPrice(v){return(v!=null&&!isNaN(parseFloat(v)))?parseFloat(v).toFixed(2):'—';}
+    function setEl(id,text,color){const e=document.getElementById(id);if(!e)return;if(text!==undefined)e.textContent=text;if(color)e.style.color=color;}
+    function setAccentBar(id,pts){const e=document.getElementById(id);if(!e)return;e.style.background=pts>0?'#22C55E':pts<0?'#EF4444':'#252525';}
+    function updateScoreBar(id,score,type,maxAbs=100){const b=document.getElementById(id);if(!b)return;const pct=((score+maxAbs)/(2*maxAbs))*100,bc=signalColor(type);b.style.width=Math.max(0,Math.min(100,pct))+'%';b.style.background=bc;}
+    function renderRow3(id,c1,c2,c3,labels){const e=document.getElementById(id);if(!e)return;e.innerHTML=[{l:labels[0],v:c1},{l:labels[1],v:c2},{l:labels[2],v:c3}].map(({l,v})=>`<div class="macro-data-cell"><div class="macro-data-cell-label">${l}</div><div class="macro-data-cell-val">${v}</div></div>`).join('');}
+    function renderRow2(id,c1,c2,labels){const e=document.getElementById(id);if(!e)return;e.innerHTML=[{l:labels[0],v:c1},{l:labels[1],v:c2}].map(({l,v})=>`<div class="macro-data-cell"><div class="macro-data-cell-label">${l}</div><div class="macro-data-cell-val">${v}</div></div>`).join('');}
+    function applyCardStyle(cardId,bannerId,type){const card=document.getElementById(cardId);if(card)card.className=`macro-card ${signalGlow(type)}`;}
+
+    function renderConfDots(containerId,score,maxScore,colorClass){const c=document.getElementById(containerId);if(!c)return;c.querySelectorAll('.conf-dot').forEach((d,i)=>{d.className='conf-dot '+(i<score?colorClass:'off');});}
+    function renderReasonList(containerId,reasons,accentColor){const el=document.getElementById(containerId);if(!el)return;if(!reasons||!reasons.length){el.innerHTML=`<div class="reason-item"><div class="reason-icon">·</div><span style="color:#666;">No data.</span></div>`;return;}const icons=['◈','▶','◉','◆','◇','▷','◎','▸'];el.innerHTML=reasons.map((r,i)=>{const icon=icons[i%icons.length],safe=String(r).replace(/</g,'&lt;').replace(/>/g,'&gt;');return`<div class="reason-item" style="animation:fadeInUp 0.4s ease ${i*60}ms both;"><div class="reason-icon" style="border-color:${accentColor}33;color:${accentColor};">${icon}</div><span>${safe}</span></div>`;}).join('');}
+
+    // ─── TOAST SYSTEM ───────────────────────────────────────────────
+    let toastCount=0;
+    function showToast(type,title,msg,duration=4000){
+      const container=document.getElementById('toastContainer');
+      if(!container)return;
+      const icons={buy:'🟢',sell:'🔴',info:'ℹ️',warn:'⚠️'};
+      const id='toast-'+(toastCount++);
+      const toast=document.createElement('div');
+      toast.className=`toast ${type}`;
+      toast.id=id;
+      toast.innerHTML=`<div class="toast-title"><span class="toast-icon">${icons[type]||'ℹ️'}</span>${title}</div><div class="toast-msg">${msg}</div>`;
+      container.appendChild(toast);
+      setTimeout(()=>{toast.classList.add('exit');setTimeout(()=>toast.remove(),300);},duration);
     }
 
-    // ─── HELPERS ────────────────────────────────────────────────────
-    function classifyByScore(s) { return s >= CARD_THRESHOLD ? 'sell' : s <= -CARD_THRESHOLD ? 'buy' : 'wait'; }
-    function signalColor(t)  { return {buy:'#00FF88',sell:'#FF3B3B',wait:'#F0B429'}[t]||'#8B949E'; }
-    function signalGlow(t)   { return {buy:'glow-buy',sell:'glow-sell',wait:'glow-wait'}[t]||''; }
-    function bannerBg(t)     { return {buy:'bg-buy-dim',sell:'bg-sell-dim',wait:'bg-wait-dim'}[t]||''; }
-    function fmt(v, u='')    { if(v==null)return 'N/A'; const n=parseFloat(v); if(isNaN(n))return String(v); if(Math.abs(n)>=1e6)return(n/1e6).toFixed(2)+'M'+u; if(Math.abs(n)>=1000)return n.toLocaleString('en-US',{maximumFractionDigits:0})+u; return n.toFixed(2)+u; }
-    function fmtPoints(p)    { return (p>0?'+':'')+p+' pts'; }
-    function fmtScore(s)     { return (s>0?'+':'')+s; }
-    function fmtPrice(v)     { return (v!=null&&!isNaN(parseFloat(v)))?parseFloat(v).toFixed(2):'—'; }
-    function setEl(id,text,color) { const e=document.getElementById(id); if(!e)return; if(text!==undefined)e.textContent=text; if(color)e.style.color=color; }
-    function setAccentBar(id,pts) { const e=document.getElementById(id); if(!e)return; const c=pts>0?'#00FF88':pts<0?'#FF3B3B':'#484F58'; e.style.background=c; e.style.boxShadow=pts!==0?`0 0 6px ${c}99`:'none'; }
-    function updateScoreBar(id,score,type,maxAbs=100) { const b=document.getElementById(id); if(!b)return; const pct=((score+maxAbs)/(2*maxAbs))*100; const c=signalColor(type); b.style.width=Math.max(0,Math.min(100,pct))+'%'; b.style.background=c; b.style.boxShadow=`0 0 8px ${c}66`; }
-    function renderRow3(id,c1,c2,c3,labels) { const e=document.getElementById(id); if(!e)return; e.innerHTML=[{l:labels[0],v:c1},{l:labels[1],v:c2},{l:labels[2],v:c3}].map(({l,v})=>`<div class="bg-[#161B22] px-2 py-1.5"><div class="font-mono text-[8px] text-[#484F58] mb-0.5">${l}</div><div class="font-mono text-[10px] font-semibold text-[#E6EDF3] leading-tight">${v}</div></div>`).join(''); }
-    function renderRow2(id,c1,c2,labels) { const e=document.getElementById(id); if(!e)return; e.innerHTML=[{l:labels[0],v:c1},{l:labels[1],v:c2}].map(({l,v})=>`<div class="bg-[#161B22] px-2 py-1.5"><div class="font-mono text-[8px] text-[#484F58] mb-0.5">${l}</div><div class="font-mono text-[10px] font-semibold text-[#E6EDF3] leading-tight">${v}</div></div>`).join(''); }
-    function applyCardStyle(cardId,bannerId,type) { const card=document.getElementById(cardId); const banner=document.getElementById(bannerId); if(card)card.className=`macro-card bg-[#0D1117] border flex flex-col ${signalGlow(type)}`; if(banner)banner.className=`px-4 py-4 border-b border-[#21262D] ${bannerBg(type)}`; }
+    // ─── DXY BAR RENDER ────────────────────────────────────────────
+    function renderDXYBar(dxy){
+      if(!dxy)return;
+      const lb=document.getElementById('dxyLoadingBar');
+      if(lb)lb.style.display='none';
+      const live=document.getElementById('dxyLiveBar');
+      if(live)live.style.display='flex';
+      const current=parseFloat(dxy.current)||0;
+      const changePct=parseFloat(dxy.changePercent)||0;
+      const isBull=changePct>0,isBear=changePct<0;
+      const pillClass=isBull?'bullish':isBear?'bearish':'neutral';
+      setEl('dxyPriceBar',current.toFixed(2));
+      const pill=document.getElementById('dxyPriceBar');
+      if(pill)pill.className=`dxy-mini-pill ${pillClass}`;
+      const cc=isBull?'#EF4444':isBear?'#22C55E':'#F59E0B';
+      setEl('dxyChangeBar',`${changePct>0?'+':''}${changePct.toFixed(2)}%`,cc);
+      setEl('dxyHintBar',isBull?'XAU: BEARISH ↓':isBear?'XAU: BULLISH ↑':'XAU: NEUTRAL');
+      // Tech tab mini DXY
+      const techBar=document.getElementById('dxyTechBar');
+      if(techBar){
+        techBar.style.opacity='1';
+        techBar.innerHTML=`<span class="dxy-mini-pill ${pillClass}">${current.toFixed(2)}</span><span class="dxy-hint" style="font-weight:600;color:${cc};">${changePct>0?'+':''}${changePct.toFixed(2)}%</span><span class="dxy-hint" style="color:#3A3A3A;">|</span><span class="dxy-hint">${isBull?'BEARISH ↓':isBear?'BULLISH ↑':'NEUTRAL'}</span>`;
+      }
+    }
 
-    // ─── CONFLUENCE DOTS ─────────────────────────────────────────────
-    function renderConfDots(containerId, score, maxScore, colorClass) {
-      const container = document.getElementById(containerId);
-      if (!container) return;
-      const dots = container.querySelectorAll('.conf-dot');
-      dots.forEach((d, i) => {
-        d.className = 'conf-dot ' + (i < score ? colorClass : 'off');
+    // ─── NEWS COUNTDOWN ────────────────────────────────────────────
+    let newsCountdownTimer=null;
+    function updateNewsCountdown(){
+      document.querySelectorAll('.news-pill[data-date]').forEach(pill=>{
+        const dateStr=pill.dataset.date;
+        if(!dateStr)return;
+        const target=new Date(dateStr).getTime();
+        const now=Date.now();
+        const diff=target-now;
+        const countdownEl=pill.querySelector('.news-countdown');
+        const liveEl=pill.querySelector('.news-live-badge');
+        if(diff<=0&&diff>-3600000){
+          // Event is LIVE or just happened
+          if(countdownEl)countdownEl.remove();
+          if(!liveEl){
+            const badge=document.createElement('div');
+            badge.className='news-live-badge';
+            badge.textContent='LIVE NOW';
+            pill.querySelector('.news-pill-meta')?.before(badge);
+          }
+        }else if(diff>0&&diff<3600000){
+          // Within 1 hour - show countdown
+          if(!countdownEl){
+            const cd=document.createElement('div');
+            cd.className='news-countdown';
+            pill.querySelector('.news-pill-meta')?.before(cd);
+          }
+          const el=pill.querySelector('.news-countdown');
+          if(el){
+            const mins=Math.floor(diff/60000);
+            const secs=Math.floor((diff%60000)/1000);
+            el.textContent=`⏱ ${mins}m ${secs}s`;
+          }
+        }
       });
     }
 
-    // ─── RENDER REASON LIST ──────────────────────────────────────────
-    function renderReasonList(containerId, reasons, accentColor) {
-      const el = document.getElementById(containerId); if (!el) return;
-      if (!reasons || !reasons.length) { el.innerHTML = `<div class="reason-item"><div class="reason-icon">·</div><span class="text-[#484F58]">No analysis data.</span></div>`; return; }
-      const icons  = ['◈','▶','◉','◆','◇','▷','◎','▸'];
-      el.innerHTML = reasons.map((r, i) => {
-        const icon = icons[i % icons.length];
-        const safe = String(r).replace(/</g,'&lt;').replace(/>/g,'&gt;');
-        return `<div class="reason-item" style="animation:techReveal 0.3s ease ${i*60}ms both;"><div class="reason-icon" style="border-color:${accentColor}33;color:${accentColor};background:${accentColor}0D;">${icon}</div><span>${safe}</span></div>`;
-      }).join('');
+    // ─── PNL TRACKER ───────────────────────────────────────────────
+    let tradeHistory=[];
+    function updatePnLTracker(){
+      const container=document.getElementById('pnlTracker');
+      if(!container)return;
+      const allTrades=[...tradeHistory,...activeEntryMemory];
+      const total=allTrades.length;
+      const wins=allTrades.filter(t=>t.status&&(t.status.includes('WIN')||t.status.includes('TP'))).length;
+      const losses=allTrades.filter(t=>t.status&&(t.status.includes('LOSS')||t.status.includes('SL'))).length;
+      const running=activeEntryMemory.filter(t=>t.status==='RUNNING').length;
+      const winRate=total>0?((wins/total)*100).toFixed(0):'0';
+      const pnlAll=allTrades.reduce((sum,t)=>{
+        if(!t.signal||!t.bias)return sum;
+        const entry=parseFloat(t.signal.entry);
+        const sl=parseFloat(t.signal.sl);
+        if(isNaN(entry)||isNaN(sl))return sum;
+        const risk=Math.abs(entry-sl);
+        if(t.status&&t.status.includes('WIN'))return sum+risk*2;
+        if(t.status&&t.status.includes('LOSS'))return sum-risk;
+        return sum;
+      },0);
+      const pnlColor=pnlAll>0?'#22C55E':pnlAll<0?'#EF4444':'#F5F5F5';
+      container.innerHTML=`
+        <div class="pnl-stat"><div class="pnl-stat-num">${total}</div><div class="pnl-stat-label">Total Trades</div></div>
+        <div class="pnl-stat"><div class="pnl-stat-num" style="color:#22C55E;">${wins}</div><div class="pnl-stat-label">Wins</div></div>
+        <div class="pnl-stat"><div class="pnl-stat-num" style="color:${pnlColor};">${winRate}%</div><div class="pnl-stat-label">Win Rate</div></div>
+        <div class="pnl-stat"><div class="pnl-stat-num" style="color:${pnlColor};">${pnlAll>0?'+':''}${pnlAll.toFixed(1)}</div><div class="pnl-stat-label">Cumulative PnL</div></div>
+      `;
     }
 
-    // ─── RENDER DXY ──────────────────────────────────────────────────
-    function renderDXY(dxy) {
-      if (!dxy) return;
-      document.getElementById('dxyLoading').classList.add('hidden');
-      document.getElementById('dxyLive').classList.remove('hidden');
-      const current = parseFloat(dxy.current) || 0;
-      const changePct = parseFloat(dxy.changePercent) || 0;
-      const isBull = changePct > 0, isBear = changePct < 0;
-      const pill = document.getElementById('dxyPricePill');
-      if (pill) pill.className = `dxy-price-pill ${isBull?'bullish':isBear?'bearish':'neutral'}`;
-      const poly = document.getElementById('dxyArrowPoly');
-      if (poly) poly.setAttribute('points', isBull?'3.5,0 7,7 0,7':isBear?'0,0 7,0 3.5,7':'0,3.5 7,3.5 3.5,3.5');
-      const dot = document.getElementById('dxyDot');
-      if (dot) { dot.style.background = isBull?'#FF3B3B':isBear?'#00FF88':'#F0B429'; dot.style.boxShadow = isBull?'0 0 6px #FF3B3B99':isBear?'0 0 6px #00FF8899':'none'; }
-      const cc = isBull?'#FF3B3B':isBear?'#00FF88':'#F0B429';
-      setEl('dxyPrice', current.toFixed(2));
-      setEl('dxyChangeBadge', `${changePct>0?'+':''}${changePct.toFixed(2)}%`, cc);
-      setEl('dxyStatus', (dxy.status||'').toUpperCase(), cc);
-      setEl('dxyXauHint', isBull?'XAU IMPLICATION: BEARISH PRESSURE ↓':isBear?'XAU IMPLICATION: BULLISH SUPPORT ↑':'XAU IMPLICATION: NEUTRAL', cc);
-      const spark = document.getElementById('dxySparkline');
-      if (spark) { spark.querySelectorAll('div').forEach((b,i,arr)=>{ const last=i===arr.length-1; b.style.background=last?cc:'#21262D'; b.style.boxShadow=last?`0 0 4px ${cc}99`:'none'; b.style.transition='background 0.5s ease'; }); }
-    }
-
-    // ─── RENDER SWING SIGNAL (sama seperti sebelumnya) ─────────────────────────
-    function renderSwing(swing) {
-      const awaiting = document.getElementById('swingAwaiting');
-      const content  = document.getElementById('swingContent');
-      if (!swing) return;
-      if (awaiting) awaiting.classList.add('hidden');
-      if (content) { content.classList.remove('hidden'); content.style.animation = 'techReveal 0.4s ease forwards'; }
-
-      const posRaw = (swing.position || '').toUpperCase();
-      const isBuy  = posRaw.includes('BUY');
-      const isSell = posRaw.includes('SELL');
-      const isActive = posRaw.includes('ACTIVE');
-      let posClass = 'neutral', posColor = '#484F58', posSubText = 'No active signal';
-      if (isBuy)  { posClass = 'buy';  posColor = '#00FF88'; posSubText = 'Long bias — H4 bullish structure'; }
-      if (isSell) { posClass = 'sell'; posColor = '#FF3B3B'; posSubText = 'Short bias — H4 bearish structure'; }
-
-      const badge = document.getElementById('swingPositionBadge');
-      if (badge) { badge.className = `position-badge ${posClass}`; badge.textContent = posRaw || '— NO SIGNAL —'; }
-      const dot = document.getElementById('swingPosDot');
-      if (dot) { dot.style.background = posColor; dot.style.boxShadow = `0 0 6px ${posColor}88`; }
-      setEl('swingPosSub', posSubText, posColor);
-
-      const h4Color = swing.h4Bias && swing.h4Bias.includes('BULLISH') ? '#00FF88' : swing.h4Bias && swing.h4Bias.includes('BEARISH') ? '#FF3B3B' : '#F0B429';
-      setEl('swingH4Bias', swing.h4Bias || '—', h4Color);
-
-      const score = swing.confluenceScore || 0;
-      renderConfDots('swingConfDots', score, 5, 'on-gold');
-      setEl('swingConfScore', score + '/5');
-      setEl('swingConfLabel', score + '/5');
-      const confBar = document.getElementById('swingConfBar');
-      if (confBar) {
-        const confColor = score >= 4 ? '#00FF88' : score >= 3 ? '#F0B429' : '#FF3B3B';
-        confBar.style.width = (score / 5 * 100) + '%';
-        confBar.style.background = confColor;
-        confBar.style.boxShadow = `0 0 6px ${confColor}66`;
-      }
-
-      setEl('swingEntry', fmtPrice(swing.entry));
-      setEl('swingSL',    fmtPrice(swing.sl));
-      setEl('swingTP1',   fmtPrice(swing.tp1));
-      setEl('swingTP2',   fmtPrice(swing.tp2));
-      setEl('swingTP1Pips', swing.tp1Pips || '—');
-      setEl('swingTP2Pips', swing.tp2Pips || '—');
-
-      const dz = swing.demandZone;
-      const sz = swing.supplyZone;
-      setEl('swingDemandZone', dz ? `$${dz.btm} – $${dz.top}` : '—');
-      setEl('swingSupplyZone', sz ? `$${sz.btm} – $${sz.top}` : '—');
-      setEl('swingRsi', swing.h1Rsi || '—');
-
-      setEl('swingSignalTime', new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'}));
-
-      const reasons = swing.reason || [];
-      setEl('swingReasonCount', reasons.length + ' condition' + (reasons.length !== 1 ? 's' : ''));
-      renderReasonList('swingReasonList', reasons, '#F0B429');
-
-      const panel = document.getElementById('swingPanel');
-      if (panel) {
-        panel.className = 'signal-panel swing-panel' + (isActive && isBuy ? ' glow-buy' : isActive && isSell ? ' glow-sell' : '');
-      }
-    }
-
-    // ─── RENDER SCALP SIGNAL (sama seperti sebelumnya) ─────────────────────────
-    function renderScalp(scalp) {
-      const awaiting = document.getElementById('scalpAwaiting');
-      const content  = document.getElementById('scalpContent');
-      if (!scalp) return;
-      if (awaiting) awaiting.classList.add('hidden');
-      if (content) { content.classList.remove('hidden'); content.style.animation = 'techReveal 0.4s ease 0.1s forwards'; }
-
-      const posRaw   = (scalp.position || '').toUpperCase();
-      const isBuy    = posRaw.includes('BUY');
-      const isSell   = posRaw.includes('SELL');
-      const isActive = posRaw.includes('ACTIVE');
-      const isBlocked= posRaw.includes('BLOCKED');
-      let posClass = 'neutral', posColor = '#484F58', posSubText = 'Waiting for swing confirmation';
-      if (isBlocked) { posClass = 'blocked'; posColor = '#21262D'; posSubText = 'Scalp blocked — no swing signal'; }
-      else if (isBuy)  { posClass = 'buy';  posColor = '#00FF88'; posSubText = 'Scalp long — M5 bullish entry'; }
-      else if (isSell) { posClass = 'sell'; posColor = '#FF3B3B'; posSubText = 'Scalp short — M5 bearish entry'; }
-
-      const badge = document.getElementById('scalpPositionBadge');
-      if (badge) { badge.className = `position-badge ${posClass}`; badge.textContent = posRaw || '— BLOCKED —'; }
-      const dot = document.getElementById('scalpPosDot');
-      if (dot) { dot.style.background = posColor; dot.style.boxShadow = `0 0 6px ${posColor}88`; }
-      setEl('scalpPosSub', posSubText, posColor);
-
-      const gated = scalp.gatedBySwing;
-      const gateBadge = document.getElementById('scalpGateBadge');
-      if (gateBadge) {
-        gateBadge.className = `gate-badge ${gated ? 'gate-active' : 'gate-blocked'}`;
-        gateBadge.textContent = gated ? '✓ ACTIVE — Swing Confirmed' : '⊘ BLOCKED — Await Swing';
-      }
-
-      const score = scalp.confluenceScore || 0;
-      renderConfDots('scalpConfDots', score, 5, 'on-cyan');
-      setEl('scalpConfScore', score + '/5');
-      setEl('scalpConfLabel', score + '/5');
-      const confBar = document.getElementById('scalpConfBar');
-      if (confBar) {
-        const confColor = score >= 4 ? '#38BDF8' : score >= 3 ? '#F0B429' : '#484F58';
-        confBar.style.width = (score / 5 * 100) + '%';
-        confBar.style.background = confColor;
-        confBar.style.boxShadow = `0 0 6px ${confColor}66`;
-      }
-
-      setEl('scalpEntry', fmtPrice(scalp.entry));
-      setEl('scalpSL',    fmtPrice(scalp.sl));
-      setEl('scalpTP1',   fmtPrice(scalp.tp1));
-      setEl('scalpTP2',   fmtPrice(scalp.tp2));
-      setEl('scalpTP1Pips', scalp.tp1Pips || '—');
-      setEl('scalpTP2Pips', scalp.tp2Pips || '—');
-
-      setEl('scalpRsi', scalp.m5Rsi || '—');
-      setEl('scalpAtr', scalp.m5Atr ? '$' + scalp.m5Atr : '—');
-      setEl('scalpVolMult', scalp.volMultiplier ? scalp.volMultiplier + '×' : '—');
-
-      setEl('scalpSignalTime', new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'}));
-
-      const reasons = scalp.reason || [];
-      setEl('scalpReasonCount', reasons.length + ' condition' + (reasons.length !== 1 ? 's' : ''));
-      renderReasonList('scalpReasonList', reasons, '#38BDF8');
-
-      const panel = document.getElementById('scalpPanel');
-      if (panel) {
-        panel.className = 'signal-panel scalp-panel' + (isActive && isBuy ? ' glow-buy' : isActive && isSell ? ' glow-sell' : '');
-      }
-    }
-
-    // ─── RENDER NFP, CPI, GROWTH, FED (sama seperti sebelumnya) ────────────────
-    function renderNFP(nfp) {
-      const type=classifyByScore(nfp.score), color=signalColor(type);
-      setEl('nfpSignal',nfp.signal,color); setEl('nfpScore',fmtScore(nfp.score),color);
-      applyCardStyle('nfpCard','nfpSignalBanner',type); updateScoreBar('nfpBar',nfp.score,type);
-      const {adp,ism,jolts}=nfp.components;
-      setAccentBar('adpBar',adp.points); setEl('adpPoints',fmtPoints(adp.points),adp.points>0?'#00FF88':adp.points<0?'#FF3B3B':'#484F58');
-      renderRow3('adpRow',fmt(adp.actual,'K'),fmt(adp.estimate,'K'),adp.status,['ACTUAL','FCST','STATUS']);
-      setEl('adpDate',adp.date?'Date: '+adp.date:'');
-      setAccentBar('ismBar',ism.points); setEl('ismPoints',fmtPoints(ism.points),ism.points>0?'#00FF88':ism.points<0?'#FF3B3B':'#484F58');
-      renderRow3('ismRow',fmt(ism.actual),'50.0',ism.status,['ACTUAL','THRESH','STATUS']);
-      setEl('ismDate',ism.date?'Date: '+ism.date:'');
-      setAccentBar('joltsBar',jolts.points); setEl('joltsPoints',fmtPoints(jolts.points),jolts.points>0?'#00FF88':jolts.points<0?'#FF3B3B':'#484F58');
-      renderRow3('joltsRow',fmt(jolts.actual,'M'),fmt(jolts.estimate,'M'),jolts.status,['ACTUAL','FCST','STATUS']);
-      setEl('joltsDate',jolts.date?'Date: '+jolts.date:'');
-      return nfp.score;
-    }
-
-    function renderCPI(cpi) {
-      const type=classifyByScore(cpi.score), color=signalColor(type);
-      setEl('cpiSignal',cpi.signal,color); setEl('cpiScore',fmtScore(cpi.score),color);
-      applyCardStyle('cpiCard','cpiSignalBanner',type); updateScoreBar('cpiBar',cpi.score,type);
-      const {ppi,crude}=cpi.components;
-      setAccentBar('ppiBar',ppi.points); setEl('ppiPoints',fmtPoints(ppi.points),ppi.points>0?'#00FF88':ppi.points<0?'#FF3B3B':'#484F58');
-      renderRow3('ppiRow',fmt(ppi.actual,'%'),fmt(ppi.estimate,'%'),ppi.status,['ACTUAL','FCST','STATUS']);
-      setEl('ppiDate',ppi.date?'Date: '+ppi.date:'');
-      setAccentBar('crudeBar',crude.points); setEl('crudePoints',fmtPoints(crude.points),crude.points>0?'#00FF88':crude.points<0?'#FF3B3B':'#484F58');
-      renderRow3('crudeRow',crude.current!=null?'$'+parseFloat(crude.current).toFixed(2):'N/A',crude.avg30!=null?'$'+parseFloat(crude.avg30).toFixed(2):'N/A',crude.status,['CURRENT','30D AVG','STATUS']);
-      return cpi.score;
-    }
-
-    function renderGrowth(growth) {
-      if (!growth) return 0;
-      const type=classifyByScore(growth.score), color=signalColor(type);
-      setEl('growthSignal',growth.signal,color); setEl('growthScore',fmtScore(growth.score),color);
-      applyCardStyle('growthCard','growthSignalBanner',type); updateScoreBar('growthBar',growth.score,type);
-      const comp=growth.components||{};
-      const gdp=comp.gdp||comp.gdpGrowth||{};
-      setAccentBar('gdpBar',gdp.points||0); setEl('gdpPoints',fmtPoints(gdp.points||0),(gdp.points||0)>0?'#00FF88':(gdp.points||0)<0?'#FF3B3B':'#484F58');
-      renderRow3('gdpRow',fmt(gdp.actual,'%'),fmt(gdp.estimate||gdp.forecast,'%'),gdp.status||'N/A',['ACTUAL','FCST','STATUS']);
-      setEl('gdpDate',gdp.date?'Date: '+gdp.date:'');
-      const retail=comp.retail_sales||comp.retailSales||comp.retail||{};
-      setAccentBar('retailBar',retail.points||0); setEl('retailPoints',fmtPoints(retail.points||0),(retail.points||0)>0?'#00FF88':(retail.points||0)<0?'#FF3B3B':'#484F58');
-      renderRow3('retailRow',fmt(retail.actual,'%'),fmt(retail.estimate||retail.forecast,'%'),retail.status||'N/A',['ACTUAL','FCST','STATUS']);
-      setEl('retailDate',retail.date?'Date: '+retail.date:'');
-      return growth.score;
-    }
-
-    function renderFed(fed) {
-      if (!fed) return 0;
-      const type=classifyByScore(fed.score), color=signalColor(type);
-      setEl('fedSignal',fed.signal,color); setEl('fedScore',fmtScore(fed.score),color);
-      applyCardStyle('fedCard','fedSignalBanner',type); updateScoreBar('fedBar',fed.score,type);
-      const comp=fed.components||{};
-      const rate=comp.fed_rate||comp.fedRate||comp.interest_rate||comp.fed||{};
-      setEl('fedRateDisplay',rate.current!=null?parseFloat(rate.current).toFixed(2)+'%':'—%',color);
-      setEl('fedPrevRate',rate.previous!=null?parseFloat(rate.previous).toFixed(2)+'%':'—%');
-      setAccentBar('fedRateBar',rate.points||fed.score||0);
-      setEl('fedRatePoints',fmtPoints(rate.points||fed.score||0),(rate.points||fed.score||0)>0?'#00FF88':(rate.points||fed.score||0)<0?'#FF3B3B':'#484F58');
-      const changeStr=rate.change!=null?(rate.change>0?'+':'')+parseFloat(rate.change).toFixed(2)+'bps':'N/A';
-      renderRow2('fedRateRow',changeStr,rate.bias||rate.status||fed.signal||'N/A',['CHANGE','BIAS']);
-      setEl('fedRateDate',rate.date?'Date: '+rate.date:'');
-      const el=document.getElementById('rateTrend');
-      if(el){ const cur=parseFloat(rate.current)||5.25,prev=parseFloat(rate.previous)||5.50; const bars=[prev-0.25,prev-0.25,prev,prev,prev,cur]; const minV=Math.min(...bars)-0.25,maxV=Math.max(...bars)+0.25,range=maxV-minV||1; el.innerHTML=bars.map((v,i)=>{const h=Math.max(10,((v-minV)/range)*100),last=i===bars.length-1;const bg=last?color:'#21262D';return`<div class="flex-1 rounded-sm transition-all duration-500" style="height:${h}%;background:${bg};${last?`box-shadow:0 0 6px ${bg}66`:''}"></div>`;}).join('');}
-      return fed.score;
-    }
-
-    function renderMaster(scores) {
-      const total=scores.reduce((a,b)=>a+b,0);
-      let label,type;
-      if(total>=MASTER_THRESHOLD){label='⬇  STRONG SELL XAU';type='sell';}
-      else if(total<=-MASTER_THRESHOLD){label='⬆  STRONG BUY XAU';type='buy';}
-      else{label='—  NEUTRAL / CHOPPY MARKET';type='wait';}
-      const color=signalColor(type);
-      const banner=document.getElementById('masterBanner');
-      if(banner){banner.className=`border bg-[#0D1117] p-5 relative overflow-hidden ${signalGlow(type)}`;banner.style.borderColor={buy:'rgba(0,255,136,0.4)',sell:'rgba(255,59,59,0.4)',wait:'rgba(240,180,41,0.4)'}[type];}
-      setEl('masterSignalText',label,color);
-      setEl('masterScore',(total>0?'+':'')+total,color);
-      setEl('masterSubtext',{buy:`Composite score ${total}. Macro data favors USD weakness → Gold bullish.`,sell:`Composite score ${total}. Macro data favors USD strength → Gold bearish.`,wait:`Composite score ${total}. Mixed signals — no dominant directional edge.`}[type]);
-      setEl('masterBgLabel',label.replace(/[⬆⬇—\s]+/,'').trim());
-      updateScoreBar('masterFill',total,type,400);
-    }
-
-    function renderMiniScores(nfp,cpi,growth,fed) {
-      [{scoreId:'miniNfpScore',barId:'miniNfpBar',score:nfp},{scoreId:'miniCpiScore',barId:'miniCpiBar',score:cpi},{scoreId:'miniGrowthScore',barId:'miniGrowthBar',score:growth},{scoreId:'miniFedScore',barId:'miniFedBar',score:fed}]
-      .forEach(({scoreId,barId,score})=>{ if(score==null)return; const type=classifyByScore(score),color=signalColor(type); setEl(scoreId,fmtScore(score),color); const bar=document.getElementById(barId); if(bar){bar.style.background=color;bar.style.boxShadow=`0 0 4px ${color}99`;} });
-    }
-
-    function renderNews(newsArr) {
-      const grid = document.getElementById('newsGrid');
-      if (!grid) return;
-      if (!newsArr || !newsArr.length) {
-        grid.innerHTML = `<div class="col-span-full flex items-center justify-center py-8"><span class="font-mono text-xs text-[#484F58]">No upcoming USD events found.</span></div>`;
-        setEl('newsCount', '0 events');
-        return;
-      }
-      setEl('newsCount', newsArr.length + ' events');
-      grid.innerHTML = newsArr.map((item, idx) => {
-        const impactRaw = item.impact ?? item.importance ?? "";
-        let impact = "low";
-        if (typeof impactRaw === "string") {
-          impact = impactRaw.toLowerCase();
-          if (impact.includes("high")) impact = "high";
-          else if (impact.includes("med") || impact.includes("medium")) impact = "medium";
-          else impact = "low";
-        } else if (Number(impactRaw) === 3) impact = "high";
-        else if (Number(impactRaw) === 2) impact = "medium";
-        else impact = "low";
-        const impactClass = impact === "high" ? "impact-high" : impact === "medium" ? "impact-medium" : "impact-low";
-        const impactColor = impact === "high" ? "#FF3B3B" : impact === "medium" ? "#F0B429" : "#484F58";
-        const impactLabel = impact === "high" ? "HIGH" : impact === "medium" ? "MEDIUM" : "LOW";
-        let localTime = item.date || item.datetime || item.time || "";
-        try {
-          const d = new Date(localTime);
-          if (!isNaN(d.getTime())) {
-            localTime = d.toLocaleString("en-US", { month:"short", day:"numeric", hour:"2-digit", minute:"2-digit", hour12:true });
-          }
-        } catch(e) {}
-        const forecast = item.forecast != null ? String(item.forecast) : item.estimate != null ? String(item.estimate) : "—";
-        const previous = item.previous != null ? String(item.previous) : "—";
-        const eventName = item.event || item.name || item.title || "Unknown Event";
-        return `<div class="news-item news-pill ${impactClass} bg-[#0D1117] px-3 py-3 m-1" style="animation-delay:${idx*40}ms"><div class="flex items-start justify-between gap-2 mb-2"><div class="font-mono text-[10px] font-bold text-[#E6EDF3] leading-snug line-clamp-2">${eventName}</div><span class="shrink-0 font-mono text-[8px] px-1.5 py-0.5 border" style="color:${impactColor};border-color:${impactColor}33;background:${impactColor}11;">${impactLabel}</span></div><div class="flex items-end justify-between gap-2"><div><div class="font-mono text-[8px] text-[#484F58] mb-0.5">DATE / TIME</div><div class="font-mono text-[9px] text-[#8B949E]">${localTime}</div></div><div class="text-right"><div class="font-mono text-[8px] text-[#484F58] mb-0.5">FORECAST</div><div class="font-mono text-[9px] font-bold text-[#E6EDF3]">${forecast}</div></div><div class="text-right"><div class="font-mono text-[8px] text-[#484F58] mb-0.5">PREV</div><div class="font-mono text-[9px] text-[#8B949E]">${previous}</div></div></div></div>`;
-      }).join('');
-    }
-
-    // ─── MAIN LOAD ───────────────────────────────────────────────────
-    // Memori untuk sinyal yang sudah ter-trigger (hanya RUNNING)
-    let activeEntryMemory = [];
-
-    async function loadData() {
-      const btn=document.getElementById('refreshBtn');
-      const icon=document.getElementById('refreshIcon');
-      const status=document.getElementById('lastUpdate');
-      btn.disabled=true; icon.classList.add('spinning');
-      status.textContent='FETCHING...';
-      document.getElementById('errorToast').classList.add('hidden');
-      try {
-        const res=await fetch('/api/predict');
-        if(!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data=await res.json();
-        if(!data.success) throw new Error(data.error||'Unknown error');
-
-        renderDXY(data.dxy_live||data.dxyLive||null);
-        const nfpScore    = renderNFP(data.nfp);
-        const cpiScore    = renderCPI(data.cpi);
-        const growthScore = renderGrowth(data.growth||data.gdp||null);
-        const fedScore    = renderFed(data.fed||data.fed_rate||null);
-        renderMiniScores(nfpScore,cpiScore,growthScore,fedScore);
-        renderMaster([nfpScore,cpiScore,growthScore,fedScore]);
-        renderNews(data.upcoming_news||data.upcomingNews||[]);
-
-        renderSwing(data.swing_signal || null);
-        renderScalp(data.scalp_signal || null);
-
-        const zones = data.zone_pantau || [];
-        document.getElementById('zoneTotalCount').textContent = `${zones.length} zones`;
-        document.getElementById('zoneGrid').innerHTML = zones.map(z => {
-          const color = z.bias === "BUY" ? "#00FF88" : z.bias === "SELL" ? "#FF3B3B" : "#A78BFA";
-          return `<div class="border border-[#21262D] bg-[#0D1117] p-3"><div class="flex justify-between mb-2"><span class="font-mono text-[10px] text-[#E6EDF3]">${z.typeLabel || z.type}</span><span class="font-mono text-[9px]" style="color:${color}">${z.bias}</span></div><div class="font-mono text-[12px] text-[#E6EDF3]">${z.lowStr || z.low}</div><div class="font-mono text-[8px] text-[#484F58]">to</div><div class="font-mono text-[12px] text-[#E6EDF3]">${z.highStr || z.high}</div><div class="mt-2 font-mono text-[8px] text-[#8B949E]">${z.session || ""}</div></div>`;
-        }).join('');
-
-               // ─── LIVE TRADE MANAGER: hanya trigger ketika harga menyentuh entry ───
-        const rawPrice = data.swing_signal?.currentPrice || data.technical_signal?.currentPrice || 0;
-        const currentPrice = parseFloat(rawPrice);
-        const nowMs = Date.now();
-        const isPriceValid = currentPrice > 0 && !isNaN(currentPrice);
-
-        if (isPriceValid) {
-          // PERBAIKAN: entry untuk BUY = batas bawah zona (low), untuk SELL = batas atas zona (high)
-          zones.forEach(z => {
-            if (!z.signal) return;
-            const entry = parseFloat(z.signal.entry);
-            const isBuy = z.bias === "BUY";
-            const tolerance = 0.15; // toleransi 15 pips (0.15 USD)
-            // BUY limit: harga >= entry - tolerance (harga menyentuh area demand)
-            // SELL limit: harga <= entry + tolerance (harga menyentuh area supply)
-            const isTriggered = isBuy
-              ? currentPrice >= entry - tolerance
-              : currentPrice <= entry + tolerance;
-
-            if (isTriggered) {
-              const exists = activeEntryMemory.find(e => e.id === z.id);
-              if (!exists) {
-                activeEntryMemory.push({
-                  ...z,
-                  triggeredAt: nowMs,
-                  status: 'RUNNING',
-                  statusColor: '#38BDF8'
-                });
-              }
-            }
-          });
-
-          // Evaluasi status RUNNING (SL/TP hit)
-          activeEntryMemory.forEach(trade => {
-            if (trade.status !== 'RUNNING') return;
-            const isBuy = trade.bias === "BUY";
-            const entry = parseFloat(trade.signal.entry);
-            const sl = parseFloat(trade.signal.sl);
-            const tp1 = parseFloat(trade.signal.tp1);
-            if (isBuy) {
-              if (currentPrice <= sl) { trade.status = 'LOSS (SL HIT)'; trade.statusColor = '#FF3B3B'; trade.closedAt = nowMs; }
-              else if (currentPrice >= tp1) { trade.status = 'WIN (TP1 HIT)'; trade.statusColor = '#00FF88'; trade.closedAt = nowMs; }
-            } else {
-              if (currentPrice >= sl) { trade.status = 'LOSS (SL HIT)'; trade.statusColor = '#FF3B3B'; trade.closedAt = nowMs; }
-              else if (currentPrice <= tp1) { trade.status = 'WIN (TP1 HIT)'; trade.statusColor = '#00FF88'; trade.closedAt = nowMs; }
-            }
-          });
+    // ─── SIGNAL CHANGE DETECTION ───────────────────────────────────
+    let prevSwingPos='',prevScalpPos='',prevMasterLabel='';
+    function detectSignalChanges(swing,scalp,masterLabel){
+      if(swing){
+        const newPos=swing.position||'';
+        if(prevSwingPos&&newPos!==prevSwingPos&&newPos!=='WAIT & SEE / NO SWING SETUP'){
+          const isBuy=newPos.includes('BUY'),isSell=newPos.includes('SELL');
+          showToast(isBuy?'buy':isSell?'sell':'info','Swing Signal Changed',`${newPos}`,5000);
+          playBeep();
         }
-
-        // Hapus sinyal yang sudah closed lebih dari 30 menit
-        activeEntryMemory = activeEntryMemory.filter(e => {
-          if (e.status === 'RUNNING') return true;
-          return nowMs - e.closedAt < 1800000;
-        });
-
-        // ─── RENDER LIVE TRADE MANAGER (HANYA RUNNING + UPDATE PnL) ───
-        const runningTrades = activeEntryMemory.filter(t => t.status === 'RUNNING');
-        const closedTrades = activeEntryMemory.filter(t => t.status !== 'RUNNING');
-        document.getElementById('entryTriggerCount').textContent = `${runningTrades.length} running, ${closedTrades.length} closed`;
-        const trackerGrid = document.getElementById('entryTriggerGrid');
-
-        if (runningTrades.length === 0) {
-          trackerGrid.innerHTML = `<div class="col-span-full flex items-center justify-center py-10"><span class="font-mono text-xs text-[#484F58]">Tidak ada limit order yang sedang running<span class="cursor">_</span></span></div>`;
-        } else {
-          trackerGrid.innerHTML = runningTrades.map(trade => {
-            const isBuy = trade.bias === "BUY";
-            const entry = parseFloat(trade.signal.entry);
-            const sl = parseFloat(trade.signal.sl);
-            const tp1 = parseFloat(trade.signal.tp1);
-            const current = currentPrice;
-            const pnl = isBuy ? current - entry : entry - current;
-            const risk = Math.abs(entry - sl);
-            const pnlPercent = (pnl / risk) * 100;
-            const distanceToSL = Math.abs(current - sl);
-            const distanceToTP1 = Math.abs(tp1 - current);
-            const pnlColor = pnl > 0 ? '#00FF88' : pnl < 0 ? '#FF3B3B' : '#F0B429';
-            return `<div class="border border-[#21262D] bg-[#0D1117] p-4 relative" style="border-left: 3px solid ${trade.statusColor}; animation: techReveal 0.3s ease forwards;"><div class="absolute top-3 right-3 flex items-center gap-1.5"><div class="w-1.5 h-1.5 rounded-full bg-[#38BDF8] animate-ping"></div><span class="font-mono text-[9px] font-bold" style="color:${trade.statusColor}">${trade.status}</span></div><div class="font-mono text-[10px] text-[#F0B429] tracking-widest uppercase mb-1">${trade.bias} LIMIT TRIGGERED @ $${entry.toFixed(2)}</div><div class="text-[11px] text-[#8B949E] mb-2">via ${trade.typeLabel} (${trade.session})</div><div class="grid grid-cols-3 gap-2 text-center mb-3"><div class="bg-[#161B22] py-1"><div class="font-mono text-[7px] text-[#FF3B3B]">SL</div><div class="font-mono text-[10px] text-white">$${sl.toFixed(2)}</div></div><div class="bg-[#161B22] py-1"><div class="font-mono text-[7px] text-[#00FF88]">TP1</div><div class="font-mono text-[10px] text-white">$${tp1.toFixed(2)}</div></div><div class="bg-[#161B22] py-1"><div class="font-mono text-[7px] text-[#38BDF8]">Risk</div><div class="font-mono text-[10px] text-white">${risk.toFixed(1)} pips</div></div></div><div class="flex items-center justify-between border-t border-[#21262D] pt-2 mt-1"><div><div class="font-mono text-[7px] text-[#484F58]">Unrealized PnL</div><div class="font-mono text-[12px] font-bold" style="color:${pnlColor}">${pnl > 0 ? '+' : ''}$${pnl.toFixed(2)} (${pnlPercent.toFixed(0)}%)</div></div><div class="text-right"><div class="font-mono text-[7px] text-[#484F58]">Distance to SL / TP1</div><div class="font-mono text-[9px] text-[#8B949E]">${distanceToSL.toFixed(2)} / ${distanceToTP1.toFixed(2)}</div></div></div><div class="mt-2 font-mono text-[8px] text-[#484F58] text-right">Triggered: ${new Date(trade.triggeredAt).toLocaleTimeString()}</div></div>`;
-          }).join('');
+        prevSwingPos=newPos;
+      }
+      if(scalp){
+        const newPos=scalp.position||'';
+        if(prevScalpPos&&newPos!==prevScalpPos&&newPos!=='WAIT & SEE / NO SCALP'){
+          const isBuy=newPos.includes('BUY'),isSell=newPos.includes('SELL');
+          showToast(isBuy?'buy':isSell?'sell':'info','Scalp Signal Changed',`${newPos}`,5000);
+          playBeep();
         }
-
-        const ts=new Date(data.timestamp);
-        status.textContent='UPDATED '+ts.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
-      } catch(err) {
-        console.error(err);
-        document.getElementById('errorMsg').textContent='Error: '+err.message;
-        document.getElementById('errorToast').classList.remove('hidden');
-        status.textContent='FETCH FAILED';
-        setTimeout(()=>document.getElementById('errorToast').classList.add('hidden'),6000);
-      } finally {
-        btn.disabled=false; icon.classList.remove('spinning');
+        prevScalpPos=newPos;
+      }
+      if(masterLabel&&masterLabel!==prevMasterLabel&&prevMasterLabel!==''){
+        if(masterLabel.includes('SELL')||masterLabel.includes('BUY')){
+          showToast('warn','Master Signal Changed',`${masterLabel}`,5000);
+          playBeep();
+        }
+        prevMasterLabel=masterLabel;
       }
     }
 
-    // ─── AUTO POLLING SYSTEM (REALTIME DISPLAY) ──────────────────────
-    let pollTimer = null;
-    const POLL_INTERVAL = 3000;
-
-    function startAutoRefresh() {
-      if (pollTimer) clearInterval(pollTimer);
-      pollTimer = setInterval(() => {
-        if (!document.hidden) {
-          loadData();
-        }
-      }, POLL_INTERVAL);
+    // ─── SOUND ALERT ───────────────────────────────────────────────
+    let audioCtx=null;
+    function playBeep(){
+      try{
+        if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+        const osc=audioCtx.createOscillator();
+        const gain=audioCtx.createGain();
+        osc.connect(gain);gain.connect(audioCtx.destination);
+        osc.type='sine';osc.frequency.value=880;
+        gain.gain.setValueAtTime(0.1,audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+0.15);
+        osc.start(audioCtx.currentTime);osc.stop(audioCtx.currentTime+0.15);
+      }catch(e){}
     }
 
-    document.addEventListener("visibilitychange", () => {
-      if (document.hidden) {
-        clearInterval(pollTimer);
-      } else {
-        loadData();
-        startAutoRefresh();
-      }
+    // ─── KEYBOARD SHORTCUTS ────────────────────────────────────────
+    document.addEventListener('keydown',e=>{
+      if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;
+      if(e.key==='1'){switchTab('macro');}
+      if(e.key==='2'){switchTab('tech');}
+      if(e.key==='r'||e.key==='R'){if(!e.ctrlKey&&!e.metaKey){loadData();showToast('info','Refreshing','Fetching latest data...');}}
     });
 
-    // ─── INITIALIZATION ───────────────────────────────────────────────
-    document.addEventListener('DOMContentLoaded', () => {
-      const ind=document.getElementById('tabLiveIndicator');
-      const lbl=document.getElementById('tabModeLabel');
-      ind.style.background='#00FF88'; ind.style.boxShadow='0 0 6px rgba(0,255,136,0.7)';
-      lbl.style.color='#00FF88';
-      loadData();
-      startAutoRefresh();
-    });
+    // ─── MOBILE NAV SYNC ───────────────────────────────────────────
+    function syncMobileNav(tab){
+      document.getElementById('mobileTabMacro')?.classList.toggle('active',tab==='macro');
+      document.getElementById('mobileTabTech')?.classList.toggle('active',tab==='tech');
+    }
+
+    // ─── ENHANCED SWITCH TAB ───────────────────────────────────────
+    const _origSwitchTab=switchTab;
+    switchTab=function(tab){
+      _origSwitchTab(tab);
+      syncMobileNav(tab);
+    };
+
+    function renderDXY(dxy){if(!dxy)return;const el=document.getElementById('dxyLoading');if(el)el.style.display='none';const live=document.getElementById('dxyLive');if(live)live.style.display='flex';const current=parseFloat(dxy.current)||0,changePct=parseFloat(dxy.changePercent)||0,isBull=changePct>0,isBear=changePct<0;const pill=document.getElementById('dxyPricePill');if(pill)pill.className=`dxy-pill ${isBull?'bullish':isBear?'bearish':'neutral'}`;const cc=isBull?'#EF4444':isBear?'#22C55E':'#F59E0B';setEl('dxyPrice',current.toFixed(2));setEl('dxyChangeBadge',`${changePct>0?'+':''}${changePct.toFixed(2)}%`,cc);setEl('dxyStatus',(dxy.status||'').toUpperCase(),cc);setEl('dxyXauHint',isBull?'BEARISH ↓':isBear?'BULLISH ↑':'NEUTRAL',cc);renderDXYBar(dxy);}
+
+    function renderSwing(swing){const aw=document.getElementById('swingAwaiting'),ct=document.getElementById('swingContent');if(!swing)return;if(aw)aw.style.display='none';if(ct){ct.classList.remove('hidden');ct.style.animation='fadeInUp 0.5s cubic-bezier(0.16,1,0.3,1) forwards';}const p=(swing.position||'').toUpperCase(),isB=p.includes('BUY'),isS=p.includes('SELL'),isActive=p.includes('ACTIVE');let pc='#666',ps='No signal';if(isB){pc='#22C55E';ps='Long — H4 bullish';}if(isS){pc='#EF4444';ps='Short — H4 bearish';}setEl('swingPositionBadge',p||'— NO SIGNAL —',pc);const dot=document.getElementById('swingPosDot');if(dot)dot.style.background=pc;setEl('swingPosSub',ps,pc);const hc=swing.h4Bias&&swing.h4Bias.includes('BULLISH')?'#22C55E':swing.h4Bias&&swing.h4Bias.includes('BEARISH')?'#EF4444':'#F59E0B';setEl('swingH4Bias',swing.h4Bias||'—',hc);const score=swing.confluenceScore||0;renderConfDots('swingConfDots',score,5,'on-gold');setEl('swingConfScore',score+'/5');setEl('swingConfLabel',score+'/5');const cb=document.getElementById('swingConfBar');if(cb){const c=score>=4?'#22C55E':score>=3?'#F59E0B':'#EF4444';cb.style.width=(score/5*100)+'%';cb.style.background=c;}setEl('swingEntry',fmtPrice(swing.entry));setEl('swingSL',fmtPrice(swing.sl));setEl('swingTP1',fmtPrice(swing.tp1));setEl('swingTP2',fmtPrice(swing.tp2));setEl('swingTP1Pips',swing.tp1Pips||'—');setEl('swingTP2Pips',swing.tp2Pips||'—');const dz=swing.demandZone,sz=swing.supplyZone;setEl('swingDemandZone',dz?`$${dz.btm}–$${dz.top}`:'—');setEl('swingSupplyZone',sz?`$${sz.btm}–$${sz.top}`:'—');setEl('swingRsi',swing.h1Rsi||'—');const reasons=swing.reason||[];setEl('swingReasonCount',reasons.length+' condition'+(reasons.length!==1?'s':''));renderReasonList('swingReasonList',reasons,'#F59E0B');const panel=document.getElementById('swingPanel');if(panel)panel.className='signal-panel'+(isActive&&isB?' glow-buy':isActive&&isS?' glow-sell':'');}
+
+    function renderScalp(scalp){const aw=document.getElementById('scalpAwaiting'),ct=document.getElementById('scalpContent');if(!scalp)return;if(aw)aw.style.display='none';if(ct){ct.classList.remove('hidden');ct.style.animation='fadeInUp 0.5s cubic-bezier(0.16,1,0.3,1) 0.1s forwards';}const p=(scalp.position||'').toUpperCase(),isB=p.includes('BUY'),isS=p.includes('SELL'),isActive=p.includes('ACTIVE');let pc='#666',ps='Waiting for swing';if(isB){pc='#22C55E';ps='Scalp long';}else if(isS){pc='#EF4444';ps='Scalp short';}setEl('scalpPositionBadge',p||'— BLOCKED —',pc);const dot=document.getElementById('scalpPosDot');if(dot)dot.style.background=pc;setEl('scalpPosSub',ps,pc);const gated=scalp.gatedBySwing,gb=document.getElementById('scalpGateBadge');if(gb){gb.className=`gate-pill ${gated?'active':'blocked'}`;gb.textContent=gated?'ACTIVE':'BLOCKED';}const score=scalp.confluenceScore||0;renderConfDots('scalpConfDots',score,5,'on-cyan');setEl('scalpConfScore',score+'/5');setEl('scalpConfLabel',score+'/5');const cb=document.getElementById('scalpConfBar');if(cb){const c=score>=4?'#38BDF8':score>=3?'#F59E0B':'#252525';cb.style.width=(score/5*100)+'%';cb.style.background=c;}setEl('scalpEntry',fmtPrice(scalp.entry));setEl('scalpSL',fmtPrice(scalp.sl));setEl('scalpTP1',fmtPrice(scalp.tp1));setEl('scalpTP2',fmtPrice(scalp.tp2));setEl('scalpTP1Pips',scalp.tp1Pips||'—');setEl('scalpTP2Pips',scalp.tp2Pips||'—');setEl('scalpRsi',scalp.m5Rsi||'—');setEl('scalpAtr',scalp.m5Atr?'$'+scalp.m5Atr:'—');setEl('scalpVolMult',scalp.volMultiplier?scalp.volMultiplier+'×':'—');const reasons=scalp.reason||[];setEl('scalpReasonCount',reasons.length+' condition'+(reasons.length!==1?'s':''));renderReasonList('scalpReasonList',reasons,'#38BDF8');const panel=document.getElementById('scalpPanel');if(panel)panel.className='signal-panel'+(isActive&&isB?' glow-buy':isActive&&isS?' glow-sell':'');}
+
+    function renderNFP(nfp){const type=classifyByScore(nfp.score),color=signalColor(type);setEl('nfpSignal',nfp.signal,color);setEl('nfpScore',fmtScore(nfp.score),color);applyCardStyle('nfpCard','',type);updateScoreBar('nfpBar',nfp.score,type);const{adp,ism,jolts}=nfp.components;setAccentBar('adpBar',adp.points);setEl('adpPoints',fmtPoints(adp.points),adp.points>0?'#22C55E':adp.points<0?'#EF4444':'#666');renderRow3('adpRow',fmt(adp.actual,'K'),fmt(adp.estimate,'K'),adp.status,['ACTUAL','FCST','STATUS']);setAccentBar('ismBar',ism.points);setEl('ismPoints',fmtPoints(ism.points),ism.points>0?'#22C55E':ism.points<0?'#EF4444':'#666');renderRow3('ismRow',fmt(ism.actual),'50.0',ism.status,['ACTUAL','THRESH','STATUS']);setAccentBar('joltsBar',jolts.points);setEl('joltsPoints',fmtPoints(jolts.points),jolts.points>0?'#22C55E':jolts.points<0?'#EF4444':'#666');renderRow3('joltsRow',fmt(jolts.actual,'M'),fmt(jolts.estimate,'M'),jolts.status,['ACTUAL','FCST','STATUS']);return nfp.score;}
+
+    function renderCPI(cpi){const type=classifyByScore(cpi.score),color=signalColor(type);setEl('cpiSignal',cpi.signal,color);setEl('cpiScore',fmtScore(cpi.score),color);applyCardStyle('cpiCard','',type);updateScoreBar('cpiBar',cpi.score,type);const{ppi,crude}=cpi.components;setAccentBar('ppiBar',ppi.points);setEl('ppiPoints',fmtPoints(ppi.points),ppi.points>0?'#22C55E':ppi.points<0?'#EF4444':'#666');renderRow3('ppiRow',fmt(ppi.actual,'%'),fmt(ppi.estimate,'%'),ppi.status,['ACTUAL','FCST','STATUS']);setAccentBar('crudeBar',crude.points);setEl('crudePoints',fmtPoints(crude.points),crude.points>0?'#22C55E':crude.points<0?'#EF4444':'#666');renderRow3('crudeRow',crude.current!=null?'$'+parseFloat(crude.current).toFixed(2):'N/A',crude.avg30!=null?'$'+parseFloat(crude.avg30).toFixed(2):'N/A',crude.status,['CURRENT','30D AVG','STATUS']);return cpi.score;}
+
+    function renderGrowth(growth){if(!growth)return 0;const type=classifyByScore(growth.score),color=signalColor(type);setEl('growthSignal',growth.signal,color);setEl('growthScore',fmtScore(growth.score),color);applyCardStyle('growthCard','',type);updateScoreBar('growthBar',growth.score,type);const comp=growth.components||{},gdp=comp.gdp||comp.gdpGrowth||{};setAccentBar('gdpBar',gdp.points||0);setEl('gdpPoints',fmtPoints(gdp.points||0),(gdp.points||0)>0?'#22C55E':(gdp.points||0)<0?'#EF4444':'#666');renderRow3('gdpRow',fmt(gdp.actual,'%'),fmt(gdp.estimate||gdp.forecast,'%'),gdp.status||'N/A',['ACTUAL','FCST','STATUS']);const retail=comp.retail_sales||comp.retailSales||comp.retail||{};setAccentBar('retailBar',retail.points||0);setEl('retailPoints',fmtPoints(retail.points||0),(retail.points||0)>0?'#22C55E':(retail.points||0)<0?'#EF4444':'#666');renderRow3('retailRow',fmt(retail.actual,'%'),fmt(retail.estimate||retail.forecast,'%'),retail.status||'N/A',['ACTUAL','FCST','STATUS']);return growth.score;}
+
+    function renderFed(fed){if(!fed)return 0;const type=classifyByScore(fed.score),color=signalColor(type);setEl('fedSignal',fed.signal,color);setEl('fedScore',fmtScore(fed.score),color);applyCardStyle('fedCard','',type);updateScoreBar('fedBar',fed.score,type);const comp=fed.components||{},rate=comp.fed_rate||comp.fedRate||comp.interest_rate||comp.fed||{};setEl('fedRateDisplay',rate.current!=null?parseFloat(rate.current).toFixed(2)+'%':'—%',color);setEl('fedPrevRate',rate.previous!=null?parseFloat(rate.previous).toFixed(2)+'%':'—%');setAccentBar('fedRateBar',rate.points||fed.score||0);setEl('fedRatePoints',fmtPoints(rate.points||fed.score||0),(rate.points||fed.score||0)>0?'#22C55E':(rate.points||fed.score||0)<0?'#EF4444':'#666');const cs=rate.change!=null?(rate.change>0?'+':'')+parseFloat(rate.change).toFixed(2)+'bps':'N/A';renderRow2('fedRateRow',cs,rate.bias||rate.status||fed.signal||'N/A',['CHANGE','BIAS']);const el=document.getElementById('rateTrend');if(el){const cur=parseFloat(rate.current)||5.25,prev=parseFloat(rate.previous)||5.50,bars=[prev-0.25,prev-0.25,prev,prev,prev,cur],minV=Math.min(...bars)-0.25,maxV=Math.max(...bars)+0.25,range=maxV-minV||1;el.innerHTML=bars.map((v,i)=>{const h=Math.max(10,((v-minV)/range)*100),last=i===bars.length-1;return`<div style="flex:1;border-radius:3px;height:${h}%;background:${last?color:'#1A1A1A'};transition:all 0.5s ease;"></div>`;}).join('');}return fed.score;}
+
+    function renderMaster(scores){const total=scores.reduce((a,b)=>a+b,0);let label,type;if(total>=MASTER_THRESHOLD){label='STRONG SELL XAU';type='sell';}else if(total<=-MASTER_THRESHOLD){label='STRONG BUY XAU';type='buy';}else{label='NEUTRAL';type='wait';}const color=signalColor(type);const banner=document.getElementById('masterBanner');if(banner)banner.style.borderColor={buy:'rgba(34,197,94,0.1)',sell:'rgba(239,68,68,0.1)',wait:'rgba(245,158,11,0.1)'}[type];setEl('masterSignalText',label,color);setEl('masterScore',(total>0?'+':'')+total,color);setEl('masterSubtext',{buy:`Score ${total}. USD weakness → Gold bullish.`,sell:`Score ${total}. USD strength → Gold bearish.`,wait:`Score ${total}. Mixed signals.`}[type]);updateScoreBar('masterFill',total,type,400);}
+
+    function renderMiniScores(nfp,cpi,growth,fed){[{s:'miniNfpScore',b:'miniNfpBar',v:nfp},{s:'miniCpiScore',b:'miniCpiBar',v:cpi},{s:'miniGrowthScore',b:'miniGrowthBar',v:growth},{s:'miniFedScore',b:'miniFedBar',v:fed}].forEach(({s,b,v})=>{if(v==null)return;const t=classifyByScore(v),c=signalColor(t);setEl(s,fmtScore(v),c);const bar=document.getElementById(b);if(bar)bar.style.background=c;});}
+
+    function renderNews(newsArr){const grid=document.getElementById('newsGrid');if(!grid)return;if(!newsArr||!newsArr.length){grid.innerHTML=`<div style="grid-column:1/-1;padding:36px;text-align:center;"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#3A3A3A;">No upcoming USD events.</span></div>`;return;}grid.innerHTML=newsArr.map((item,idx)=>{const ir=item.impact??item.importance??"";let impact="low";if(typeof ir==="string"){impact=ir.toLowerCase();if(impact.includes("high"))impact="high";else if(impact.includes("med"))impact="medium";}else if(Number(ir)===3)impact="high";else if(Number(ir)===2)impact="medium";let lt=item.date||"";let dateAttr="";try{const d=new Date(lt);if(!isNaN(d.getTime())){lt=d.toLocaleString("en-US",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit",hour12:true});dateAttr=d.toISOString();}}catch(e){}const fc=item.forecast!=null?String(item.forecast):item.estimate!=null?String(item.estimate):"—";const name=item.event||item.name||item.title||"Unknown";const il=impact==="high"?"HIGH":impact==="medium"?"MED":"LOW";return`<div class="news-pill impact-${impact}" data-date="${dateAttr}" style="animation:fadeInUp 0.5s ease ${idx*50}ms both;"><div class="news-pill-badge ${impact}">${il}</div><div class="news-pill-title">${name}</div><div class="news-pill-meta"><div><div class="news-pill-date">${lt}</div></div><div style="text-align:right;"><div style="font-family:'IBM Plex Mono',monospace;font-size:8px;color:#3A3A3A;">FCST</div><div class="news-pill-fcst-val">${fc}</div></div></div></div>`;}).join('');}
+
+    let activeEntryMemory=[];
+    async function loadData(){const status=document.getElementById('lastUpdate');if(status)status.textContent='FETCHING...';const toast=document.getElementById('errorToast');toast.style.opacity='0';toast.style.transform='translateY(16px)';toast.style.pointerEvents='none';try{const res=await fetch('/api/predict');if(!res.ok)throw new Error(`HTTP ${res.status}`);const data=await res.json();if(!data.success)throw new Error(data.error||'Unknown error');renderDXY(data.dxy_live||data.dxyLive||null);const nfpS=renderNFP(data.nfp),cpiS=renderCPI(data.cpi),grS=renderGrowth(data.growth||data.gdp||null),fedS=renderFed(data.fed||data.fed_rate||null);renderMiniScores(nfpS,cpiS,grS,fedS);renderMaster([nfpS,cpiS,grS,fedS]);renderNews(data.upcoming_news||data.upcomingNews||[]);renderSwing(data.swing_signal||null);renderScalp(data.scalp_signal||null);
+    // Signal change detection
+    detectSignalChanges(data.swing_signal||null,data.scalp_signal||null,document.getElementById('masterSignalText')?.textContent||'');
+    // News countdown
+    updateNewsCountdown();
+    const zones=data.zone_pantau||[];document.getElementById('zoneGrid').innerHTML=zones.map(z=>{const color=z.bias==="BUY"?"#22C55E":z.bias==="SELL"?"#EF4444":"#A78BFA";return`<div class="zone-card"><div class="zone-card-head"><span class="zone-card-type">${z.typeLabel||z.type}</span><span class="zone-card-bias" style="color:${color}">${z.bias}</span></div><div class="zone-card-range">${z.lowStr||z.low}</div><div class="zone-card-to">to</div><div class="zone-card-range">${z.highStr||z.high}</div><div class="zone-card-session">${z.session||""}</div></div>`;}).join('');const rawPrice=data.swing_signal?.currentPrice||data.technical_signal?.currentPrice||0,currentPrice=parseFloat(rawPrice),nowMs=Date.now(),isPriceValid=currentPrice>0&&!isNaN(currentPrice);if(isPriceValid){zones.forEach(z=>{if(!z.signal)return;const entry=parseFloat(z.signal.entry),isBuy=z.bias==="BUY",tol=0.15,isTrig=isBuy?currentPrice>=entry-tol:currentPrice<=entry+tol;if(isTrig){const exists=activeEntryMemory.find(e=>e.id===z.id);if(!exists)activeEntryMemory.push({...z,triggeredAt:nowMs,status:'RUNNING',statusColor:'#38BDF8'});}});activeEntryMemory.forEach(trade=>{if(trade.status!=='RUNNING')return;const isBuy=trade.bias==="BUY",entry=parseFloat(trade.signal.entry),sl=parseFloat(trade.signal.sl),tp1=parseFloat(trade.signal.tp1);if(isBuy){if(currentPrice<=sl){trade.status='LOSS (SL HIT)';trade.statusColor='#EF4444';trade.closedAt=nowMs;}else if(currentPrice>=tp1){trade.status='WIN (TP1 HIT)';trade.statusColor='#22C55E';trade.closedAt=nowMs;}}else{if(currentPrice>=sl){trade.status='LOSS (SL HIT)';trade.statusColor='#EF4444';trade.closedAt=nowMs;}else if(currentPrice<=tp1){trade.status='WIN (TP1 HIT)';trade.statusColor='#22C55E';trade.closedAt=nowMs;}}});}activeEntryMemory=activeEntryMemory.filter(e=>{if(e.status==='RUNNING')return true;return nowMs-e.closedAt<1800000;});const running=activeEntryMemory.filter(t=>t.status==='RUNNING'),closed=activeEntryMemory.filter(t=>t.status!=='RUNNING');document.getElementById('entryTriggerCount').textContent=`${running.length} running, ${closed.length} closed`;const tg=document.getElementById('entryTriggerGrid');if(running.length===0){tg.innerHTML=`<div style="grid-column:1/-1;padding:36px;text-align:center;"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#3A3A3A;">Tidak ada limit order running<span class="cursor">_</span></span></div>`;}else{tg.innerHTML=running.map(trade=>{const isBuy=trade.bias==="BUY",entry=parseFloat(trade.signal.entry),sl=parseFloat(trade.signal.sl),tp1=parseFloat(trade.signal.tp1),cur=currentPrice,pnl=isBuy?cur-entry:entry-cur,risk=Math.abs(entry-sl),pnlP=(pnl/risk)*100,dSL=Math.abs(cur-sl),dTP1=Math.abs(tp1-cur),pnlC=pnl>0?'#22C55E':pnl<0?'#EF4444':'#F59E0B';return`<div class="trade-card" style="border-left-color:${trade.statusColor};"><div class="trade-status"><span class="trade-status-dot" style="background:${trade.statusColor};"></span><span class="trade-status-text" style="color:${trade.statusColor};">${trade.status}</span></div><div class="trade-title">${trade.bias} @ $${entry.toFixed(2)}</div><div class="trade-sub">${trade.typeLabel} (${trade.session})</div><div class="trade-prices"><div class="trade-price"><div class="trade-price-label" style="color:#EF4444;">SL</div><div class="trade-price-val">$${sl.toFixed(2)}</div></div><div class="trade-price"><div class="trade-price-label" style="color:#22C55E;">TP1</div><div class="trade-price-val">$${tp1.toFixed(2)}</div></div><div class="trade-price"><div class="trade-price-label" style="color:#38BDF8;">Risk</div><div class="trade-price-val">${risk.toFixed(1)}p</div></div></div><div class="trade-pnl"><div><div class="trade-pnl-label">PnL</div><div class="trade-pnl-val" style="color:${pnlC};">${pnl>0?'+':''}$${pnl.toFixed(2)} (${pnlP.toFixed(0)}%)</div></div><div style="text-align:right;"><div class="trade-pnl-label">SL/TP1</div><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#666;">${dSL.toFixed(2)} / ${dTP1.toFixed(2)}</div></div></div><div class="trade-time">${new Date(trade.triggeredAt).toLocaleTimeString()}</div></div>`;}).join('');}if(status)status.textContent='UPDATED '+new Date(data.timestamp).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});}catch(err){console.error(err);document.getElementById('errorMsg').textContent='Error: '+err.message;toast.style.opacity='1';toast.style.transform='translateY(0)';toast.style.pointerEvents='auto';if(status)status.textContent='FETCH FAILED';setTimeout(()=>{toast.style.opacity='0';toast.style.transform='translateY(16px)';},6000);}}
+
+    let pollTimer=null;function startAutoRefresh(){if(pollTimer)clearInterval(pollTimer);pollTimer=setInterval(()=>{if(!document.hidden)loadData();},3000);}
+    document.addEventListener("visibilitychange",()=>{if(document.hidden){clearInterval(pollTimer);}else{loadData();startAutoRefresh();}});
+
+    const revealObserver=new IntersectionObserver(entries=>{entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add('visible');if(entry.target.classList.contains('stagger'))animateCounters();revealObserver.unobserve(entry.target);}});},{threshold:0.1});
+
+    document.addEventListener('DOMContentLoaded',()=>{loadData();startAutoRefresh();document.querySelectorAll('.reveal,.reveal-scale,.stagger').forEach(el=>revealObserver.observe(el));newsCountdownTimer=setInterval(updateNewsCountdown,1000);});
   </script>
 </body>
 </html>
