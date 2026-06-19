@@ -487,10 +487,50 @@
     }
     body.keyboard-nav *:focus { outline: 2px solid #F59E0B; outline-offset: 2px; }
     body:not(.keyboard-nav) *:focus { outline: none; }
+
+    /* ─── GRADUAL BLUR (Vanilla — no React needed) ───────────────── */
+    .gradual-blur-container {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 10rem;
+      pointer-events: none;
+      z-index: 60;
+      isolation: isolate;
+    }
+    .gradual-blur-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+    .gradual-blur-container.mobile-hide { display: none; }
+    @media (max-width: 768px) {
+      .gradual-blur-container { height: 6rem; }
+    }
+
+    /* ─── PIXELBLAST CANVAS (Vanilla Canvas 2D) ──────────────────── */
+    #pixelBlastCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: -1;
+      opacity: 0.35;
+    }
+    @media (max-width: 768px) {
+      #pixelBlastCanvas { opacity: 0.2; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      #pixelBlastCanvas { display: none; }
+    }
   </style>
 </head>
 
 <body>
+  <canvas id="pixelBlastCanvas"></canvas>
   <div class="cursor-dot" id="cursorDot"></div>
   <div class="cursor-ring" id="cursorRing"></div>
 
@@ -922,6 +962,9 @@
     </div>
   </div>
 
+  <!-- GRADUAL BLUR OVERLAY -->
+  <div class="gradual-blur-container" id="gradualBlur"></div>
+
   <!-- FOOTER -->
   <div style="padding:32px 48px;border-top:1px solid rgba(255,255,255,0.04);display:flex;align-items:center;justify-content:space-between;max-width:1400px;margin:0 auto;background:rgba(12,12,12,0.4);backdrop-filter:blur(8px);">
     <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#3A3A3A;">Dual Signal Engine v6.1 by Han — For research only.</span>
@@ -937,6 +980,263 @@
   <!-- JAVASCRIPT — ALL LOGIC PRESERVED EXACTLY -->
   <!-- ═══════════════════════════════════════════════════════════════ -->
   <script>
+    // ─── GRADUAL BLUR ENGINE (Vanilla JS — ported from React Bits) ────────
+    function createGradualBlur(containerId, config) {
+      const cfg = Object.assign({
+        position: 'bottom',
+        strength: 2.5,
+        height: '10rem',
+        divCount: 5,
+        exponential: true,
+        curve: 'bezier',
+        opacity: 1,
+        zIndex: 60
+      }, config || {});
+
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      container.innerHTML = '';
+
+      const curveFns = {
+        linear: p => p,
+        bezier: p => p * p * (3 - 2 * p),
+        'ease-in': p => p * p,
+        'ease-out': p => 1 - Math.pow(1 - p, 2),
+        'ease-in-out': p => p < 0.5 ? 2*p*p : 1 - Math.pow(-2*p+2,2)/2
+      };
+      const curveFn = curveFns[curveFns[cfg.curve] ? cfg.curve : 'bezier'];
+      const increment = 100 / cfg.divCount;
+
+      for (let i = 1; i <= cfg.divCount; i++) {
+        let progress = curveFn(i / cfg.divCount);
+
+        let blurValue;
+        if (cfg.exponential) {
+          blurValue = Math.pow(2, progress * 4) * 0.0625 * cfg.strength;
+        } else {
+          blurValue = 0.0625 * (progress * cfg.divCount + 1) * cfg.strength;
+        }
+
+        const p1 = Math.round((increment * i - increment) * 10) / 10;
+        const p2 = Math.round(increment * i * 10) / 10;
+        const p3 = Math.round((increment * i + increment) * 10) / 10;
+        const p4 = Math.round((increment * i + increment * 2) * 10) / 10;
+
+        let gradient = `transparent ${p1}%, rgba(0,0,0,0.95) ${p2}%`;
+        if (p3 <= 100) gradient += `, rgba(0,0,0,0.95) ${p3}%`;
+        if (p4 <= 100) gradient += `, transparent ${p4}%`;
+
+        const direction = cfg.position === 'top' ? 'to top' : 'to bottom';
+
+        const layer = document.createElement('div');
+        layer.className = 'gradual-blur-layer';
+        layer.style.cssText = `
+          mask-image: linear-gradient(${direction}, ${gradient});
+          -webkit-mask-image: linear-gradient(${direction}, ${gradient});
+          backdrop-filter: blur(${blurValue.toFixed(3)}rem);
+          -webkit-backdrop-filter: blur(${blurValue.toFixed(3)}rem);
+          opacity: ${cfg.opacity};
+        `;
+        container.appendChild(layer);
+      }
+    }
+
+    // ─── INIT GRADUAL BLUR ON LOAD ─────────────────────────────────────
+    function initGradualBlur() {
+      createGradualBlur('gradualBlur', {
+        position: 'bottom',
+        strength: 2.5,
+        height: '10rem',
+        divCount: 5,
+        exponential: true,
+        curve: 'bezier',
+        opacity: 1
+      });
+    }
+
+    // ─── PIXELBLAST ENGINE (Vanilla Canvas 2D — ported from React Bits) ─
+    function initPixelBlast() {
+      const canvas = document.getElementById('pixelBlastCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      // Config
+      const CFG = {
+        pixelSize: 6,
+        color: { r: 40, g: 60, b: 80 },
+        accentColor: { r: 0, g: 255, b: 136 },
+        patternScale: 0.003,
+        patternDensity: 0.55,
+        speed: 0.0003,
+        edgeFade: 0.2,
+        rippleSpeed: 0.008,
+        rippleDecay: 0.0004,
+        rippleRadius: 150,
+        rippleStrength: 0.8
+      };
+
+      let W, H, cols, rows, grid;
+      let mouse = { x: -9999, y: -9999 };
+      let ripples = [];
+      let time = 0;
+      let animId;
+
+      function resize() {
+        W = canvas.width = window.innerWidth;
+        H = canvas.height = window.innerHeight;
+        cols = Math.ceil(W / CFG.pixelSize);
+        rows = Math.ceil(H / CFG.pixelSize);
+      }
+
+      // Simplex-like noise (fast hash-based)
+      function hash(x, y) {
+        let n = Math.sin(x * 127.1 + y * 311.7) * 43758.5453;
+        return n - Math.floor(n);
+      }
+
+      function noise2D(x, y) {
+        const ix = Math.floor(x), iy = Math.floor(y);
+        const fx = x - ix, fy = y - iy;
+        const sx = fx * fx * (3 - 2 * fx);
+        const sy = fy * fy * (3 - 2 * fy);
+        const a = hash(ix, iy);
+        const b = hash(ix + 1, iy);
+        const c = hash(ix, iy + 1);
+        const d = hash(ix + 1, iy + 1);
+        return a + (b - a) * sx + (c - a) * sy + (a - b - c + d) * sx * sy;
+      }
+
+      function fbm(x, y) {
+        let v = 0, amp = 0.5, freq = 1;
+        for (let i = 0; i < 5; i++) {
+          v += amp * noise2D(x * freq, y * freq);
+          freq *= 1.25;
+          amp *= 0.5;
+        }
+        return v;
+      }
+
+      // Bayer dither 8x8
+      const bayerMatrix = [
+        [0,32,8,40,2,34,10,42],
+        [48,16,56,24,50,18,58,26],
+        [12,44,4,36,14,46,6,38],
+        [60,28,52,20,62,30,54,22],
+        [3,35,11,43,1,33,9,41],
+        [51,19,59,27,49,17,57,25],
+        [15,47,7,39,13,45,5,37],
+        [63,31,55,23,61,29,53,21]
+      ];
+
+      function bayerValue(px, py) {
+        return bayerMatrix[py & 7][px & 7] / 64 - 0.5;
+      }
+
+      function edgeFade(normX, normY) {
+        const edge = Math.min(normX, normY, 1 - normX, 1 - normY);
+        return Math.min(1, edge / CFG.edgeFade);
+      }
+
+      function getRippleAt(nx, ny) {
+        let total = 0;
+        for (const r of ripples) {
+          const dx = nx - r.nx;
+          const dy = ny - r.ny;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          const waveR = r.age * CFG.rippleSpeed;
+          const ring = Math.exp(-Math.pow((dist - waveR) / 0.12, 2));
+          const atten = Math.exp(-r.age * 0.003) * Math.exp(-dist * 3);
+          total = Math.max(total, ring * atten * CFG.rippleStrength);
+        }
+        return total;
+      }
+
+      function draw() {
+        time++;
+        ctx.clearRect(0, 0, W, H);
+
+        // Update ripples
+        for (let i = ripples.length - 1; i >= 0; i--) {
+          ripples[i].age++;
+          if (ripples[i].age > 300) ripples.splice(i, 1);
+        }
+
+        const ps = CFG.pixelSize;
+        const t = time * CFG.speed;
+
+        // Batch by color for performance
+        ctx.fillStyle = 'rgba(0,0,0,0)';
+
+        for (let row = 0; row < rows; row++) {
+          for (let col = 0; col < cols; col++) {
+            const px = col * ps;
+            const py = row * ps;
+            const nx = px / W;
+            const ny = py / H;
+
+            // FBM noise for pattern
+            const n = fbm(nx * CFG.patternScale * W * 0.01 + t, ny * CFG.patternScale * H * 0.01 + t * 0.7);
+
+            // Feed value
+            let feed = n * 0.5 - (1.0 - CFG.patternDensity) * 0.3;
+
+            // Add ripple
+            feed += getRippleAt(nx, ny);
+
+            // Bayer dither
+            const bayer = bayerValue(col, row);
+            const on = feed + bayer > 0.5 ? 1 : 0;
+
+            if (on === 0) continue;
+
+            // Edge fade
+            const fade = edgeFade(nx, ny);
+            if (fade < 0.01) continue;
+
+            // Color: mix base + accent based on noise
+            const accentMix = Math.max(0, n - 0.55) * 2;
+            const r = Math.round(CFG.color.r + (CFG.accentColor.r - CFG.color.r) * accentMix);
+            const g = Math.round(CFG.color.g + (CFG.accentColor.g - CFG.color.g) * accentMix);
+            const b = Math.round(CFG.color.b + (CFG.accentColor.b - CFG.color.b) * accentMix);
+            const alpha = fade * (0.3 + accentMix * 0.5);
+
+            ctx.fillStyle = `rgba(${r},${g},${b},${alpha})`;
+            ctx.fillRect(px, py, ps - 1, ps - 1);
+          }
+        }
+
+        animId = requestAnimationFrame(draw);
+      }
+
+      // Mouse interaction
+      document.addEventListener('mousemove', e => {
+        mouse.x = e.clientX;
+        mouse.y = e.clientY;
+        // Add ripple on movement (throttled)
+        if (Math.random() < 0.15) {
+          ripples.push({ nx: e.clientX / W, ny: e.clientY / H, age: 0 });
+        }
+      }, { passive: true });
+
+      document.addEventListener('click', e => {
+        ripples.push({ nx: e.clientX / W, ny: e.clientY / H, age: 0 });
+      }, { passive: true });
+
+      // Visibility API — pause when tab hidden
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+          cancelAnimationFrame(animId);
+        } else {
+          draw();
+        }
+      });
+
+      window.addEventListener('resize', resize);
+      resize();
+      draw();
+    }
+
     const CARD_THRESHOLD=20,MASTER_THRESHOLD=40;
 
     function switchTab(tab){document.getElementById('panelMacro').classList.toggle('active',tab==='macro');document.getElementById('panelTech').classList.toggle('active',tab==='tech');document.getElementById('tabBtnMacro').classList.toggle('active',tab==='macro');document.getElementById('tabBtnTech').classList.toggle('active',tab==='tech');window.scrollTo({top:0,behavior:'smooth'});setTimeout(()=>{document.querySelectorAll('.reveal:not(.visible),.reveal-scale:not(.visible),.stagger:not(.visible)').forEach(el=>revealObserver.observe(el));},100);}
@@ -1473,7 +1773,7 @@
 
     const revealObserver=new IntersectionObserver(entries=>{entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add('visible');if(entry.target.classList.contains('stagger'))animateCounters();revealObserver.unobserve(entry.target);}});},{threshold:0.1});
 
-    document.addEventListener('DOMContentLoaded',()=>{loadData();startAutoRefresh();startGoldPoller();document.querySelectorAll('.reveal,.reveal-scale,.stagger').forEach(el=>revealObserver.observe(el));newsCountdownTimer=setInterval(updateNewsCountdown,1000);setInterval(updateSession,60000);setInterval(()=>{const upSec=Math.floor((Date.now()-perfStartTime)/1000);const mins=Math.floor(upSec/60),secs=upSec%60;const el=document.getElementById('perfUptime');if(el)el.textContent=mins>0?`${mins}m ${secs}s`:`${secs}s`;},1000);addAlertLog('info','System','Terminal initialized. Monitoring XAU/USD.');});
+    document.addEventListener('DOMContentLoaded',()=>{initGradualBlur();initPixelBlast();loadData();startAutoRefresh();startGoldPoller();document.querySelectorAll('.reveal,.reveal-scale,.stagger').forEach(el=>revealObserver.observe(el));newsCountdownTimer=setInterval(updateNewsCountdown,1000);setInterval(updateSession,60000);setInterval(()=>{const upSec=Math.floor((Date.now()-perfStartTime)/1000);const mins=Math.floor(upSec/60),secs=upSec%60;const el=document.getElementById('perfUptime');if(el)el.textContent=mins>0?`${mins}m ${secs}s`:`${secs}s`;},1000);addAlertLog('info','System','Terminal initialized. Monitoring XAU/USD.');});
   </script>
 </body>
 </html>
