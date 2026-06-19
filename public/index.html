@@ -145,17 +145,32 @@
     .master-mini-val { font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700; transition: color 0.3s ease; }
 
     /* ─── NEWS ─── */
-    .news-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1px; background: rgba(255,255,255,0.03); border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.04); }
-    .news-pill { background: rgba(20,20,20,0.4); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); padding: 20px 24px; border-left: 2px solid rgba(255,255,255,0.04); transition: all 0.4s cubic-bezier(0.25,0.46,0.45,0.94); border-radius: 0 8px 8px 0; }
-    .news-pill:hover { background: rgba(26,26,26,0.7); transform: translateX(6px) scale(1.01); box-shadow: -4px 0 20px rgba(0,0,0,0.2); }
+    .news-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1px; background: rgba(255,255,255,0.03); border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.04); }
+    .news-pill { background: rgba(20,20,20,0.4); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); padding: 16px 20px; border-left: 3px solid rgba(255,255,255,0.04); transition: all 0.4s cubic-bezier(0.25,0.46,0.45,0.94); border-radius: 0 8px 8px 0; }
+    .news-pill:hover { background: rgba(26,26,26,0.7); transform: translateX(4px); box-shadow: -4px 0 20px rgba(0,0,0,0.2); }
     .news-pill:hover .news-pill-title { color: #fff; }
-    .news-pill-title { font-size: 13px; font-weight: 600; color: #DDD; margin-bottom: 8px; line-height: 1.4; transition: color 0.3s ease; }
-    .news-pill:hover .news-pill-title { color: #fff; }
-    .news-pill:hover .news-pill-badge { transform: scale(1.1); }
-    .news-pill-badge { transition: all 0.3s ease; }
-    .news-pill-meta { display: flex; justify-content: space-between; align-items: flex-end; }
-    .news-pill-date { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #666; }
-    .news-pill-fcst-val { font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 700; color: #CCC; }
+    .news-pill.impact-high { border-left-color: #EF4444; }
+    .news-pill.impact-high:hover { box-shadow: -4px 0 24px rgba(239,68,68,0.15); }
+    .news-pill.impact-medium { border-left-color: #F59E0B; }
+    .news-pill.impact-medium:hover { box-shadow: -4px 0 24px rgba(245,158,11,0.15); }
+    .news-pill.impact-low { border-left-color: #555; }
+    .news-pill-title { font-size: 13px; font-weight: 600; color: #DDD; margin-bottom: 6px; line-height: 1.4; transition: color 0.3s ease; }
+    .news-pill-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .news-pill-badge { display: inline-flex; align-items: center; gap: 4px; font-family: 'IBM Plex Mono', monospace; font-size: 9px; font-weight: 700; padding: 3px 8px; border-radius: 4px; transition: all 0.3s ease; }
+    .news-pill-badge.high { color: #EF4444; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); }
+    .news-pill-badge.medium { color: #F59E0B; background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.2); }
+    .news-pill-badge.low { color: #888; background: rgba(136,136,136,0.08); border: 1px solid rgba(136,136,136,0.15); }
+    .news-pill-time { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #666; }
+    .news-pill-data { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 8px; }
+    .news-pill-data-item { text-align: center; }
+    .news-pill-data-label { font-family: 'IBM Plex Mono', monospace; font-size: 8px; color: #555; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 2px; }
+    .news-pill-data-val { font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700; }
+    .news-pill-data-val.actual { color: #22C55E; }
+    .news-pill-data-val.forecast { color: #F5F5F5; }
+    .news-pill-data-val.previous { color: #888; }
+    .news-pill-status { display: inline-flex; align-items: center; gap: 4px; font-family: 'IBM Plex Mono', monospace; font-size: 9px; padding: 2px 6px; border-radius: 3px; margin-top: 6px; }
+    .news-pill-status.released { color: #22C55E; background: rgba(34,197,94,0.1); }
+    .news-pill-status.upcoming { color: #F59E0B; background: rgba(245,158,11,0.1); }
 
     /* ─── CHART ─── */
     .chart-frame { background: rgba(20,20,20,0.5); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; overflow: hidden; transition: all 0.4s cubic-bezier(0.25,0.46,0.45,0.94); }
@@ -667,11 +682,18 @@
           </div>
         </div>
 
-        <!-- NEWS -->
-        <div style="margin-top:64px;">
-          <div class="section-num reveal">03 — NEWS RADAR</div>
-          <h2 class="section-title reveal" style="font-size:clamp(28px,4vw,44px);">Upcoming USD<br/>Events<em>.</em></h2>
-          <div id="newsGrid" class="news-grid reveal" style="margin-top:24px;">
+    <!-- NEWS -->
+    <div style="margin-top:64px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
+        <div class="section-num reveal" style="margin-bottom:0;">03 — NEWS RADAR</div>
+        <div class="reveal" style="display:flex;align-items:center;gap:12px;">
+          <span style="display:flex;align-items:center;gap:4px;font-family:'IBM Plex Mono',monospace;font-size:9px;color:#EF4444;"><span style="width:8px;height:8px;border-radius:2px;background:#EF4444;"></span>High</span>
+          <span style="display:flex;align-items:center;gap:4px;font-family:'IBM Plex Mono',monospace;font-size:9px;color:#F59E0B;"><span style="width:8px;height:8px;border-radius:2px;background:#F59E0B;"></span>Medium</span>
+          <span style="display:flex;align-items:center;gap:4px;font-family:'IBM Plex Mono',monospace;font-size:9px;color:#888;"><span style="width:8px;height:8px;border-radius:2px;background:#555;"></span>Low</span>
+        </div>
+      </div>
+      <h2 class="section-title reveal" style="font-size:clamp(28px,4vw,44px);">Upcoming USD<br/>Events<em>.</em></h2>
+      <div id="newsGrid" class="news-grid reveal" style="margin-top:24px;">
             <div style="grid-column:1/-1;padding:36px;text-align:center;"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#3A3A3A;">Fetching events<span class="cursor">_</span></span></div>
           </div>
         </div>
@@ -1330,7 +1352,73 @@
 
     function renderMiniScores(nfp,cpi,growth,fed){[{s:'miniNfpScore',b:'miniNfpBar',v:nfp},{s:'miniCpiScore',b:'miniCpiBar',v:cpi},{s:'miniGrowthScore',b:'miniGrowthBar',v:growth},{s:'miniFedScore',b:'miniFedBar',v:fed}].forEach(({s,b,v})=>{if(v==null)return;const t=classifyByScore(v),c=signalColor(t);setEl(s,fmtScore(v),c);const bar=document.getElementById(b);if(bar)bar.style.background=c;});}
 
-    function renderNews(newsArr){const grid=document.getElementById('newsGrid');if(!grid)return;if(!newsArr||!newsArr.length){grid.innerHTML=`<div style="grid-column:1/-1;padding:36px;text-align:center;"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#3A3A3A;">No upcoming USD events.</span></div>`;return;}grid.innerHTML=newsArr.map((item,idx)=>{const ir=item.impact??item.importance??"";let impact="low";if(typeof ir==="string"){impact=ir.toLowerCase();if(impact.includes("high"))impact="high";else if(impact.includes("med"))impact="medium";}else if(Number(ir)===3)impact="high";else if(Number(ir)===2)impact="medium";let lt=item.date||"";let dateAttr="";try{const d=new Date(lt);if(!isNaN(d.getTime())){lt=d.toLocaleString("en-US",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit",hour12:true});dateAttr=d.toISOString();}}catch(e){}const fc=item.forecast!=null?String(item.forecast):item.estimate!=null?String(item.estimate):"—";const name=item.event||item.name||item.title||"Unknown";const il=impact==="high"?"HIGH":impact==="medium"?"MED":"LOW";return`<div class="news-pill impact-${impact}" data-date="${dateAttr}" style="animation:fadeInUp 0.5s ease ${idx*50}ms both;"><div class="news-pill-badge ${impact}">${il}</div><div class="news-pill-title">${name}</div><div class="news-pill-meta"><div><div class="news-pill-date">${lt}</div></div><div style="text-align:right;"><div style="font-family:'IBM Plex Mono',monospace;font-size:8px;color:#3A3A3A;">FCST</div><div class="news-pill-fcst-val">${fc}</div></div></div></div>`;}).join('');}
+    function renderNews(newsArr){
+      const grid=document.getElementById('newsGrid');
+      if(!grid)return;
+      if(!newsArr||!newsArr.length){
+        grid.innerHTML=`<div style="grid-column:1/-1;padding:36px;text-align:center;"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#3A3A3A;">No upcoming USD events.</span></div>`;
+        return;
+      }
+      grid.innerHTML=newsArr.map((item,idx)=>{
+        // Parse impact level from TradingView data
+        const ir=item.impact??item.importance??"";
+        let impact="low";
+        if(typeof ir==="string"){
+          const lower=ir.toLowerCase();
+          if(lower.includes("high"))impact="high";
+          else if(lower.includes("med"))impact="medium";
+          else impact="low";
+        }else if(Number(ir)===3)impact="high";
+        else if(Number(ir)===2)impact="medium";
+        else impact="low";
+
+        // Parse date
+        let lt=item.date||"";
+        let dateAttr="";
+        let timeOnly="";
+        try{
+          const d=new Date(lt);
+          if(!isNaN(d.getTime())){
+            lt=d.toLocaleString("en-US",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit",hour12:true});
+            timeOnly=d.toLocaleTimeString("en-US",{hour:"2-digit",minute:"2-digit",hour12:true});
+            dateAttr=d.toISOString();
+          }
+        }catch(e){}
+
+        // Parse values
+        const fc=item.forecast!=null?String(item.forecast):item.estimate!=null?String(item.estimate):"—";
+        const prev=item.previous!=null?String(item.previous):"—";
+        const actual=item.actual!=null?String(item.actual):null;
+        const name=item.event||item.name||item.title||"Unknown";
+        const il=impact==="high"?"HIGH":impact==="medium"?"MED":"LOW";
+        const isReleased=actual&&actual!=="";
+        const statusClass=isReleased?"released":"upcoming";
+        const statusText=isReleased?"RELEASED":"UPCOMING";
+
+        return`<div class="news-pill impact-${impact}" data-date="${dateAttr}" style="animation:fadeInUp 0.5s ease ${idx*40}ms both;">
+          <div class="news-pill-header">
+            <span class="news-pill-badge ${impact}">${il}</span>
+            <span class="news-pill-time">${timeOnly}</span>
+          </div>
+          <div class="news-pill-title">${name}</div>
+          <div class="news-pill-data">
+            <div class="news-pill-data-item">
+              <div class="news-pill-data-label">Forecast</div>
+              <div class="news-pill-data-val forecast">${fc}</div>
+            </div>
+            <div class="news-pill-data-item">
+              <div class="news-pill-data-label">Previous</div>
+              <div class="news-pill-data-val previous">${prev}</div>
+            </div>
+            <div class="news-pill-data-item">
+              <div class="news-pill-data-label">Actual</div>
+              <div class="news-pill-data-val ${isReleased?'actual':'previous'}">${actual||'—'}</div>
+            </div>
+          </div>
+          <div class="news-pill-status ${statusClass}">${statusText}</div>
+        </div>`;
+      }).join('');
+    }
 
     let activeEntryMemory=[];
     async function loadData(){const status=document.getElementById('lastUpdate');if(status)status.textContent='FETCHING...';const toast=document.getElementById('errorToast');toast.style.opacity='0';toast.style.transform='translateY(16px)';toast.style.pointerEvents='none';const t0=performance.now();try{const res=await fetchWithRetry('/api/predict');const latency=Math.round(performance.now()-t0);if(!res.ok)throw new Error(`HTTP ${res.status}`);const data=await res.json();if(!data.success)throw new Error(data.error||'Unknown error');
