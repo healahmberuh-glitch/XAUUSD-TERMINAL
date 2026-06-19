@@ -425,6 +425,18 @@
     .proximity-badge { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); z-index: 90; padding: 8px 20px; background: rgba(20,20,20,0.9); backdrop-filter: blur(16px); border: 1px solid rgba(245,158,11,0.3); border-radius: 8px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #F59E0B; display: none; animation: fadeInUp 0.3s ease forwards; }
     .proximity-badge.show { display: flex; align-items: center; gap: 8px; }
 
+    /* ─── COMPACT MODE ─── */
+    .compact-toggle { position: fixed; top: 80px; right: 20px; z-index: 90; padding: 6px 12px; background: rgba(20,20,20,0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.06); border-radius: 6px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #666; cursor: pointer; transition: all 0.3s ease; }
+    .compact-toggle:hover { border-color: rgba(255,255,255,0.15); color: #fff; }
+    .compact-toggle.active { color: #F59E0B; border-color: rgba(245,158,11,0.3); }
+    body.compact .hero { min-height: auto; padding: 80px 48px 40px; }
+    body.compact .section { padding: 40px 48px; }
+    body.compact .macro-grid { grid-template-columns: repeat(2, 1fr); }
+    body.compact .stats { grid-template-columns: repeat(4, 1fr); }
+    body.compact .hero-big { font-size: 48px; }
+    body.compact .hero-bottom { margin-top: 24px; }
+    body.compact .section-title { font-size: 32px; }
+
     /* ─── PERF STATS ─── */
     .perf-bar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 80; padding: 6px 20px; background: rgba(12,12,12,0.8); backdrop-filter: blur(12px); border-top: 1px solid rgba(255,255,255,0.04); display: flex; align-items: center; justify-content: space-between; font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #3A3A3A; }
     .perf-item { display: flex; align-items: center; gap: 6px; }
@@ -432,7 +444,44 @@
     .perf-dot.ok { background: #22C55E; }
     .perf-dot.warn { background: #F59E0B; }
     .perf-dot.err { background: #EF4444; }
+    body.compact .perf-bar { display: none; }
 
+    /* ─── EXPORT MODAL ─── */
+    .export-modal { position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; }
+    .export-modal.show { display: flex; }
+    .export-box { background: rgba(20,20,20,0.95); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 32px; max-width: 400px; width: 90%; animation: fadeInUp 0.3s ease; }
+    .export-title { font-size: 16px; font-weight: 800; color: #F5F5F5; margin-bottom: 16px; }
+    .export-btn { display: block; width: 100%; padding: 12px; margin-bottom: 8px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 600; color: #999; cursor: pointer; transition: all 0.2s ease; text-align: left; }
+    .export-btn:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.12); color: #fff; }
+    .export-btn:last-child { margin-bottom: 0; }
+    .export-close { width: 100%; padding: 10px; background: transparent; border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; font-size: 11px; color: #666; cursor: pointer; margin-top: 12px; transition: all 0.2s ease; }
+    .export-close:hover { border-color: rgba(255,255,255,0.15); color: #999; }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 768px) {
+      .nav { padding: 0 20px; height: 56px; }
+      .nav-links { display: none; }
+      .nav-right { display: none; }
+      .hero { padding: 100px 20px 60px; }
+      .hero-big { font-size: 48px; }
+      .section { padding: 60px 20px; }
+      .master { padding: 28px; }
+      .master-score-val { font-size: 40px; }
+      .signal-pos { grid-template-columns: 1fr; }
+      .signal-pos-left { padding-right: 0; border-right: none; border-bottom: 1px solid rgba(255,255,255,0.04); padding-bottom: 16px; margin-bottom: 16px; }
+      .signal-prices { grid-template-columns: repeat(2, 1fr); }
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      .process-grid { grid-template-columns: 1fr; }
+      .mobile-nav { display: block; }
+      .dxy-bar { padding: 10px 14px; }
+      .pnl-grid { grid-template-columns: repeat(2, 1fr); }
+      .toast-container { top: 64px; right: 12px; left: 12px; }
+      .toast { min-width: auto; max-width: 100%; }
+      .cursor-dot, .cursor-ring { display: none; }
+      body { padding-bottom: 72px; }
+      .perf-bar { display: none; }
+      .compact-toggle { display: none; }
+    }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
     }
@@ -464,6 +513,12 @@
       <button class="nav-refresh" onclick="loadData()" aria-label="Refresh data">Refresh</button>
     </div>
   </nav>
+
+  <!-- COMPACT MODE TOGGLE -->
+  <button class="compact-toggle" id="compactToggle" onclick="toggleCompact()" aria-label="Toggle compact mode">⊞ Compact</button>
+
+  <!-- EXPORT BUTTON (fixed) -->
+  <button class="compact-toggle" style="right:120px;" onclick="showExportModal()" aria-label="Export analysis">↗ Export</button>
 
   <!-- ZONE PROXIMITY BADGE -->
   <div class="proximity-badge" id="proximityBadge" role="alert" aria-live="assertive">
@@ -831,6 +886,17 @@
 
   </div><!-- /panelTech -->
 
+  <!-- EXPORT MODAL -->
+  <div class="export-modal" id="exportModal" role="dialog" aria-label="Export analysis">
+    <div class="export-box">
+      <div class="export-title">Export Analysis</div>
+      <button class="export-btn" onclick="exportCopySummary()">📋 Copy Summary to Clipboard</button>
+      <button class="export-btn" onclick="exportCopyJSON()">📊 Copy JSON Data</button>
+      <button class="export-btn" onclick="exportShareLink()">🔗 Share Current State</button>
+      <button class="export-close" onclick="hideExportModal()">Close</button>
+    </div>
+  </div>
+
   <!-- PERF STATS BAR -->
   <div class="perf-bar" id="perfBar" role="status" aria-label="Performance stats">
     <div class="perf-item"><span class="perf-dot ok" id="perfDot"></span><span id="perfStatus">Connected</span></div>
@@ -1055,13 +1121,216 @@
     }
 
     // ─── KEYBOARD SHORTCUTS ────────────────────────────────────────
-    // ─── 10. ACCESSIBILITY ─────────────────────────────────────────
     document.addEventListener('keydown',e=>{
       if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;
       if(e.key==='1'){switchTab('macro');}
       if(e.key==='2'){switchTab('tech');}
       if(e.key==='r'||e.key==='R'){if(!e.ctrlKey&&!e.metaKey){loadData();showToast('info','Refreshing','Fetching latest data...');}}
-      if(e.key==='Tab'){document.body.classList.add('keyboard-nav');}
+    });
+
+    // ─── MOBILE NAV SYNC ───────────────────────────────────────────
+    function syncMobileNav(tab){
+      document.getElementById('mobileTabMacro')?.classList.toggle('active',tab==='macro');
+      document.getElementById('mobileTabTech')?.classList.toggle('active',tab==='tech');
+    }
+
+    // ─── ENHANCED SWITCH TAB ───────────────────────────────────────
+    const _origSwitchTab=switchTab;
+    switchTab=function(tab){
+      _origSwitchTab(tab);
+      syncMobileNav(tab);
+    };
+
+    // ─── 1. GOLD PRICE TICKER ──────────────────────────────────────
+    let lastGoldPrice='';
+    function renderGoldTicker(price){
+      if(!price)return;
+      const navEl=document.getElementById('goldTickerNav');
+      if(navEl)navEl.style.display='inline-flex';
+      const priceEl=document.getElementById('goldPriceNav');
+      if(priceEl){
+        const newPrice='$'+parseFloat(price).toFixed(2);
+        if(newPrice!==lastGoldPrice){
+          priceEl.textContent=newPrice;
+          priceEl.style.animation='none';
+          priceEl.offsetHeight; // trigger reflow
+          priceEl.style.animation='priceFlash 0.5s ease';
+          lastGoldPrice=newPrice;
+        }
+      }
+    }
+
+    // ─── 2. SESSION INDICATOR ──────────────────────────────────────
+    function updateSession(){
+      const utcH=new Date().getUTCHours();
+      let name='',cls='off',activeIdx=-1;
+      if(utcH>=0&&utcH<7){name='Asian Range';cls='asian';activeIdx=0;}
+      else if(utcH>=7&&utcH<12){name='London Killzone';cls='london';activeIdx=1;}
+      else if(utcH>=12&&utcH<21){name='New York Killzone';cls='newyork';activeIdx=2;}
+      else{name='Late NY';cls='off';activeIdx=3;}
+      const el=document.getElementById('sessionActive');
+      if(el){el.className=`session-active ${cls}`;}
+      setEl('sessionName',name);
+      const time=new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:false,timeZone:'UTC'});
+      setEl('sessionTime',time+' UTC');
+      document.querySelectorAll('.session-seg').forEach((seg,i)=>{
+        seg.classList.toggle('active',i===activeIdx);
+      });
+    }
+
+    // ─── 3. ALERT HISTORY LOG ──────────────────────────────────────
+    let alertHistory=[];
+    function addAlertLog(type,title,msg){
+      const now=new Date();
+      const time=now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+      const icons={buy:'🟢',sell:'🔴',info:'ℹ️',warn:'⚠️',news:'📰',zone:'📍'};
+      alertHistory.unshift({type,title,msg,time,icon:icons[type]||'ℹ️'});
+      if(alertHistory.length>50)alertHistory.pop();
+      renderAlertLog();
+    }
+    function renderAlertLog(){
+      const list=document.getElementById('alertLogList');
+      const count=document.getElementById('alertLogCount');
+      if(!list)return;
+      if(alertHistory.length===0){
+        list.innerHTML='<div class="alert-log-empty">No alerts yet. Signals will appear here.</div>';
+        if(count)count.textContent='0 alerts';
+        return;
+      }
+      if(count)count.textContent=alertHistory.length+' alerts';
+      list.innerHTML=alertHistory.slice(0,20).map(a=>`<div class="alert-log-item"><span class="alert-log-icon">${a.icon}</span><span class="alert-log-text"><b>${a.title}</b> ${a.msg}</span><span class="alert-log-time">${a.time}</span></div>`).join('');
+    }
+
+    // ─── 4. AUTO-RETRY ─────────────────────────────────────────────
+    let retryCount=0;const MAX_RETRIES=3;
+    async function fetchWithRetry(url,opts={},retries=MAX_RETRIES){
+      for(let i=0;i<retries;i++){
+        try{
+          const res=await fetch(url,opts);
+          if(!res.ok)throw new Error(`HTTP ${res.status}`);
+          retryCount=0;
+          return res;
+        }catch(e){
+          retryCount=i+1;
+          if(i===retries-1)throw e;
+          await new Promise(r=>setTimeout(r,Math.pow(2,i)*1000));
+        }
+      }
+    }
+
+    // ─── 5. RSI DASHBOARD ──────────────────────────────────────────
+    function renderRSIDashboard(swing,scalp){
+      const h1Rsi=swing?.h1Rsi?parseFloat(swing.h1Rsi):null;
+      const m5Rsi=scalp?.m5Rsi?parseFloat(scalp.m5Rsi):null;
+      const m1Rsi=null;
+      [{id:'rsiH1',barId:'rsiH1Bar',statusId:'rsiH1Status',val:h1Rsi},
+       {id:'rsiM5',barId:'rsiM5Bar',statusId:'rsiM5Status',val:m5Rsi},
+       {id:'rsiM1',barId:'rsiM1Bar',statusId:'rsiM1Status',val:m1Rsi}
+      ].forEach(({id,barId,statusId,val})=>{
+        const el=document.getElementById(id);
+        const bar=document.getElementById(barId);
+        const status=document.getElementById(statusId);
+        if(!el)return;
+        if(val===null||isNaN(val)){
+          el.textContent='—';el.style.color='#666';
+          if(bar){bar.style.width='50%';bar.style.background='#252525';}
+          if(status){status.textContent='Awaiting data';status.style.color='#666';}
+          return;
+        }
+        el.textContent=val.toFixed(1);
+        let color='#666',statusText='Neutral',statusColor='#666';
+        if(val>=70){color='#EF4444';statusText='OVERBOUGHT';statusColor='#EF4444';}
+        else if(val<=30){color='#22C55E';statusText='OVERSOLD';statusColor='#22C55E';}
+        else if(val>=60){color='#F59E0B';statusText='Bullish zone';statusColor='#F59E0B';}
+        else if(val<=40){color='#38BDF8';statusText='Bearish zone';statusColor='#38BDF8';}
+        else{color='#999';statusText='Neutral';statusColor='#666';}
+        el.style.color=color;
+        if(bar){bar.style.width=val+'%';bar.style.background=color;}
+        if(status){status.textContent=statusText;status.style.color=statusColor;}
+      });
+    }
+
+    // ─── 6. ZONE PROXIMITY ALERT ───────────────────────────────────
+    function checkZoneProximity(zones,price){
+      if(!price||!zones||!zones.length)return;
+      const badge=document.getElementById('proximityBadge');
+      const text=document.getElementById('proximityText');
+      if(!badge||!text)return;
+      const closest=zones.reduce((best,z)=>{
+        const zMid=(parseFloat(z.low)+parseFloat(z.high))/2;
+        const dist=Math.abs(price-zMid);
+        return dist<best.dist?{dist,z}:best;
+      },{dist:Infinity,z:null});
+      if(closest.dist<5){
+        const z=closest.z;
+        text.textContent=`📍 Price $${price.toFixed(2)} near ${z.typeLabel||z.type} (${z.bias}) — ${closest.dist.toFixed(1)} pips away`;
+        badge.classList.add('show');
+      }else{
+        badge.classList.remove('show');
+      }
+    }
+
+    // ─── 7. COMPACT MODE ───────────────────────────────────────────
+    function toggleCompact(){
+      document.body.classList.toggle('compact');
+      const btn=document.getElementById('compactToggle');
+      if(btn)btn.classList.toggle('active');
+    }
+
+    // ─── 8. PERFORMANCE STATS ──────────────────────────────────────
+    let perfStartTime=Date.now(),perfPollCount=0,perfLastLatency=0;
+    function updatePerfStats(latency,success){
+      perfPollCount++;
+      perfLastLatency=latency;
+      const dot=document.getElementById('perfDot');
+      const status=document.getElementById('perfStatus');
+      const latencyEl=document.getElementById('perfLatency');
+      const uptimeEl=document.getElementById('perfUptime');
+      const pollsEl=document.getElementById('perfPolls');
+      if(dot)dot.className=`perf-dot ${success?'ok':'err'}`;
+      if(status)status.textContent=success?'Connected':'Error';
+      if(latencyEl)latencyEl.textContent=latency;
+      if(pollsEl)pollsEl.textContent=perfPollCount;
+      const upSec=Math.floor((Date.now()-perfStartTime)/1000);
+      const mins=Math.floor(upSec/60),secs=upSec%60;
+      if(uptimeEl)uptimeEl.textContent=mins>0?`${mins}m ${secs}s`:`${secs}s`;
+    }
+
+    // ─── 9. EXPORT ─────────────────────────────────────────────────
+    function showExportModal(){document.getElementById('exportModal')?.classList.add('show');}
+    function hideExportModal(){document.getElementById('exportModal')?.classList.remove('show');}
+    function exportCopySummary(){
+      const master=document.getElementById('masterSignalText')?.textContent||'N/A';
+      const score=document.getElementById('masterScore')?.textContent||'N/A';
+      const swing=document.getElementById('swingPositionBadge')?.textContent||'N/A';
+      const scalp=document.getElementById('scalpPositionBadge')?.textContent||'N/A';
+      const gold=document.getElementById('goldPriceNav')?.textContent||'N/A';
+      const txt=`XAU/USD TERMINAL — ${new Date().toLocaleString()}\n\nMaster: ${master} (${score})\nGold: ${gold}\nSwing: ${swing}\nScalp: ${scalp}`;
+      navigator.clipboard?.writeText(txt);
+      showToast('info','Copied','Summary copied to clipboard');
+      hideExportModal();
+    }
+    function exportCopyJSON(){
+      const lastData=window._lastData||{};
+      navigator.clipboard?.writeText(JSON.stringify(lastData,null,2));
+      showToast('info','Copied','JSON data copied to clipboard');
+      hideExportModal();
+    }
+    function exportShareLink(){
+      const state=btoa(JSON.stringify({t:Date.now()}));
+      const url=window.location.href.split('?')[0]+'?state='+state;
+      navigator.clipboard?.writeText(url);
+      showToast('info','Copied','Share link copied to clipboard');
+      hideExportModal();
+    }
+    document.addEventListener('click',e=>{if(e.target.id==='exportModal')hideExportModal();});
+
+    // ─── 10. ACCESSIBILITY ─────────────────────────────────────────
+    document.addEventListener('keydown',e=>{
+      if(e.key==='Escape'){hideExportModal();}
+      if(e.key==='Tab'){
+        document.body.classList.add('keyboard-nav');
+      }
     });
     document.addEventListener('mousedown',()=>{document.body.classList.remove('keyboard-nav');});
 
