@@ -283,6 +283,31 @@ async function fetchChartData(interval, range) {
   return { c, o, h, l, v, current: c[c.length-1] };
 }
 
+// ─── REAL-TIME GOLD PRICE (Yahoo Finance v7 Quote) ──────────────────────────
+async function fetchGoldPrice() {
+  try {
+    const res = await axios.get(
+      `https://query2.finance.yahoo.com/v7/finance/quote?symbols=GC=F,XAUUSD=X`,
+      { timeout: 8000, headers: { "User-Agent": "Mozilla/5.0" } }
+    );
+    const quotes = res.data?.quoteResponse?.result || [];
+    // Try XAUUSD=X first (spot), fallback to GC=F (futures)
+    const spot = quotes.find(q => q.symbol === "XAUUSD=X");
+    const futures = quotes.find(q => q.symbol === "GC=F");
+    const q = spot || futures;
+    if (q) {
+      return {
+        price: q.regularMarketPrice,
+        change: q.regularMarketChange,
+        changePercent: q.regularMarketChangePercent,
+        source: spot ? "XAUUSD=X (spot)" : "GC=F (futures)",
+        time: q.regularMarketTime
+      };
+    }
+    return null;
+  } catch (e) { return null; }
+}
+
 // ─── RAW ZONE SCANNERS (tidak berubah) ──────────────────────────────────────
 function scanPreviousHL(h1, session) {
   const zones = [];
@@ -942,10 +967,11 @@ module.exports = async (req, res) => {
   try {
     const session = getSession();
 
-    const [events, crude, dxy, h4Raw, h1, m5, m1] = await Promise.all([
+    const [events, crude, dxy, goldData, h4Raw, h1, m5, m1] = await Promise.all([
       fetchTradingViewData(),
       fetchCrudeOil(),
       fetchDXY(),
+      fetchGoldPrice(),
       fetchChartData("1d","60d").catch(() => fetchChartData("1h","10d")),
       fetchChartData("1h","7d"),
       fetchChartData("5m","2d"),
@@ -1022,7 +1048,8 @@ module.exports = async (req, res) => {
     return res.status(200).json({
       success: true,
       timestamp: new Date().toISOString(),
-      gold_price: h1 ? h1.current : null,
+      gold_price: goldData ? goldData.price : (h1 ? h1.current : null),
+      gold_change: goldData ? goldData.changePercent : null,
       dxy_live: dxy,
       master_signal: { signal:master, total_score:total },
       nfp, cpi, growth, fed,
