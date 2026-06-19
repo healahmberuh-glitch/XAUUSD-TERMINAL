@@ -719,71 +719,14 @@
           <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
           <script type="text/javascript">
             (function(){
-              let tvWidget=null;
               function initTV(){
                 if(typeof TradingView==='undefined'){setTimeout(initTV,500);return;}
-                tvWidget=new TradingView.widget({
+                new TradingView.widget({
                   autosize:true,symbol:"OANDA:XAUUSD",interval:"15",timezone:"Etc/UTC",
                   theme:"dark",style:"1",locale:"en",toolbar_bg:"#0C0C0C",
                   enable_publishing:false,hide_top_toolbar:false,save_image:false,
                   backgroundColor:"#0C0C0C",gridColor:"#1A1A1A",
                   container_id:"tradingview_chart"
-                });
-                tvWidget.onChartReady(function(){
-                  // Method 1: Poll chart.getSeries().data() every 1s
-                  setInterval(function(){
-                    try{
-                      if(!tvWidget)return;
-                      const chart=tvWidget.chart();
-                      if(!chart)return;
-                      const series=chart.getSeries();
-                      if(!series)return;
-                      const data=series.data();
-                      if(!data||data.length===0)return;
-                      const last=data[data.length-1];
-                      const price=last.close||last.value||last[4]||last.c;
-                      if(price&&price>1000&&price<10000){
-                        window._tvPrice=price;
-                        renderGoldTicker(price);
-                        const el=document.getElementById('tvPrice');
-                        if(el)el.textContent='$'+price.toFixed(2);
-                        const disp=document.getElementById('tvPriceDisplay');
-                        if(disp)disp.style.display='inline-flex';
-                      }
-                    }catch(e){}
-                  },1000);
-
-                  // Method 2: onCrosshairMoved for tick-level updates
-                  try{
-                    chart.onCrosshairMoved().subscribe(null,function(p){
-                      try{
-                        if(p&&p.price){
-                          window._tvPrice=p.price;
-                          renderGoldTicker(p.price);
-                          const el=document.getElementById('tvPrice');
-                          if(el)el.textContent='$'+p.price.toFixed(2);
-                          const disp=document.getElementById('tvPriceDisplay');
-                          if(disp)disp.style.display='inline-flex';
-                        }
-                      }catch(e){}
-                    });
-                  }catch(e){}
-
-                  // Method 3: Subscribe to bar updates
-                  try{
-                    chart.onBar().subscribe(null,function(bar){
-                      try{
-                        if(bar&&bar.close){
-                          window._tvPrice=bar.close;
-                          renderGoldTicker(bar.close);
-                          const el=document.getElementById('tvPrice');
-                          if(el)el.textContent='$'+bar.close.toFixed(2);
-                          const disp=document.getElementById('tvPriceDisplay');
-                          if(disp)disp.style.display='inline-flex';
-                        }
-                      }catch(e){}
-                    });
-                  }catch(e){}
                 });
               }
               if(document.readyState==='loading'){
@@ -1404,64 +1347,33 @@
 
     let pollTimer=null;function startAutoRefresh(){if(pollTimer)clearInterval(pollTimer);pollTimer=setInterval(()=>{if(!document.hidden)loadData();},3000);}
 
-    // ─── LIVE GOLD PRICE POLLER (fallback if TradingView fails) ────
+    // ─── LIVE GOLD PRICE POLLER (every 1.5s) ──────────────────────
     let goldPollTimer=null;
     async function pollGoldPrice(){
-      if(window._tvPrice)return; // TradingView is providing price
       try{
-        const res=await fetch('https://query2.finance.yahoo.com/v7/finance/quote?symbols=XAUUSD=X,GC=F',{
-          headers:{'User-Agent':'Mozilla/5.0'}
-        });
-        if(!res.ok)return;
-        const data=await res.json();
-        const quotes=data?.quoteResponse?.result||[];
-        const q=quotes.find(x=>x.symbol==='XAUUSD=X')||quotes.find(x=>x.symbol==='GC=F');
-        if(q&&q.regularMarketPrice){
-          renderGoldTicker(q.regularMarketPrice);
+        // Try our server first (has XAU=X spot price)
+        const res=await fetch('/api/predict?gold_only=1');
+        if(res.ok){
+          const data=await res.json();
+          if(data.gold_price){renderGoldTicker(data.gold_price);return;}
+        }
+      }catch(e){}
+      // Fallback: Yahoo Finance client-side
+      try{
+        const yRes=await fetch('https://query2.finance.yahoo.com/v7/finance/quote?symbols=XAU=X,GC=F',{headers:{'User-Agent':'Mozilla/5.0'}});
+        if(yRes.ok){
+          const yData=await yRes.json();
+          const q=(yData?.quoteResponse?.result||[])[0];
+          if(q&&q.regularMarketPrice)renderGoldTicker(q.regularMarketPrice);
         }
       }catch(e){}
     }
     function startGoldPoller(){
       if(goldPollTimer)clearInterval(goldPollTimer);
       pollGoldPrice();
-      goldPollTimer=setInterval(pollGoldPrice,3000);
+      goldPollTimer=setInterval(pollGoldPrice,1500);
     }
 
-    // ─── TRADINGVIEW POSTMESSAGE LISTENER ──────────────────────────
-    window.addEventListener('message',function(e){
-      try{
-        if(e.origin&&e.origin.indexOf('tradingview')===-1)return;
-        const d=e.data;
-        if(!d)return;
-        // Try to extract price from various message formats
-        if(typeof d==='object'){
-          // Quote update messages
-          if(d.name==='quoteUpdate'||d.name==='quote_data'){
-            const p=d.last_price||d.price||d.lp;
-            if(p&&p>1000&&p<10000){
-              window._tvPrice=p;
-              renderGoldTicker(p);
-              const el=document.getElementById('tvPrice');
-              if(el)el.textContent='$'+p.toFixed(2);
-              const disp=document.getElementById('tvPriceDisplay');
-              if(disp)disp.style.display='inline-flex';
-            }
-          }
-          // Price in data field
-          if(d.data&&(d.data.last_price||d.data.price)){
-            const p=d.data.last_price||d.data.price;
-            if(p>1000&&p<10000){
-              window._tvPrice=p;
-              renderGoldTicker(p);
-              const el=document.getElementById('tvPrice');
-              if(el)el.textContent='$'+p.toFixed(2);
-              const disp=document.getElementById('tvPriceDisplay');
-              if(disp)disp.style.display='inline-flex';
-            }
-          }
-        }
-      }catch(ex){}
-    });
     document.addEventListener("visibilitychange",()=>{if(document.hidden){clearInterval(pollTimer);clearInterval(goldPollTimer);}else{loadData();startAutoRefresh();startGoldPoller();}});
 
     const revealObserver=new IntersectionObserver(entries=>{entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add('visible');if(entry.target.classList.contains('stagger'))animateCounters();revealObserver.unobserve(entry.target);}});},{threshold:0.1});
