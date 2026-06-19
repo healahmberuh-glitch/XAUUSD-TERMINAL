@@ -526,6 +526,36 @@
     @media (prefers-reduced-motion: reduce) {
       #pixelBlastCanvas { display: none; }
     }
+
+    /* ─── CURVED LOOP MARQUEE (Vanilla SVG) ─────────────────────── */
+    .curved-loop-wrap {
+      width: 100%;
+      overflow: visible;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .curved-loop-svg {
+      display: block;
+      width: 100%;
+      overflow: visible;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .curved-loop-svg text {
+      font-family: 'Inter', sans-serif;
+      font-weight: 900;
+      font-size: 3.2rem;
+      fill: rgba(255,255,255,0.06);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      transition: fill 0.3s ease;
+    }
+    .curved-loop-svg:hover text {
+      fill: rgba(255,255,255,0.1);
+    }
+    @media (max-width: 768px) {
+      .curved-loop-svg text { font-size: 1.8rem; }
+    }
   </style>
 </head>
 
@@ -572,8 +602,18 @@
     <!-- HERO -->
     <section class="hero">
       <div class="hero-top">
-        <div class="hero-tag">BECOME RICH WITH ME!</div>
-        <div class="hero-tag">VERSION 6.1</div>
+        <div class="curved-loop-wrap" id="curvedLoopHero">
+          <svg class="curved-loop-svg" viewBox="0 0 1440 120">
+            <defs>
+              <path id="heroCurve" d="M-100,40 Q500,440 1540,40" fill="none" stroke="transparent" />
+            </defs>
+            <text>
+              <textPath id="heroTextPath" href="#heroCurve" startOffset="0px">
+              </textPath>
+            </text>
+          </svg>
+        </div>
+        <div class="hero-tag">VERSION 6.3</div>
       </div>
       <h1 class="hero-big reveal">Strategy<br/>before <em>signals.</em></h1>
       <!-- DXY BAR -->
@@ -1237,6 +1277,98 @@
       draw();
     }
 
+    // ─── CURVED LOOP ENGINE (Vanilla SVG — ported from React Bits) ─────
+    function initCurvedLoop(elementId, text, config) {
+      const cfg = Object.assign({
+        speed: 2,
+        curveAmount: 400,
+        direction: 'left',
+        interactive: true
+      }, config || {});
+
+      const wrap = document.getElementById(elementId);
+      if (!wrap) return;
+
+      const svg = wrap.querySelector('svg');
+      const textPath = document.getElementById(elementId.replace('Hero','') + 'TextPath') || svg.querySelector('textPath');
+      if (!svg || !textPath) return;
+
+      // Update curve path with custom curveAmount
+      const path = svg.querySelector('path');
+      if (path) {
+        const d = `M-100,40 Q500,${40 + cfg.curveAmount} 1540,40`;
+        path.setAttribute('d', d);
+      }
+
+      // Measure text length
+      const measureEl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      measureEl.setAttribute('visibility', 'hidden');
+      measureEl.setAttribute('font-family', "'Inter', sans-serif");
+      measureEl.setAttribute('font-weight', '900');
+      measureEl.setAttribute('font-size', '3.2rem');
+      measureEl.textContent = text;
+      svg.appendChild(measureEl);
+      const textLen = measureEl.getComputedTextLength();
+      svg.removeChild(measureEl);
+
+      if (textLen <= 0) return;
+
+      // Fill textPath with enough copies
+      const copies = Math.ceil(1600 / textLen) + 2;
+      let fullText = '';
+      for (let i = 0; i < copies; i++) fullText += text + '\u00A0';
+      textPath.textContent = fullText;
+
+      // Animation state
+      let offset = -textLen;
+      let dir = cfg.direction === 'right' ? 1 : -1;
+      let dragging = false;
+      let lastX = 0;
+      let velocity = 0;
+
+      function animate() {
+        if (!dragging) {
+          offset += cfg.speed * dir;
+          // Wrap around
+          if (offset <= -textLen) offset += textLen;
+          if (offset > 0) offset -= textLen;
+          textPath.setAttribute('startOffset', offset + 'px');
+        }
+        requestAnimationFrame(animate);
+      }
+
+      // Drag interaction
+      if (cfg.interactive) {
+        wrap.style.cursor = 'grab';
+        wrap.addEventListener('pointerdown', e => {
+          dragging = true;
+          lastX = e.clientX;
+          velocity = 0;
+          wrap.style.cursor = 'grabbing';
+          wrap.setPointerCapture(e.pointerId);
+        });
+        wrap.addEventListener('pointermove', e => {
+          if (!dragging) return;
+          const dx = e.clientX - lastX;
+          lastX = e.clientX;
+          velocity = dx;
+          offset += dx;
+          if (offset <= -textLen) offset += textLen;
+          if (offset > 0) offset -= textLen;
+          textPath.setAttribute('startOffset', offset + 'px');
+        });
+        const endDrag = () => {
+          dragging = false;
+          dir = velocity > 0 ? 1 : -1;
+          wrap.style.cursor = 'grab';
+        };
+        wrap.addEventListener('pointerup', endDrag);
+        wrap.addEventListener('pointerleave', endDrag);
+      }
+
+      animate();
+    }
+
     const CARD_THRESHOLD=20,MASTER_THRESHOLD=40;
 
     function switchTab(tab){document.getElementById('panelMacro').classList.toggle('active',tab==='macro');document.getElementById('panelTech').classList.toggle('active',tab==='tech');document.getElementById('tabBtnMacro').classList.toggle('active',tab==='macro');document.getElementById('tabBtnTech').classList.toggle('active',tab==='tech');window.scrollTo({top:0,behavior:'smooth'});setTimeout(()=>{document.querySelectorAll('.reveal:not(.visible),.reveal-scale:not(.visible),.stagger:not(.visible)').forEach(el=>revealObserver.observe(el));},100);}
@@ -1773,7 +1905,7 @@
 
     const revealObserver=new IntersectionObserver(entries=>{entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add('visible');if(entry.target.classList.contains('stagger'))animateCounters();revealObserver.unobserve(entry.target);}});},{threshold:0.1});
 
-    document.addEventListener('DOMContentLoaded',()=>{initGradualBlur();initPixelBlast();loadData();startAutoRefresh();startGoldPoller();document.querySelectorAll('.reveal,.reveal-scale,.stagger').forEach(el=>revealObserver.observe(el));newsCountdownTimer=setInterval(updateNewsCountdown,1000);setInterval(updateSession,60000);setInterval(()=>{const upSec=Math.floor((Date.now()-perfStartTime)/1000);const mins=Math.floor(upSec/60),secs=upSec%60;const el=document.getElementById('perfUptime');if(el)el.textContent=mins>0?`${mins}m ${secs}s`:`${secs}s`;},1000);addAlertLog('info','System','Terminal initialized. Monitoring XAU/USD.');});
+    document.addEventListener('DOMContentLoaded',()=>{initGradualBlur();initPixelBlast();initCurvedLoop('curvedLoopHero','GET RICH OR DIE TRYING! \u2726 ',{speed:1.5,curveAmount:350,direction:'left',interactive:true});loadData();startAutoRefresh();startGoldPoller();document.querySelectorAll('.reveal,.reveal-scale,.stagger').forEach(el=>revealObserver.observe(el));newsCountdownTimer=setInterval(updateNewsCountdown,1000);setInterval(updateSession,60000);setInterval(()=>{const upSec=Math.floor((Date.now()-perfStartTime)/1000);const mins=Math.floor(upSec/60),secs=upSec%60;const el=document.getElementById('perfUptime');if(el)el.textContent=mins>0?`${mins}m ${secs}s`:`${secs}s`;},1000);addAlertLog('info','System','Terminal initialized. Monitoring XAU/USD.');});
   </script>
 </body>
 </html>
