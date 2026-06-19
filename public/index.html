@@ -359,7 +359,9 @@
     .gold-ticker-change { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; }
     .gold-ticker-change.up { color: #22C55E; background: rgba(34,197,94,0.1); }
     .gold-ticker-change.down { color: #EF4444; background: rgba(239,68,68,0.1); }
-    .gold-ticker-mini { font-size: 14px; font-weight: 800; color: #F5F5F5; font-family: 'IBM Plex Mono', monospace; letter-spacing: -0.01em; }
+    .gold-ticker-mini { font-size: 15px; font-weight: 900; color: #F5F5F5; font-family: 'IBM Plex Mono', monospace; letter-spacing: -0.01em; padding: 4px 12px; background: rgba(245,158,11,0.04); border: 1px solid rgba(245,158,11,0.1); border-radius: 6px; transition: all 0.3s ease; }
+    .gold-ticker-mini:hover { background: rgba(245,158,11,0.08); border-color: rgba(245,158,11,0.2); }
+    @keyframes priceFlash { 0%{color:#F59E0B;} 100%{color:#F5F5F5;} }
 
     /* ─── SESSION INDICATOR ─── */
     .session-bar { display: flex; align-items: center; gap: 12px; padding: 10px 20px; background: rgba(20,20,20,0.4); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.04); border-radius: 8px; margin-bottom: 24px; }
@@ -705,13 +707,112 @@
       <div class="chart-frame reveal-scale">
         <div class="chart-head">
           <div style="display:flex;align-items:center;gap:8px;"><span class="chart-head-dot"></span><div><div style="font-size:13px;font-weight:800;color:#F5F5F5;">OANDA:XAUUSD</div><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#666;">TradingView · 15M · UTC</div></div></div>
-          <div class="chart-badge"><span style="width:4px;height:4px;border-radius:50%;background:#38BDF8;animation:pulse 2s ease-in-out infinite;"></span>LIVE</div>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div id="tvPriceDisplay" class="gold-ticker-mini" style="display:none;font-size:16px;" aria-live="polite">
+              <span id="tvPrice">—</span>
+            </div>
+            <div class="chart-badge"><span style="width:4px;height:4px;border-radius:50%;background:#38BDF8;animation:pulse 2s ease-in-out infinite;"></span>LIVE</div>
+          </div>
         </div>
         <div class="tradingview-widget-container" style="height:520px;">
           <div id="tradingview_chart" style="height:100%;"></div>
           <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
           <script type="text/javascript">
-            (function(){function initTV(){if(typeof TradingView!=='undefined'){new TradingView.widget({autosize:true,symbol:"OANDA:XAUUSD",interval:"15",timezone:"Etc/UTC",theme:"dark",style:"1",locale:"en",toolbar_bg:"#0C0C0C",enable_publishing:false,hide_top_toolbar:false,save_image:false,backgroundColor:"#0C0C0C",gridColor:"#1A1A1A",container_id:"tradingview_chart"});}}if(typeof TradingView!=='undefined'){initTV();}else{document.addEventListener('DOMContentLoaded',function(){setTimeout(initTV,500);});}})();
+            (function(){
+              let tvWidget=null;
+              function initTV(){
+                if(typeof TradingView==='undefined'){setTimeout(initTV,500);return;}
+                tvWidget=new TradingView.widget({
+                  autosize:true,symbol:"OANDA:XAUUSD",interval:"15",timezone:"Etc/UTC",
+                  theme:"dark",style:"1",locale:"en",toolbar_bg:"#0C0C0C",
+                  enable_publishing:false,hide_top_toolbar:false,save_image:false,
+                  backgroundColor:"#0C0C0C",gridColor:"#1A1A1A",
+                  container_id:"tradingview_chart"
+                });
+                tvWidget.onChartReady(function(){
+                  try{
+                    const chart=tvWidget.chart();
+                    // Subscribe to quote changes via symbol
+                    chart.onSymbolChanged().subscribe(null,function(){
+                      try{
+                        const data=chart.getSeries().data();
+                        if(data&&data.length>0){
+                          const last=data[data.length-1];
+                          const price=last.close||last.value;
+                          if(price){
+                            window._tvPrice=price;
+                            renderGoldTicker(price);
+                            const el=document.getElementById('tvPrice');
+                            if(el)el.textContent='$'+price.toFixed(2);
+                            const disp=document.getElementById('tvPriceDisplay');
+                            if(disp)disp.style.display='inline-flex';
+                          }
+                        }
+                      }catch(e){}
+                    });
+                    // Also poll the chart's current price periodically
+                    setInterval(function(){
+                      try{
+                        const chart=tvWidget.chart();
+                        if(!chart)return;
+                        const symbol=chart.symbol();
+                        const data=chart.getSeries().data();
+                        if(data&&data.length>0){
+                          const last=data[data.length-1];
+                          const price=last.close||last.value;
+                          if(price){
+                            window._tvPrice=price;
+                            renderGoldTicker(price);
+                            const el=document.getElementById('tvPrice');
+                            if(el)el.textContent='$'+price.toFixed(2);
+                            const disp=document.getElementById('tvPriceDisplay');
+                            if(disp)disp.style.display='inline-flex';
+                          }
+                        }
+                      }catch(e){}
+                    },1000);
+                    // Backup: observe DOM for price text changes in TradingView widget
+                    setTimeout(function(){
+                      try{
+                        const container=document.getElementById('tradingview_chart');
+                        if(!container)return;
+                        const observer=new MutationObserver(function(mutations){
+                          mutations.forEach(function(m){
+                            m.addedNodes.forEach(function(node){
+                              if(node.nodeType===1){
+                                const priceEls=node.querySelectorAll('[class*="lastPrice"],[class*="priceWrapper"],[data-name="legend-source-item"]');
+                                priceEls.forEach(function(el){
+                                  const text=el.textContent;
+                                  const match=text.match(/(\d{3,4}\.\d{1,2})/);
+                                  if(match){
+                                    const price=parseFloat(match[1]);
+                                    if(price>1000&&price<10000){
+                                      window._tvPrice=price;
+                                      renderGoldTicker(price);
+                                      const el2=document.getElementById('tvPrice');
+                                      if(el2)el2.textContent='$'+price.toFixed(2);
+                                      const disp=document.getElementById('tvPriceDisplay');
+                                      if(disp)disp.style.display='inline-flex';
+                                    }
+                                  }
+                                });
+                              }
+                            });
+                          });
+                        });
+                        observer.observe(container,{childList:true,subtree:true,characterData:true});
+                        window._tvPriceObserver=observer;
+                      }catch(e){}
+                    },3000);
+                  }catch(e){}
+                });
+              }
+              if(document.readyState==='loading'){
+                document.addEventListener('DOMContentLoaded',function(){setTimeout(initTV,500);});
+              }else{
+                setTimeout(initTV,500);
+              }
+            })();
           </script>
         </div>
       </div>
@@ -1097,12 +1198,22 @@
     };
 
     // ─── 1. GOLD PRICE TICKER ──────────────────────────────────────
+    let lastGoldPrice='';
     function renderGoldTicker(price){
       if(!price)return;
       const navEl=document.getElementById('goldTickerNav');
       if(navEl)navEl.style.display='inline-flex';
       const priceEl=document.getElementById('goldPriceNav');
-      if(priceEl)priceEl.textContent='$'+parseFloat(price).toFixed(2);
+      if(priceEl){
+        const newPrice='$'+parseFloat(price).toFixed(2);
+        if(newPrice!==lastGoldPrice){
+          priceEl.textContent=newPrice;
+          priceEl.style.animation='none';
+          priceEl.offsetHeight; // trigger reflow
+          priceEl.style.animation='priceFlash 0.5s ease';
+          lastGoldPrice=newPrice;
+        }
+      }
     }
 
     // ─── 2. SESSION INDICATOR ──────────────────────────────────────
@@ -1313,11 +1424,35 @@
     const zones=data.zone_pantau||[];document.getElementById('zoneGrid').innerHTML=zones.map(z=>{const color=z.bias==="BUY"?"#22C55E":z.bias==="SELL"?"#EF4444":"#A78BFA";return`<div class="zone-card"><div class="zone-card-head"><span class="zone-card-type">${z.typeLabel||z.type}</span><span class="zone-card-bias" style="color:${color}">${z.bias}</span></div><div class="zone-card-range">${z.lowStr||z.low}</div><div class="zone-card-to">to</div><div class="zone-card-range">${z.highStr||z.high}</div><div class="zone-card-session">${z.session||""}</div></div>`;}).join('');const rawPrice=data.swing_signal?.currentPrice||data.technical_signal?.currentPrice||0,currentPrice=parseFloat(rawPrice),nowMs=Date.now(),isPriceValid=currentPrice>0&&!isNaN(currentPrice);if(isPriceValid){checkZoneProximity(zones,currentPrice);zones.forEach(z=>{if(!z.signal)return;const entry=parseFloat(z.signal.entry),isBuy=z.bias==="BUY",tol=0.15,isTrig=isBuy?currentPrice>=entry-tol:currentPrice<=entry+tol;if(isTrig){const exists=activeEntryMemory.find(e=>e.id===z.id);if(!exists)activeEntryMemory.push({...z,triggeredAt:nowMs,status:'RUNNING',statusColor:'#38BDF8'});}});activeEntryMemory.forEach(trade=>{if(trade.status!=='RUNNING')return;const isBuy=trade.bias==="BUY",entry=parseFloat(trade.signal.entry),sl=parseFloat(trade.signal.sl),tp1=parseFloat(trade.signal.tp1);if(isBuy){if(currentPrice<=sl){trade.status='LOSS (SL HIT)';trade.statusColor='#EF4444';trade.closedAt=nowMs;}else if(currentPrice>=tp1){trade.status='WIN (TP1 HIT)';trade.statusColor='#22C55E';trade.closedAt=nowMs;}}else{if(currentPrice>=sl){trade.status='LOSS (SL HIT)';trade.statusColor='#EF4444';trade.closedAt=nowMs;}else if(currentPrice<=tp1){trade.status='WIN (TP1 HIT)';trade.statusColor='#22C55E';trade.closedAt=nowMs;}}});}activeEntryMemory=activeEntryMemory.filter(e=>{if(e.status==='RUNNING')return true;return nowMs-e.closedAt<1800000;});const running=activeEntryMemory.filter(t=>t.status==='RUNNING'),closed=activeEntryMemory.filter(t=>t.status!=='RUNNING');document.getElementById('entryTriggerCount').textContent=`${running.length} running, ${closed.length} closed`;const tg=document.getElementById('entryTriggerGrid');if(running.length===0){tg.innerHTML=`<div style="grid-column:1/-1;padding:36px;text-align:center;"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#3A3A3A;">Tidak ada limit order running<span class="cursor">_</span></span></div>`;}else{tg.innerHTML=running.map(trade=>{const isBuy=trade.bias==="BUY",entry=parseFloat(trade.signal.entry),sl=parseFloat(trade.signal.sl),tp1=parseFloat(trade.signal.tp1),cur=currentPrice,pnl=isBuy?cur-entry:entry-cur,risk=Math.abs(entry-sl),pnlP=(pnl/risk)*100,dSL=Math.abs(cur-sl),dTP1=Math.abs(tp1-cur),pnlC=pnl>0?'#22C55E':pnl<0?'#EF4444':'#F59E0B';return`<div class="trade-card" style="border-left-color:${trade.statusColor};"><div class="trade-status"><span class="trade-status-dot" style="background:${trade.statusColor};"></span><span class="trade-status-text" style="color:${trade.statusColor};">${trade.status}</span></div><div class="trade-title">${trade.bias} @ $${entry.toFixed(2)}</div><div class="trade-sub">${trade.typeLabel} (${trade.session})</div><div class="trade-prices"><div class="trade-price"><div class="trade-price-label" style="color:#EF4444;">SL</div><div class="trade-price-val">$${sl.toFixed(2)}</div></div><div class="trade-price"><div class="trade-price-label" style="color:#22C55E;">TP1</div><div class="trade-price-val">$${tp1.toFixed(2)}</div></div><div class="trade-price"><div class="trade-price-label" style="color:#38BDF8;">Risk</div><div class="trade-price-val">${risk.toFixed(1)}p</div></div></div><div class="trade-pnl"><div><div class="trade-pnl-label">PnL</div><div class="trade-pnl-val" style="color:${pnlC};">${pnl>0?'+':''}$${pnl.toFixed(2)} (${pnlP.toFixed(0)}%)</div></div><div style="text-align:right;"><div class="trade-pnl-label">SL/TP1</div><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#666;">${dSL.toFixed(2)} / ${dTP1.toFixed(2)}</div></div></div><div class="trade-time">${new Date(trade.triggeredAt).toLocaleTimeString()}</div></div>`;}).join('');}if(status)status.textContent='UPDATED '+new Date(data.timestamp).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});    }catch(err){console.error(err);const latency=Math.round(performance.now()-t0);updatePerfStats(latency,false);addAlertLog('warn','Fetch Error',err.message);document.getElementById('errorMsg').textContent='Error: '+err.message;toast.style.opacity='1';toast.style.transform='translateY(0)';toast.style.pointerEvents='auto';if(status)status.textContent='FETCH FAILED';setTimeout(()=>{toast.style.opacity='0';toast.style.transform='translateY(16px)';},6000);}}
 
     let pollTimer=null;function startAutoRefresh(){if(pollTimer)clearInterval(pollTimer);pollTimer=setInterval(()=>{if(!document.hidden)loadData();},3000);}
-    document.addEventListener("visibilitychange",()=>{if(document.hidden){clearInterval(pollTimer);}else{loadData();startAutoRefresh();}});
+
+    // ─── LIVE GOLD PRICE POLLER (fallback if TradingView fails) ────
+    let goldPollTimer=null;
+    async function pollGoldPrice(){
+      // If TradingView is providing price, skip Yahoo fallback
+      if(window._tvPrice)return;
+      try{
+        const res=await fetch('https://query2.finance.yahoo.com/v7/finance/quote?symbols=XAUUSD=X,GC=F',{
+          headers:{'User-Agent':'Mozilla/5.0'}
+        });
+        if(!res.ok)return;
+        const data=await res.json();
+        const quotes=data?.quoteResponse?.result||[];
+        const q=quotes.find(x=>x.symbol==='XAUUSD=X')||quotes.find(x=>x.symbol==='GC=F');
+        if(q&&q.regularMarketPrice){
+          renderGoldTicker(q.regularMarketPrice);
+        }
+      }catch(e){}
+    }
+    function startGoldPoller(){
+      if(goldPollTimer)clearInterval(goldPollTimer);
+      pollGoldPrice();
+      goldPollTimer=setInterval(pollGoldPrice,3000); // only as fallback
+    }
+    document.addEventListener("visibilitychange",()=>{if(document.hidden){clearInterval(pollTimer);clearInterval(goldPollTimer);}else{loadData();startAutoRefresh();startGoldPoller();}});
 
     const revealObserver=new IntersectionObserver(entries=>{entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add('visible');if(entry.target.classList.contains('stagger'))animateCounters();revealObserver.unobserve(entry.target);}});},{threshold:0.1});
 
-    document.addEventListener('DOMContentLoaded',()=>{loadData();startAutoRefresh();document.querySelectorAll('.reveal,.reveal-scale,.stagger').forEach(el=>revealObserver.observe(el));newsCountdownTimer=setInterval(updateNewsCountdown,1000);setInterval(updateSession,60000);setInterval(()=>{const upSec=Math.floor((Date.now()-perfStartTime)/1000);const mins=Math.floor(upSec/60),secs=upSec%60;const el=document.getElementById('perfUptime');if(el)el.textContent=mins>0?`${mins}m ${secs}s`:`${secs}s`;},1000);addAlertLog('info','System','Terminal initialized. Monitoring XAU/USD.');});
+    document.addEventListener('DOMContentLoaded',()=>{loadData();startAutoRefresh();startGoldPoller();document.querySelectorAll('.reveal,.reveal-scale,.stagger').forEach(el=>revealObserver.observe(el));newsCountdownTimer=setInterval(updateNewsCountdown,1000);setInterval(updateSession,60000);setInterval(()=>{const upSec=Math.floor((Date.now()-perfStartTime)/1000);const mins=Math.floor(upSec/60),secs=upSec%60;const el=document.getElementById('perfUptime');if(el)el.textContent=mins>0?`${mins}m ${secs}s`:`${secs}s`;},1000);addAlertLog('info','System','Terminal initialized. Monitoring XAU/USD.');});
   </script>
 </body>
 </html>
