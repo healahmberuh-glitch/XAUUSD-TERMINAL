@@ -4,9 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>XAU/USD Terminal — DEPRESSEDESIGN</title>
-  <link rel="stylesheet" href="pixelblast.css" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="pixelblast.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -478,9 +475,7 @@
   <div id="panelMacro" class="tab-panel active">
 
     <!-- HERO -->
-    <section class="hero" style="position:relative;">
-      <div id="pixelBlastBg" style="position:absolute;inset:0;z-index:0;opacity:0.4;"></div>
-      <div style="position:relative;z-index:1;">
+    <section class="hero">
       <div class="hero-top">
         <div class="hero-tag">BECOME RICH WITH ME!</div>
         <div class="hero-tag">VERSION 6.1</div>
@@ -507,7 +502,6 @@
         </div>
       </div>
       <div class="hero-scroll"><span class="hero-scroll-arrow">↓</span> SCROLL</div>
-      </div>
     </section>
 
     <!-- STATS -->
@@ -1210,28 +1204,7 @@
 
     const revealObserver=new IntersectionObserver(entries=>{entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add('visible');if(entry.target.classList.contains('stagger'))animateCounters();revealObserver.unobserve(entry.target);}});},{threshold:0.1});
 
-    document.addEventListener('DOMContentLoaded',()=>{loadData();startAutoRefresh();startGoldPoller();document.querySelectorAll('.reveal,.reveal-scale,.stagger').forEach(el=>revealObserver.observe(el));newsCountdownTimer=setInterval(updateNewsCountdown,1000);setInterval(updateSession,60000);setInterval(()=>{const upSec=Math.floor((Date.now()-perfStartTime)/1000);const mins=Math.floor(upSec/60),secs=upSec%60;const el=document.getElementById('perfUptime');if(el)el.textContent=mins>0?`${mins}m ${secs}s`:`${secs}s`;},1000);addAlertLog('info','System','Terminal initialized. Monitoring XAU/USD.');
-      // Initialize PixelBlast background
-      try{
-        if(typeof PixelBlast!=='undefined'&&typeof THREE!=='undefined'){
-          new PixelBlast('#pixelBlastBg',{
-            variant:'circle',
-            pixelSize:1,
-            color:'#C9A84C',
-            patternScale:1.25,
-            patternDensity:0.35,
-            pixelSizeJitter:0.5,
-            enableRipples:true,
-            rippleSpeed:0.4,
-            rippleThickness:0.12,
-            rippleIntensityScale:1.5,
-            speed:1.5,
-            edgeFade:0,
-            transparent:true
-          });
-        }
-      }catch(e){console.log('PixelBlast init skipped:',e.message);}
-    });
+    document.addEventListener('DOMContentLoaded',()=>{loadData();startAutoRefresh();startGoldPoller();document.querySelectorAll('.reveal,.reveal-scale,.stagger').forEach(el=>revealObserver.observe(el));newsCountdownTimer=setInterval(updateNewsCountdown,1000);setInterval(updateSession,60000);setInterval(()=>{const upSec=Math.floor((Date.now()-perfStartTime)/1000);const mins=Math.floor(upSec/60),secs=upSec%60;const el=document.getElementById('perfUptime');if(el)el.textContent=mins>0?`${mins}m ${secs}s`:`${secs}s`;},1000);addAlertLog('info','System','Terminal initialized. Monitoring XAU/USD.');});
   </script>
 </body>
 </html>
