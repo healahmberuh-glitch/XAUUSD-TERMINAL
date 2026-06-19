@@ -1113,7 +1113,17 @@ module.exports = async (req, res) => {
       upcoming_news: events
         .filter(e => (e.country==="US"||e.currency==="USD") && new Date(e.date).getTime() > Date.now()-3600000)
         .sort((a,b) => new Date(a.date)-new Date(b.date))
-        .slice(0, 15)
+        .slice(0, 20)
+        .map(e => ({
+          date: e.date,
+          event: e.title || e.event || e.name || "Unknown",
+          impact: e.impact || e.importance || "low",
+          forecast: e.forecast ?? e.estimate ?? null,
+          previous: e.previous ?? null,
+          actual: e.actual ?? null,
+          country: e.country,
+          currency: e.currency
+        }))
     });
 
   } catch (err) {
