@@ -283,29 +283,66 @@ async function fetchChartData(interval, range) {
   return { c, o, h, l, v, current: c[c.length-1] };
 }
 
-// ─── REAL-TIME GOLD PRICE (Yahoo Finance v7 Quote) ──────────────────────────
+// ─── REAL-TIME GOLD PRICE ────────────────────────────────────────────────────
 async function fetchGoldPrice() {
+  // Method 1: Yahoo Finance - try spot tickers first
   try {
     const res = await axios.get(
-      `https://query2.finance.yahoo.com/v7/finance/quote?symbols=GC=F,XAUUSD=X`,
+      `https://query2.finance.yahoo.com/v7/finance/quote?symbols=XAU=X,GC=F`,
       { timeout: 8000, headers: { "User-Agent": "Mozilla/5.0" } }
     );
     const quotes = res.data?.quoteResponse?.result || [];
-    // Try XAUUSD=X first (spot), fallback to GC=F (futures)
-    const spot = quotes.find(q => q.symbol === "XAUUSD=X");
+    // XAU=X is Yahoo's gold spot ticker (closest to OANDA)
+    const spot = quotes.find(q => q.symbol === "XAU=X");
     const futures = quotes.find(q => q.symbol === "GC=F");
     const q = spot || futures;
-    if (q) {
+    if (q && q.regularMarketPrice) {
       return {
         price: q.regularMarketPrice,
         change: q.regularMarketChange,
         changePercent: q.regularMarketChangePercent,
-        source: spot ? "XAUUSD=X (spot)" : "GC=F (futures)",
+        source: spot ? "XAU=X (spot)" : "GC=F (futures)",
         time: q.regularMarketTime
       };
     }
-    return null;
-  } catch (e) { return null; }
+  } catch (e) {}
+
+  // Method 2: Yahoo Finance v8 chart API (fallback)
+  try {
+    const res = await axios.get(
+      `https://query2.finance.yahoo.com/v8/finance/chart/XAU=X?interval=1m&range=1d`,
+      { timeout: 8000, headers: { "User-Agent": "Mozilla/5.0" } }
+    );
+    const meta = res.data?.chart?.result?.[0]?.meta;
+    if (meta && meta.regularMarketPrice) {
+      return {
+        price: meta.regularMarketPrice,
+        change: meta.regularMarketChange || 0,
+        changePercent: meta.regularMarketChangePercent || 0,
+        source: "XAU=X chart (spot)",
+        time: meta.regularMarketTime
+      };
+    }
+  } catch (e) {}
+
+  // Method 3: Gold-API.io free endpoint (no key needed for basic)
+  try {
+    const res = await axios.get(
+      `https://www.goldapi.io/api/XAU/USD`,
+      { timeout: 5000, headers: { "x-access-token": "goldapi-demo" } }
+    );
+    if (res.data && res.data.price) {
+      return {
+        price: res.data.price,
+        change: res.data.ch || 0,
+        changePercent: res.data.chp || 0,
+        source: "GoldAPI (spot)",
+        time: res.data.timestamp
+      };
+    }
+  } catch (e) {}
+
+  return null;
 }
 
 // ─── RAW ZONE SCANNERS (tidak berubah) ──────────────────────────────────────
@@ -956,6 +993,21 @@ module.exports = async (req, res) => {
   res.setHeader("Content-Type","application/json");
 
   const isCron = req.query.cron === "true";
+  const goldOnly = req.query.gold_only === "1";
+
+  // Lightweight gold-only endpoint for fast polling
+  if (goldOnly) {
+    try {
+      const goldData = await fetchGoldPrice();
+      return res.status(200).json({
+        success: true,
+        gold_price: goldData ? goldData.price : null,
+        gold_source: goldData ? goldData.source : null
+      });
+    } catch (e) {
+      return res.status(200).json({ success: true, gold_price: null });
+    }
+  }
 
   if (req.method === "POST" && req.body?.message?.text === "/refresh") {
     const [events, crude, dxy] = await Promise.all([fetchTradingViewData(), fetchCrudeOil(), fetchDXY()]);
