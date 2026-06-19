@@ -1359,18 +1359,25 @@
         grid.innerHTML=`<div style="grid-column:1/-1;padding:36px;text-align:center;"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#3A3A3A;">No upcoming USD events.</span></div>`;
         return;
       }
+      // High/medium impact keywords for frontend fallback
+      const highKw=["nonfarm","nfp","payroll","fomc","interest rate","cpi","gdp","employment change","unemployment rate","retail sales","ism manufacturing","ism services","adp employment","jolts","consumer confidence","durable goods"];
+      const medKw=["pmi","manufacturing","services","richmond","philadelphia","fed","treasury","initial jobless","continuing claims","consumer price","producer price","core ppi","core cpi","personal income","pce","michigan","new home sales","industrial production","beige book","empire state","nahb"];
       grid.innerHTML=newsArr.map((item,idx)=>{
-        // Parse impact level from TradingView data
+        // Parse impact level
         const ir=item.impact??item.importance??"";
         let impact="low";
         if(typeof ir==="string"){
           const lower=ir.toLowerCase();
           if(lower.includes("high"))impact="high";
           else if(lower.includes("med"))impact="medium";
-          else impact="low";
         }else if(Number(ir)===3)impact="high";
         else if(Number(ir)===2)impact="medium";
-        else impact="low";
+        // Fallback: keyword detection
+        if(impact==="low"){
+          const title=(item.event||item.name||item.title||"").toLowerCase();
+          if(highKw.some(k=>title.includes(k)))impact="high";
+          else if(medKw.some(k=>title.includes(k)))impact="medium";
+        }
 
         // Parse date
         let lt=item.date||"";
