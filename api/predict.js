@@ -1114,16 +1114,37 @@ module.exports = async (req, res) => {
         .filter(e => (e.country==="US"||e.currency==="USD") && new Date(e.date).getTime() > Date.now()-3600000)
         .sort((a,b) => new Date(a.date)-new Date(b.date))
         .slice(0, 20)
-        .map(e => ({
-          date: e.date,
-          event: e.title || e.event || e.name || "Unknown",
-          impact: e.impact || e.importance || "low",
-          forecast: e.forecast ?? e.estimate ?? null,
-          previous: e.previous ?? null,
-          actual: e.actual ?? null,
-          country: e.country,
-          currency: e.currency
-        }))
+        .map(e => {
+          // Determine impact from API field OR keyword detection
+          let impact = "low";
+          const apiImpact = e.impact ?? e.importance;
+          if (apiImpact) {
+            if (typeof apiImpact === "string") {
+              const lower = apiImpact.toLowerCase();
+              if (lower.includes("high")) impact = "high";
+              else if (lower.includes("med")) impact = "medium";
+            } else if (Number(apiImpact) === 3) impact = "high";
+            else if (Number(apiImpact) === 2) impact = "medium";
+          }
+          // Fallback: keyword-based impact detection for known high/medium events
+          if (impact === "low") {
+            const title = (e.title || e.event || e.name || "").toLowerCase();
+            const highKeywords = ["nonfarm","nfp","payroll","fomc","interest rate","cpi","gdp","employment change","unemployment rate","retail sales","ism manufacturing","ism services","adp employment","jolts","consumer confidence","durable goods","housing starts","building permits","trade balance"];
+            const medKeywords = ["pmi","manufacturing","services","richmond","philadelphia","fed","treasury","initial jobless","continuing claims","consumer price","producer price","core ppi","core cpi","personal income","personal spending","pce","michigan","new home sales","existing home","pending home","industrial production","capacity utilization","beige book","empire state","naHB"];
+            if (highKeywords.some(k => title.includes(k))) impact = "high";
+            else if (medKeywords.some(k => title.includes(k))) impact = "medium";
+          }
+          return {
+            date: e.date,
+            event: e.title || e.event || e.name || "Unknown",
+            impact: impact,
+            forecast: e.forecast ?? e.estimate ?? null,
+            previous: e.previous ?? null,
+            actual: e.actual ?? null,
+            country: e.country,
+            currency: e.currency
+          };
+        })
     });
 
   } catch (err) {
