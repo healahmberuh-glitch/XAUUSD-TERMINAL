@@ -779,40 +779,6 @@
         </div>
       </div>
     </div>
-
-    <!-- NEWS PREDICTION SECTION -->
-    <div style="margin-top:48px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
-        <div class="section-num reveal" style="margin-bottom:0;">04 — NEWS PREDICTION</div>
-      </div>
-      <h2 class="section-title reveal" style="font-size:clamp(28px,4vw,44px);margin-bottom:24px;">AI Prediction<br/>Engine<em>.</em></h2>
-
-      <!-- Prediction Stats Bar -->
-      <div id="predStatsBar" class="pnl-grid reveal" style="margin-bottom:20px;">
-        <div class="pnl-stat"><div class="pnl-stat-num" id="predAccuracy">0%</div><div class="pnl-stat-label">Accuracy</div></div>
-        <div class="pnl-stat"><div class="pnl-stat-num" style="color:#22C55E;" id="predWins">0</div><div class="pnl-stat-label">Wins</div></div>
-        <div class="pnl-stat"><div class="pnl-stat-num" style="color:#EF4444;" id="predLosses">0</div><div class="pnl-stat-label">Losses</div></div>
-        <div class="pnl-stat"><div class="pnl-stat-num" id="predTotal">0</div><div class="pnl-stat-label">Total Predictions</div></div>
-      </div>
-
-      <!-- Active Predictions -->
-      <div id="predActiveGrid" class="zone-grid reveal" style="margin-bottom:20px;">
-        <div style="grid-column:1/-1;padding:36px;text-align:center;">
-          <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#3A3A3A;">No active predictions<span class="cursor">_</span></span>
-        </div>
-      </div>
-
-      <!-- Prediction History -->
-      <div class="reveal" style="background:rgba(20,20,20,0.4);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.04);border-radius:12px;overflow:hidden;max-height:240px;overflow-y:auto;">
-        <div style="padding:12px 20px;border-bottom:1px solid rgba(255,255,255,0.04);display:flex;align-items:center;justify-content:space-between;">
-          <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;color:#666;letter-spacing:0.1em;text-transform:uppercase;">Recent Predictions</span>
-          <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:#3A3A3A;" id="predHistoryCount">0 predictions</span>
-        </div>
-        <div id="predHistoryList">
-          <div style="padding:24px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:10px;color:#3A3A3A;">No predictions yet. System will predict 5 minutes before high-impact news.</div>
-        </div>
-      </div>
-    </div>
   </div><!-- /panelMacro -->
 
   <!-- ══ TECH TAB ═══════════════════════════════════════════ -->
@@ -1464,15 +1430,14 @@
       const pill=document.getElementById('dxyPriceBar');
       if(pill)pill.className=`dxy-mini-pill ${pillClass}`;
       const cc=isBull?'#EF4444':isBear?'#22C55E':'#F59E0B';
-      const sign=changePct>0?'+':'';
-      setEl('dxyChangeBar',`${sign}${changePct.toFixed(2)}%`,cc);
-      setEl('dxyHintBar',isBull?'BEARISH ↓':isBear?'BULLISH ↑':'NEUTRAL');
+      setEl('dxyChangeBar',`${changePct>0?'+':''}${changePct.toFixed(2)}%`,cc);
+      setEl('dxyHintBar',isBull?'XAU: BEARISH ↓':isBear?'XAU: BULLISH ↑':'XAU: NEUTRAL');
+      // Tech tab mini DXY
       const techBar=document.getElementById('dxyTechBar');
       if(techBar){
         techBar.style.opacity='1';
-        techBar.innerHTML=`<span class="dxy-mini-pill ${pillClass}">${current.toFixed(2)}</span><span class="dxy-hint" style="font-weight:600;color:${cc};">${sign}${changePct.toFixed(2)}%</span><span class="dxy-hint" style="color:#3A3A3A;">|</span><span class="dxy-hint">${isBull?'BEARISH ↓':isBear?'BULLISH ↑':'NEUTRAL'}</span>`;
+        techBar.innerHTML=`<span class="dxy-mini-pill ${pillClass}">${current.toFixed(2)}</span><span class="dxy-hint" style="font-weight:600;color:${cc};">${changePct>0?'+':''}${changePct.toFixed(2)}%</span><span class="dxy-hint" style="color:#3A3A3A;">|</span><span class="dxy-hint">${isBull?'BEARISH ↓':isBear?'BULLISH ↑':'NEUTRAL'}</span>`;
       }
-    }
     }
 
     // ─── NEWS COUNTDOWN ────────────────────────────────────────────
@@ -1801,7 +1766,7 @@
     });
     document.addEventListener('mousedown',()=>{document.body.classList.remove('keyboard-nav');});
 
-    function renderDXY(dxy){if(!dxy)return;const el=document.getElementById('dxyLoading');if(el)el.style.display='none';const live=document.getElementById('dxyLive');if(live)live.style.display='flex';const current=parseFloat(dxy.current)||0,changePct=parseFloat(dxy.changePercent)||0,isBull=changePct>0,isBear=changePct<0;const pill=document.getElementById('dxyPricePill');if(pill)pill.className=`dxy-pill ${isBull?'bullish':isBear?'bearish':'neutral'}`;const cc=isBull?'#EF4444':isBear?'#22C55E':'#F59E0B';setEl('dxyPrice',current.toFixed(2));const sign=changePct>0?'+':'';setEl('dxyChangeBadge',`${sign}${changePct.toFixed(2)}%`,cc);setEl('dxyStatus',(dxy.status||'').toUpperCase(),cc);setEl('dxyXauHint',isBull?'BEARISH ↓':isBear?'BULLISH ↑':'NEUTRAL',cc);renderDXYBar(dxy);}
+    function renderDXY(dxy){if(!dxy)return;const el=document.getElementById('dxyLoading');if(el)el.style.display='none';const live=document.getElementById('dxyLive');if(live)live.style.display='flex';const current=parseFloat(dxy.current)||0,changePct=parseFloat(dxy.changePercent)||0,isBull=changePct>0,isBear=changePct<0;const pill=document.getElementById('dxyPricePill');if(pill)pill.className=`dxy-pill ${isBull?'bullish':isBear?'bearish':'neutral'}`;const cc=isBull?'#EF4444':isBear?'#22C55E':'#F59E0B';setEl('dxyPrice',current.toFixed(2));setEl('dxyChangeBadge',`${changePct>0?'+':''}${changePct.toFixed(2)}%`,cc);setEl('dxyStatus',(dxy.status||'').toUpperCase(),cc);setEl('dxyXauHint',isBull?'BEARISH ↓':isBear?'BULLISH ↑':'NEUTRAL',cc);renderDXYBar(dxy);}
 
     function renderSwing(swing){const aw=document.getElementById('swingAwaiting'),ct=document.getElementById('swingContent');if(!swing)return;if(aw)aw.style.display='none';if(ct){ct.classList.remove('hidden');ct.style.animation='fadeInUp 0.5s cubic-bezier(0.16,1,0.3,1) forwards';}const p=(swing.position||'').toUpperCase(),isB=p.includes('BUY'),isS=p.includes('SELL'),isActive=p.includes('ACTIVE');let pc='#666',ps='No signal';if(isB){pc='#22C55E';ps='Long — H4 bullish';}if(isS){pc='#EF4444';ps='Short — H4 bearish';}setEl('swingPositionBadge',p||'— NO SIGNAL —',pc);const dot=document.getElementById('swingPosDot');if(dot)dot.style.background=pc;setEl('swingPosSub',ps,pc);const hc=swing.h4Bias&&swing.h4Bias.includes('BULLISH')?'#22C55E':swing.h4Bias&&swing.h4Bias.includes('BEARISH')?'#EF4444':'#F59E0B';setEl('swingH4Bias',swing.h4Bias||'—',hc);const score=swing.confluenceScore||0;renderConfDots('swingConfDots',score,5,'on-gold');setEl('swingConfScore',score+'/5');setEl('swingConfLabel',score+'/5');const cb=document.getElementById('swingConfBar');if(cb){const c=score>=4?'#22C55E':score>=3?'#F59E0B':'#EF4444';cb.style.width=(score/5*100)+'%';cb.style.background=c;}setEl('swingEntry',fmtPrice(swing.entry));setEl('swingSL',fmtPrice(swing.sl));setEl('swingTP1',fmtPrice(swing.tp1));setEl('swingTP2',fmtPrice(swing.tp2));setEl('swingTP1Pips',swing.tp1Pips||'—');setEl('swingTP2Pips',swing.tp2Pips||'—');const dz=swing.demandZone,sz=swing.supplyZone;setEl('swingDemandZone',dz?`$${dz.btm}–$${dz.top}`:'—');setEl('swingSupplyZone',sz?`$${sz.btm}–$${sz.top}`:'—');setEl('swingRsi',swing.h1Rsi||'—');const reasons=swing.reason||[];setEl('swingReasonCount',reasons.length+' condition'+(reasons.length!==1?'s':''));renderReasonList('swingReasonList',reasons,'#F59E0B');const panel=document.getElementById('swingPanel');if(panel)panel.className='signal-panel'+(isActive&&isB?' glow-buy':isActive&&isS?' glow-sell':'');}
 
@@ -1894,96 +1859,6 @@
       }).join('');
     }
 
-    // ─── NEWS PREDICTION RENDER ──────────────────────────────────────
-    function renderPredictions(predData) {
-      if (!predData) return;
-
-      const stats = predData.stats || {};
-      const active = predData.active || [];
-      const recent = stats.recent || [];
-
-      // Update stats bar
-      const accEl = document.getElementById('predAccuracy');
-      const winsEl = document.getElementById('predWins');
-      const lossesEl = document.getElementById('predLosses');
-      const totalEl = document.getElementById('predTotal');
-      if (accEl) { accEl.textContent = (stats.accuracy || '0') + '%'; accEl.style.color = parseFloat(stats.accuracy) >= 50 ? '#22C55E' : '#EF4444'; }
-      if (winsEl) winsEl.textContent = stats.wins || 0;
-      if (lossesEl) lossesEl.textContent = stats.losses || 0;
-      if (totalEl) totalEl.textContent = stats.total || 0;
-
-      // Render active predictions
-      const activeGrid = document.getElementById('predActiveGrid');
-      if (activeGrid) {
-        if (active.length === 0) {
-          activeGrid.innerHTML = `<div style="grid-column:1/-1;padding:36px;text-align:center;"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#3A3A3A;">No active predictions. Waiting for high-impact news within 5 minutes<span class="cursor">_</span></span></div>`;
-        } else {
-          activeGrid.innerHTML = active.map((p, idx) => {
-            const predColor = p.prediction === 'BULLISH' ? '#22C55E' : p.prediction === 'BEARISH' ? '#EF4444' : '#F59E0B';
-            const predIcon = p.prediction === 'BULLISH' ? '🟢' : p.prediction === 'BEARISH' ? '🔴' : '🟡';
-            const confWidth = Math.min(100, p.confidence || 0);
-            let timeUntil = '';
-            if (p.eventTime) {
-              const diff = (new Date(p.eventTime).getTime() - Date.now()) / 60000;
-              timeUntil = diff > 0 ? `in ${Math.round(diff)}m` : 'LIVE';
-            }
-            return `<div style="background:rgba(20,20,20,0.6);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:18px;border-left:3px solid ${predColor};animation:fadeInUp 0.4s ease ${idx*60}ms both;">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-                <span style="font-size:12px;font-weight:700;color:#F5F5F5;">${p.title || 'Unknown Event'}</span>
-                <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#F59E0B;">${timeUntil}</span>
-              </div>
-              <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-                <span style="font-size:16px;">${predIcon}</span>
-                <span style="font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:700;color:${predColor};">${p.prediction}</span>
-                <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#666;">Confidence: ${p.confidence}%</span>
-              </div>
-              <div style="height:3px;background:rgba(255,255,255,0.04);border-radius:2px;overflow:hidden;">
-                <div style="height:100%;width:${confWidth}%;background:${predColor};border-radius:2px;transition:width 0.5s ease;"></div>
-              </div>
-              <div style="margin-top:8px;font-family:'IBM Plex Mono',monospace;font-size:9px;color:#666;">${(p.reasons || []).slice(0,2).join(' · ')}</div>
-            </div>`;
-          }).join('');
-        }
-      }
-
-      // Render history
-      const historyList = document.getElementById('predHistoryList');
-      const historyCount = document.getElementById('predHistoryCount');
-      if (historyList) {
-        const finished = recent.filter(p => p.result && p.result !== 'SKIP');
-        if (historyCount) historyCount.textContent = finished.length + ' predictions';
-        if (finished.length === 0) {
-          historyList.innerHTML = `<div style="padding:24px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:10px;color:#3A3A3A;">No completed predictions yet.</div>`;
-        } else {
-          historyList.innerHTML = finished.slice().reverse().slice(0, 20).map(p => {
-            const resultColor = p.result === 'WIN' ? '#22C55E' : p.result === 'LOSS' ? '#EF4444' : '#F59E0B';
-            const resultIcon = p.result === 'WIN' ? '✅' : p.result === 'LOSS' ? '❌' : '➖';
-            const predColor = p.prediction === 'BULLISH' ? '#22C55E' : p.prediction === 'BEARISH' ? '#EF4444' : '#F59E0B';
-            let time = '';
-            if (p.eventTime) {
-              try { time = new Date(p.eventTime).toLocaleString('en-US', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }); } catch(e) {}
-            }
-            return `<div style="padding:10px 20px;border-bottom:1px solid rgba(255,255,255,0.02);display:flex;align-items:center;gap:10px;font-size:11px;color:#999;transition:background 0.15s ease;">
-              <span style="font-size:12px;">${resultIcon}</span>
-              <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#666;">${time}</span>
-              <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;color:${predColor};">${p.prediction}</span>
-              <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#666;">→</span>
-              <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:${resultColor};font-weight:700;">${p.result}</span>
-              <span style="flex:1;font-family:'IBM Plex Mono',monospace;font-size:9px;color:#555;text-align:right;">${p.title || ''}</span>
-            </div>`;
-          }).join('');
-        }
-      }
-
-      // Show toast for new wins/losses
-      if (predData.new && predData.new.length > 0) {
-        predData.new.forEach(p => {
-          if (p.result === 'WIN') showToast('buy', 'Prediction WIN!', `${p.title}: ${p.prediction} correct`, 5000);
-          else if (p.result === 'LOSS') showToast('sell', 'Prediction LOSS', `${p.title}: ${p.prediction} wrong`, 5000);
-        });
-      }
-    }
-
     let activeEntryMemory=[];
     async function loadData(){const status=document.getElementById('lastUpdate');if(status)status.textContent='FETCHING...';const toast=document.getElementById('errorToast');toast.style.opacity='0';toast.style.transform='translateY(16px)';toast.style.pointerEvents='none';const t0=performance.now();try{const res=await fetchWithRetry('/api/predict');const latency=Math.round(performance.now()-t0);if(!res.ok)throw new Error(`HTTP ${res.status}`);const data=await res.json();if(!data.success)throw new Error(data.error||'Unknown error');
     window._lastData=data;
@@ -1995,7 +1870,6 @@
     renderRSIDashboard(data.swing_signal||null,data.scalp_signal||null);
     detectSignalChanges(data.swing_signal||null,data.scalp_signal||null,document.getElementById('masterSignalText')?.textContent||'');
     updateNewsCountdown();
-    renderPredictions(data.news_predictions||null);
     const zones=data.zone_pantau||[];document.getElementById('zoneGrid').innerHTML=zones.map(z=>{const color=z.bias==="BUY"?"#22C55E":z.bias==="SELL"?"#EF4444":"#A78BFA";return`<div class="zone-card"><div class="zone-card-head"><span class="zone-card-type">${z.typeLabel||z.type}</span><span class="zone-card-bias" style="color:${color}">${z.bias}</span></div><div class="zone-card-range">${z.lowStr||z.low}</div><div class="zone-card-to">to</div><div class="zone-card-range">${z.highStr||z.high}</div><div class="zone-card-session">${z.session||""}</div></div>`;}).join('');const rawPrice=data.swing_signal?.currentPrice||data.technical_signal?.currentPrice||0,currentPrice=parseFloat(rawPrice),nowMs=Date.now(),isPriceValid=currentPrice>0&&!isNaN(currentPrice);if(isPriceValid){checkZoneProximity(zones,currentPrice);zones.forEach(z=>{if(!z.signal)return;const entry=parseFloat(z.signal.entry),isBuy=z.bias==="BUY",tol=0.15,isTrig=isBuy?currentPrice>=entry-tol:currentPrice<=entry+tol;if(isTrig){const exists=activeEntryMemory.find(e=>e.id===z.id);if(!exists)activeEntryMemory.push({...z,triggeredAt:nowMs,status:'RUNNING',statusColor:'#38BDF8'});}});activeEntryMemory.forEach(trade=>{if(trade.status!=='RUNNING')return;const isBuy=trade.bias==="BUY",entry=parseFloat(trade.signal.entry),sl=parseFloat(trade.signal.sl),tp1=parseFloat(trade.signal.tp1);if(isBuy){if(currentPrice<=sl){trade.status='LOSS (SL HIT)';trade.statusColor='#EF4444';trade.closedAt=nowMs;}else if(currentPrice>=tp1){trade.status='WIN (TP1 HIT)';trade.statusColor='#22C55E';trade.closedAt=nowMs;}}else{if(currentPrice>=sl){trade.status='LOSS (SL HIT)';trade.statusColor='#EF4444';trade.closedAt=nowMs;}else if(currentPrice<=tp1){trade.status='WIN (TP1 HIT)';trade.statusColor='#22C55E';trade.closedAt=nowMs;}}});}activeEntryMemory=activeEntryMemory.filter(e=>{if(e.status==='RUNNING')return true;return nowMs-e.closedAt<1800000;});const running=activeEntryMemory.filter(t=>t.status==='RUNNING'),closed=activeEntryMemory.filter(t=>t.status!=='RUNNING');document.getElementById('entryTriggerCount').textContent=`${running.length} running, ${closed.length} closed`;const tg=document.getElementById('entryTriggerGrid');if(running.length===0){tg.innerHTML=`<div style="grid-column:1/-1;padding:36px;text-align:center;"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#3A3A3A;">Tidak ada limit order running<span class="cursor">_</span></span></div>`;}else{tg.innerHTML=running.map(trade=>{const isBuy=trade.bias==="BUY",entry=parseFloat(trade.signal.entry),sl=parseFloat(trade.signal.sl),tp1=parseFloat(trade.signal.tp1),cur=currentPrice,pnl=isBuy?cur-entry:entry-cur,risk=Math.abs(entry-sl),pnlP=(pnl/risk)*100,dSL=Math.abs(cur-sl),dTP1=Math.abs(tp1-cur),pnlC=pnl>0?'#22C55E':pnl<0?'#EF4444':'#F59E0B';return`<div class="trade-card" style="border-left-color:${trade.statusColor};"><div class="trade-status"><span class="trade-status-dot" style="background:${trade.statusColor};"></span><span class="trade-status-text" style="color:${trade.statusColor};">${trade.status}</span></div><div class="trade-title">${trade.bias} @ $${entry.toFixed(2)}</div><div class="trade-sub">${trade.typeLabel} (${trade.session})</div><div class="trade-prices"><div class="trade-price"><div class="trade-price-label" style="color:#EF4444;">SL</div><div class="trade-price-val">$${sl.toFixed(2)}</div></div><div class="trade-price"><div class="trade-price-label" style="color:#22C55E;">TP1</div><div class="trade-price-val">$${tp1.toFixed(2)}</div></div><div class="trade-price"><div class="trade-price-label" style="color:#38BDF8;">Risk</div><div class="trade-price-val">${risk.toFixed(1)}p</div></div></div><div class="trade-pnl"><div><div class="trade-pnl-label">PnL</div><div class="trade-pnl-val" style="color:${pnlC};">${pnl>0?'+':''}$${pnl.toFixed(2)} (${pnlP.toFixed(0)}%)</div></div><div style="text-align:right;"><div class="trade-pnl-label">SL/TP1</div><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#666;">${dSL.toFixed(2)} / ${dTP1.toFixed(2)}</div></div></div><div class="trade-time">${new Date(trade.triggeredAt).toLocaleTimeString()}</div></div>`;}).join('');}if(status)status.textContent='UPDATED '+new Date(data.timestamp).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});    }catch(err){console.error(err);const latency=Math.round(performance.now()-t0);updatePerfStats(latency,false);addAlertLog('warn','Fetch Error',err.message);document.getElementById('errorMsg').textContent='Error: '+err.message;toast.style.opacity='1';toast.style.transform='translateY(0)';toast.style.pointerEvents='auto';if(status)status.textContent='FETCH FAILED';setTimeout(()=>{toast.style.opacity='0';toast.style.transform='translateY(16px)';},6000);}}
 
     let pollTimer=null;function startAutoRefresh(){if(pollTimer)clearInterval(pollTimer);pollTimer=setInterval(()=>{if(!document.hidden)loadData();},3000);}
