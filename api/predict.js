@@ -1,10 +1,11 @@
 // api/predict.js — DEPRESSEDESIGN Trading Station
-// v6.3 — Fixed Technical Logic: ChoCH, FVG naming, Scalp SL, Zone Touch, Entry Triggers, Volume
+// v6.4 — FRED API + News Prediction Engine + Win/Loss Tracking
 
 const axios = require("axios");
 
 const TELEGRAM_TOKEN   = "8325927674:AAF3xv3r0NRRTet5H-xaK1DKIwWshemVOeU";
 const TELEGRAM_CHAT_ID = "5595296615";
+const FRED_API_KEY     = "17d5f5c1eb18e504373a2328c96e1fee";
 
 // ─── GLOBAL STATE ─────────────────────────────────────────────────────────────
 let lastSentSwingID  = "";
@@ -21,6 +22,11 @@ let warnedEvents     = new Set();
 let lastH1CloseTime = null;
 let cachedSwing = null;
 let lastSwingPrice = null;
+
+// --- NEWS PREDICTION STATE ---
+let predictionHistory = [];
+let cachedFredData = {};
+let lastFredFetchTime = 0;
 
 // ─── TELEGRAM HELPERS (tidak berubah) ─────────────────────────────────────────
 async function tgSend(message) {
@@ -1207,6 +1213,244 @@ function scoreFed(events) {
   return { score, signal:score>0?"HAWKISH":score<0?"DOVISH":"MIXED", components:comp };
 }
 
+// ─── FRED API ENGINE ──────────────────────────────────────────────────────────
+const FRED_SERIES = {
+  UNRATE:   { name: "Unemployment Rate",         keywords: ["unemployment", "nfp", "nonfarm", "payroll", "employment"] },
+  CPIAUCSL: { name: "CPI All Urban Consumers",   keywords: ["cpi", "consumer price", "inflation"] },
+  GDP:      { name: "Gross Domestic Product",     keywords: ["gdp", "gross domestic product", "growth"] },
+  FEDFUNDS: { name: "Federal Funds Rate",         keywords: ["fed", "interest rate", "fomc", "federal funds"] },
+  PAYEMS:   { name: "Total Nonfarm Payrolls",     keywords: ["nonfarm", "nfp", "payroll"] },
+  PPIACSL:  { name: "Producer Price Index",       keywords: ["ppi", "producer price"] },
+  RSAFS:    { name: "Advance Retail Sales",       keywords: ["retail sales", "retail"] }
+};
+
+async function fetchFredSeries(seriesId) {
+  try {
+    const r = await axios.get("https://api.stlouisfed.org/fred/series/observations", {
+      params: {
+        series_id: seriesId,
+        api_key: FRED_API_KEY,
+        file_type: "json",
+        sort_order: "desc",
+        limit: 5
+      },
+      timeout: 10000
+    });
+    const obs = r.data?.observations || [];
+    return obs.filter(o => o.value !== ".").map(o => ({
+      date: o.date,
+      value: parseFloat(o.value)
+    }));
+  } catch (e) {
+    return [];
+  }
+}
+
+async function fetchFredData() {
+  const now = Date.now();
+  if (Object.keys(cachedFredData).length > 0 && (now - lastFredFetchTime) < 3600000) {
+    return cachedFredData;
+  }
+  const results = {};
+  const series = Object.keys(FRED_SERIES);
+  await Promise.all(series.map(async (id) => {
+    results[id] = await fetchFredSeries(id);
+  }));
+  cachedFredData = results;
+  lastFredFetchTime = now;
+  return results;
+}
+
+function getFredMacroScore(fredData) {
+  let score = 0;
+  const details = {};
+
+  // NFP/Unemployment: lower unemployment = stronger USD = bearish XAU
+  const unrate = fredData.UNRATE;
+  if (unrate && unrate.length >= 2) {
+    const curr = unrate[0].value;
+    const prev = unrate[1].value;
+    const diff = curr - prev;
+    if (diff < -0.2) { score -= 40; details.UNRATE = { change: diff.toFixed(1), signal: "BEARISH XAU (strong jobs)" }; }
+    else if (diff > 0.2) { score += 40; details.UNRATE = { change: diff.toFixed(1), signal: "BULLISH XAU (weak jobs)" }; }
+    else { details.UNRATE = { change: diff.toFixed(1), signal: "NEUTRAL" }; }
+  }
+
+  // CPI: higher CPI = inflation fear = bullish XAU
+  const cpi = fredData.CPIAUCSL;
+  if (cpi && cpi.length >= 2) {
+    const curr = cpi[0].value;
+    const prev = cpi[1].value;
+    const pctChange = ((curr - prev) / prev) * 100;
+    if (pctChange > 0.3) { score -= 30; details.CPI = { change: pctChange.toFixed(2)+"%", signal: "BEARISH XAU (high inflation → rate hike)" }; }
+    else if (pctChange < 0.1) { score += 30; details.CPI = { change: pctChange.toFixed(2)+"%", signal: "BULLISH XAU (low inflation)" }; }
+    else { details.CPI = { change: pctChange.toFixed(2)+"%", signal: "NEUTRAL" }; }
+  }
+
+  // GDP: higher growth = stronger USD = bearish XAU
+  const gdp = fredData.GDP;
+  if (gdp && gdp.length >= 2) {
+    const curr = gdp[0].value;
+    const prev = gdp[1].value;
+    const pctChange = ((curr - prev) / prev) * 100;
+    if (pctChange > 0.5) { score -= 30; details.GDP = { change: pctChange.toFixed(2)+"%", signal: "BEARISH XAU (strong growth)" }; }
+    else if (pctChange < 0) { score += 30; details.GDP = { change: pctChange.toFixed(2)+"%", signal: "BULLISH XAU (recession fear)" }; }
+    else { details.GDP = { change: pctChange.toFixed(2)+"%", signal: "NEUTRAL" }; }
+  }
+
+  // Fed Rate: higher rate = stronger USD = bearish XAU
+  const fed = fredData.FEDFUNDS;
+  if (fed && fed.length >= 2) {
+    const curr = fed[0].value;
+    const prev = fed[1].value;
+    const diff = curr - prev;
+    if (diff > 0.1) { score -= 60; details.FED = { rate: curr.toFixed(2)+"%", change: "+"+diff.toFixed(2)+"%", signal: "BEARISH XAU (hawkish)" }; }
+    else if (diff < -0.1) { score += 60; details.FED = { rate: curr.toFixed(2)+"%", change: diff.toFixed(2)+"%", signal: "BULLISH XAU (dovish)" }; }
+    else { details.FED = { rate: curr.toFixed(2)+"%", signal: "NEUTRAL (unchanged)" }; }
+  }
+
+  return { score, details };
+}
+
+// ─── NEWS PREDICTION ENGINE ───────────────────────────────────────────────────
+// Predicts market direction 5 minutes before high-impact news release
+
+const HIGH_IMPACT_KEYWORDS = [
+  "nonfarm", "nfp", "payroll", "fomc", "interest rate", "cpi", "gdp",
+  "employment change", "unemployment rate", "retail sales", "ism manufacturing",
+  "ism services", "adp employment", "jolts", "consumer confidence",
+  "durable goods", "housing starts", "building permits", "trade balance",
+  "core pce", "initial jobless"
+];
+
+function isHighImpact(event) {
+  const title = (event.title || event.event || event.name || "").toLowerCase();
+  return HIGH_IMPACT_KEYWORDS.some(k => title.includes(k));
+}
+
+function getNewsSentimentKeywords(title) {
+  const t = title.toLowerCase();
+  // Hawkish = bearish XAU, Dovish = bullish XAU
+  const hawkish = ["rate hike", "tightening", "hawkish", "inflation", "overheating", "stronger", "beat"];
+  const dovish = ["rate cut", "easing", "dovish", "recession", "weaker", "miss", "unemployment", "layoff"];
+
+  const hawkScore = hawkish.filter(k => t.includes(k)).length;
+  const dovScore = dovish.filter(k => t.includes(k)).length;
+
+  if (hawkScore > dovScore) return "HAWKISH";
+  if (dovScore > hawkScore) return "DOVISH";
+  return "NEUTRAL";
+}
+
+async function generateNewsPrediction(event, technicalBias, macroScore, fredData) {
+  const title = event.title || event.event || "Unknown";
+  const eventTime = new Date(event.date).getTime();
+  const nowMs = Date.now();
+  const minutesUntil = (eventTime - nowMs) / 60000;
+
+  // Only predict within 5 minutes of release
+  if (minutesUntil > 5 || minutesUntil < -2) return null;
+
+  const sentiment = getNewsSentimentKeywords(title);
+  let bullPoints = 0, bearPoints = 0;
+  const reasons = [];
+
+  // Factor 1: Technical Bias (30%)
+  if (technicalBias.includes("BULLISH")) { bullPoints += 30; reasons.push("Technical: Bullish trend"); }
+  else if (technicalBias.includes("BEARISH")) { bearPoints += 30; reasons.push("Technical: Bearish trend"); }
+  else { bullPoints += 15; bearPoints += 15; reasons.push("Technical: Neutral"); }
+
+  // Factor 2: Macro Score (25%)
+  if (macroScore < -20) { bullPoints += 25; reasons.push("Macro: Dovish bias (bullish XAU)"); }
+  else if (macroScore > 20) { bearPoints += 25; reasons.push("Macro: Hawkish bias (bearish XAU)"); }
+  else { bullPoints += 12; bearPoints += 12; reasons.push("Macro: Neutral"); }
+
+  // Factor 3: News Type Sentiment (25%)
+  if (sentiment === "HAWKISH") { bearPoints += 25; reasons.push("News keywords: Hawkish"); }
+  else if (sentiment === "DOVISH") { bullPoints += 25; reasons.push("News keywords: Dovish"); }
+  else { bullPoints += 12; bearPoints += 12; reasons.push("News keywords: Neutral"); }
+
+  // Factor 4: FRED Data Context (20%)
+  if (fredData.UNRATE && fredData.UNRATE.length >= 1) {
+    const unemployment = fredData.UNRATE[0].value;
+    if (unemployment > 4.5) { bullPoints += 20; reasons.push(`FRED: High unemployment (${unemployment}%) → bullish XAU`); }
+    else if (unemployment < 3.5) { bearPoints += 20; reasons.push(`FRED: Low unemployment (${unemployment}%) → bearish XAU`); }
+    else { bullPoints += 10; bearPoints += 10; }
+  }
+
+  // Calculate prediction
+  const confidence = Math.abs(bullPoints - bearPoints);
+  let prediction = "NEUTRAL";
+  if (confidence >= 15) {
+    prediction = bullPoints > bearPoints ? "BULLISH" : "BEARISH";
+  }
+
+  const predictionObj = {
+    id: `PRED_${Date.now()}_${Math.random().toString(36).slice(2,6)}`,
+    title,
+    eventTime: event.date,
+    timestamp: new Date().toISOString(),
+    prediction,
+    confidence,
+    bullPoints,
+    bearPoints,
+    reasons,
+    sentiment,
+    result: null,  // WIN, LOSS, or null (pending)
+    actualDirection: null,
+    checkedAt: null
+  };
+
+  predictionHistory.push(predictionObj);
+  if (predictionHistory.length > 100) predictionHistory = predictionHistory.slice(-100);
+
+  return predictionObj;
+}
+
+async function checkPredictionResults(predictions, currentPrice, previousPrice) {
+  if (!currentPrice || !previousPrice) return predictions;
+
+  const priceChange = currentPrice - previousPrice;
+  const actualDirection = priceChange > 0.5 ? "BULLISH" : priceChange < -0.5 ? "BEARISH" : "NEUTRAL";
+
+  for (const pred of predictions) {
+    if (pred.result !== null) continue;
+    if (!pred.eventTime) continue;
+
+    const eventTime = new Date(pred.eventTime).getTime();
+    const nowMs = Date.now();
+    const minutesSince = (nowMs - eventTime) / 60000;
+
+    // Check result 3 minutes after release
+    if (minutesSince >= 3 && minutesSince <= 30) {
+      if (pred.prediction === "NEUTRAL") {
+        pred.result = "SKIP";
+        pred.actualDirection = actualDirection;
+      } else if (pred.prediction === actualDirection) {
+        pred.result = "WIN";
+        pred.actualDirection = actualDirection;
+      } else if (actualDirection === "NEUTRAL") {
+        pred.result = "PUSH";
+        pred.actualDirection = actualDirection;
+      } else {
+        pred.result = "LOSS";
+        pred.actualDirection = actualDirection;
+      }
+      pred.checkedAt = new Date().toISOString();
+    }
+  }
+
+  return predictions;
+}
+
+function getPredictionStats() {
+  const finished = predictionHistory.filter(p => p.result === "WIN" || p.result === "LOSS");
+  const wins = finished.filter(p => p.result === "WIN").length;
+  const losses = finished.filter(p => p.result === "LOSS").length;
+  const accuracy = finished.length > 0 ? ((wins / finished.length) * 100).toFixed(1) : "0.0";
+  return { wins, losses, total: finished.length, accuracy, recent: predictionHistory.slice(-10) };
+}
+
 // ─── MAIN HANDLER ─────────────────────────────────────────────────────────────
 module.exports = async (req, res) => {
   if (req.method === "OPTIONS") {
@@ -1244,15 +1488,16 @@ module.exports = async (req, res) => {
   try {
     const session = getSession();
 
-    const [events, crude, dxy, goldData, h4Raw, h1, m5, m1] = await Promise.all([
+    const [events, crude, dxy, goldData, fredData, h4Raw, h1, m5, m1] = await Promise.all([
       fetchTradingViewData(),
       fetchCrudeOil(),
       fetchDXY(),
       fetchGoldPrice(),
+      fetchFredData(),
       fetchChartData("1d","60d").catch(() => fetchChartData("1h","10d")),
       fetchChartData("1h","7d"),
       fetchChartData("5m","2d"),
-      fetchChartData("1m","1d")
+      fetchChartData("1m","d1")
     ]);
 
     const nfp    = scoreNFP(events);
@@ -1262,10 +1507,33 @@ module.exports = async (req, res) => {
     const total  = nfp.score + cpi.score + growth.score + fed.score;
     const master = total >= 40 ? "STRONG SELL XAU" : total <= -40 ? "STRONG BUY XAU" : "NEUTRAL";
 
+    // FRED macro score (official government data)
+    const fredMacro = getFredMacroScore(fredData);
+
     const swing  = await calculateSwingSignal(h4Raw, h1, session);
     const scalp  = await calculateScalpSignal(m5, swing, session);
     const zones   = await scanAllZones(h1, m5, session, swing);
     const entries = await checkEntryTriggers(m1, zones, session);
+
+    // ─── NEWS PREDICTION ENGINE ─────────────────────────────────────────
+    const upcomingHighImpact = events.filter(e => {
+      if (e.country !== "US" && e.currency !== "USD") return false;
+      if (!isHighImpact(e)) return false;
+      const diff = (new Date(e.date).getTime() - Date.now()) / 60000;
+      return diff > -5 && diff <= 5;
+    });
+
+    let newPredictions = [];
+    for (const event of upcomingHighImpact) {
+      const pred = await generateNewsPrediction(event, swing.h4Bias, total, fredData);
+      if (pred) newPredictions.push(pred);
+    }
+
+    // Check results for pending predictions
+    const currentPrice = m5?.current || h1?.current || 0;
+    const prevPrice = h1?.current || 0;
+    predictionHistory = await checkPredictionResults(predictionHistory, currentPrice, prevPrice);
+    const predStats = getPredictionStats();
 
     if (isCron) {
       await sendTelegramAlert(master, total, dxy, nfp, cpi, growth, fed);
@@ -1330,11 +1598,17 @@ module.exports = async (req, res) => {
       dxy_live: dxy,
       master_signal: { signal:master, total_score:total },
       nfp, cpi, growth, fed,
+      fred_macro: fredMacro,
       swing_signal: swing,
       scalp_signal: scalp,
       technical_signal: scalp,
       zone_pantau: zones,
       entry_triggers: entries,
+      news_predictions: {
+        new: newPredictions,
+        stats: predStats,
+        active: predictionHistory.filter(p => p.result === null)
+      },
       upcoming_news: events
         .filter(e => (e.country==="US"||e.currency==="USD") && new Date(e.date).getTime() > Date.now()-3600000)
         .sort((a,b) => new Date(a.date)-new Date(b.date))
