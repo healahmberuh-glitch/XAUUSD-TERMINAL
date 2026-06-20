@@ -1103,12 +1103,50 @@ async function calculateScalpSignal(m5, swing, session) {
 
 // ─── MACRO ENGINES (tidak berubah) ────────────────────────────────────────────
 async function fetchDXY() {
+  // Method 1: Yahoo Finance v7 quote API (more reliable for real-time change)
   try {
-    const r = await axios.get("https://query2.finance.yahoo.com/v8/finance/chart/DX-Y.NYB?interval=1d&range=2d",{ timeout:8000, headers:{"User-Agent":"Mozilla/5.0"} });
-    const cur = r.data.chart.result[0].meta.regularMarketPrice;
-    const prev = r.data.chart.result[0].meta.previousClose;
-    return { current:parseFloat(cur.toFixed(2)), changePercent:((cur-prev)/prev*100).toFixed(2), status: cur>=prev?"BULLISH (UP)":"BEARISH (DOWN)" };
-  } catch (e) { return { current:"N/A", changePercent:"0", status:"OFFLINE" }; }
+    const r = await axios.get("https://query2.finance.yahoo.com/v7/finance/quote?symbols=DX-Y.NYB", {
+      timeout: 8000,
+      headers: { "User-Agent": "Mozilla/5.0" }
+    });
+    const q = r.data?.quoteResponse?.result?.[0];
+    if (q && q.regularMarketPrice) {
+      const cur = q.regularMarketPrice;
+      const change = q.regularMarketChange || 0;
+      const changePct = q.regularMarketChangePercent || 0;
+      const prev = q.regularMarketPreviousClose || cur;
+      return {
+        current: parseFloat(cur.toFixed(2)),
+        change: parseFloat(change.toFixed(2)),
+        changePercent: parseFloat(changePct.toFixed(2)),
+        previousClose: prev,
+        status: changePct >= 0 ? "BULLISH (UP)" : "BEARISH (DOWN)"
+      };
+    }
+  } catch (e) {}
+
+  // Method 2: Yahoo Finance v8 chart API (fallback)
+  try {
+    const r = await axios.get("https://query2.finance.yahoo.com/v8/finance/chart/DX-Y.NYB?interval=1d&range=5d", {
+      timeout: 8000,
+      headers: { "User-Agent": "Mozilla/5.0" }
+    });
+    const meta = r.data.chart.result[0].meta;
+    const cur = meta.regularMarketPrice;
+    const prev = meta.previousClose;
+    if (cur && prev && prev > 0) {
+      const changePct = ((cur - prev) / prev) * 100;
+      return {
+        current: parseFloat(cur.toFixed(2)),
+        change: parseFloat((cur - prev).toFixed(2)),
+        changePercent: parseFloat(changePct.toFixed(2)),
+        previousClose: prev,
+        status: changePct >= 0 ? "BULLISH (UP)" : "BEARISH (DOWN)"
+      };
+    }
+  } catch (e) {}
+
+  return { current: "N/A", change: 0, changePercent: 0, previousClose: null, status: "OFFLINE" };
 }
 
 async function fetchCrudeOil() {
